@@ -116,7 +116,12 @@ Version 2.2.0. Signification des statuts :
 ## IA et assistant
 | Fonction | Statut |
 | --- | --- |
-| SOLVEX AI conversationnel : vrai modèle de langage OpenAI, outils réels (image, vidéo, musique), contexte conservé, génération seulement sur demande | ✅ (testé avec un serveur imitant l’API OpenAI ; à confirmer avec une vraie clé) |
+| SOLVEX AI conversationnel : vrai modèle de langage existant (OpenAI ou modèle ouvert compatible : Ollama, vLLM, LM Studio), appelé par le serveur ; aucun modèle entraîné par SOLVEX | ✅ (testé avec un serveur au format Chat Completions ; à confirmer avec une vraie clé ou un modèle local) |
+| Réponses en flux, étapes réelles (analyse, outil, rédaction), bouton Arrêter, Réessayer, délai maximal | ✅ |
+| Outils validés par le serveur : image, vidéo, retouche de la dernière création, état des créations, musique, projet joint ; outils absents ou non configurés refusés | ✅ |
+| Modifications de projet (titre stylisé, musique, transitions, renommage) proposées puis appliquées seulement après « Appliquer » | ✅ |
+| Mémoire des préférences contrôlée : proposée, acceptée, désactivable, effaçable, stockée dans le navigateur | ✅ |
+| Banc d’évaluation `npm run eval:assistant` (9 scénarios avec le vrai modèle configuré) | ✅ (9/9 avec le modèle scripté ; à lancer avec votre modèle) |
 | SOLVEX AI dans la version claude.ai : réponses de Claude (sans génération) | 🟢 (dépend de l’autorisation donnée dans claude.ai ; non testable hors de claude.ai) |
 | Bouton « Générer l’image » toujours visible, clavier, souris, tactile | ✅ |
 | Formats 1:1, 2:3, 3:4, 4:5, 9:16, 3:2, 4:3, 16:9, 21:9 ; résolutions 512 px à 4K selon le modèle, raison affichée si indisponible | ✅ |

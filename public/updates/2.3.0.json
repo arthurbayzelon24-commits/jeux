@@ -1,0 +1,13 @@
+{
+  "version": "2.3.0",
+  "name": "SOLVEX AI, assistant complet",
+  "date": "2026-10-19",
+  "notes": [
+    "SOLVEX AI répond en direct, mot après mot, et montre les étapes réelles : analyse, lancement d’une génération, rédaction.",
+    "Bouton Arrêter pendant une réponse, Réessayer après une erreur, messages clairs si le service est indisponible.",
+    "Joignez un projet à la conversation : SOLVEX AI le lit et propose un titre stylisé, une musique, des transitions ; rien n’est modifié sans votre clic sur « Appliquer ».",
+    "« Rends-la plus lumineuse » : SOLVEX AI retrouve votre dernière image et lance une vraie retouche.",
+    "Mémoire sous votre contrôle : SOLVEX AI propose de retenir une préférence, vous acceptez ou non, et vous pouvez tout oublier.",
+    "Possibilité d’utiliser un modèle ouvert installé sur votre machine (Ollama, vLLM, LM Studio) à la place d’OpenAI."
+  ]
+}

@@ -215,12 +215,17 @@ export function scriptedBrain(body) {
   const data = JSON.parse(system.slice(system.lastIndexOf('\n') + 1));
   if (last.role === 'tool') {
     const result = JSON.parse(last.content);
-    if (result.error) return { role: 'assistant', content: `Je n’ai pas pu le faire : ${result.error}` };
+    if (result.error && !result.status) return { role: 'assistant', content: `Je n’ai pas pu le faire : ${result.error}` };
+    if (result.status === 'failed') return { role: 'assistant', content: `La génération a échoué : ${result.error}. Vous pouvez réessayer ou modifier la demande.` };
     if (result.status === 'started') return { role: 'assistant', content: `C’est lancé (création ${result.creation_id}). Le résultat s’affichera dès qu’il sera prêt.` };
     if (result.status === 'awaiting_user_confirmation') return { role: 'assistant', content: 'Voici ma proposition : confirmez-la pour l’appliquer.' };
     if (Array.isArray(result) && result[0]?.title) return { role: 'assistant', content: `Je vous propose : ${result.map((r) => r.title).join(', ')}.` };
     if (result.id && result.clips) return call('propose_project_edit', { summary: 'Ajouter un titre élégant et des fondus.', operations: [{ op: 'add_title', text: result.name, start: 0, duration: 3, style_id: 'elegant-classique' }, { op: 'set_transitions', transition: 'fade' }] });
     return { role: 'assistant', content: 'D’accord.' };
+  }
+  if (/prête/i.test(user)) {
+    const latest = data.creations_recentes[0];
+    return call('get_creation', { creation_id: latest?.id || 'introuvable' });
   }
   if (/qu.est-ce qu|explique/i.test(user)) return { role: 'assistant', content: 'Un effet cinématographique combine un format large (21:9), un étalonnage contrasté et des mouvements de caméra lents.', slow: /lent/.test(user) ? 30 : 0 };
   if (/idées/i.test(user)) return { role: 'assistant', content: '1. Un timelapse urbain. 2. Un avant/après. 3. Un tutoriel en 30 s. 4. Une journée en 1 minute. 5. Un défi créatif. Voulez-vous que je génère une image pour l’une d’elles ?' };

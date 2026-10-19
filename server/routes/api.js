@@ -333,7 +333,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
     const recent = store
       .list({})
       .slice(0, 6)
-      .map((c) => ({ id: c.id, type: c.type, status: c.status, prompt: c.autoPrompt ? null : c.prompt?.slice(0, 160), aspect: c.params?.aspect, createdAt: c.createdAt }));
+      .map((c) => ({ id: c.id, type: c.type, status: c.status, prompt: c.autoPrompt ? null : c.prompt?.slice(0, 160), aspect: c.params?.aspect, error: c.status === 'failed' ? String(c.error || '').slice(0, 200) : undefined, createdAt: c.createdAt }));
     const system = systemPrompt({
       services: { images: image ? `${image.vendor} · ${image.model}` : null, videos: video ? `${video.vendor} · ${video.model}` : null },
       tools: toolbox.availability(),

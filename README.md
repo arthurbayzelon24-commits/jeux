@@ -21,7 +21,7 @@ L’identité visuelle est propre à SOLVEX : un losange prismatique bleu, viole
   - textes animés, stickers, formes, sous-titres SRT et VTT ;
   - outils audio, assistant de montage, export vidéo réel.
 - **Éditeur photo** : calques, 14 réglages, filtres, courbe, LUT `.cube`, recadrage, formats réseaux sociaux, collage, outils IA.
-- **SOLVEX AI** (`/assistant`) : assistant conversationnel branché sur un vrai modèle de langage (OpenAI). Il propose des idées, rédige des descriptions détaillées et lance de vraies générations d’images et de vidéos quand on le lui demande ; il garde le contexte (« rends les couleurs plus froides »). Dans la version claude.ai, c’est Claude qui répond (sans génération).
+- **SOLVEX AI** (`/assistant`) : assistant conversationnel branché sur un vrai modèle de langage existant (OpenAI, ou un modèle ouvert servi en local par Ollama, vLLM, LM Studio…), appelé par le serveur. Réponses en flux, étapes réelles (analyse, lancement, rédaction), outils contrôlés par le serveur : générer une image ou une vidéo, retoucher la dernière création (« rends-la plus lumineuse »), chercher une musique, lire un projet joint et proposer des modifications appliquées seulement après confirmation, mémoire des préférences contrôlée par l’utilisateur. SOLVEX n’entraîne aucun modèle : architecture, options étudiées, fournisseurs, coûts et tests dans [docs/ARCHITECTURE-IA.md](docs/ARCHITECTURE-IA.md). Dans la version claude.ai, c’est Claude qui répond (sans génération).
 - **Outils IA** (`/images`, `/videos`, `/retouche`) : génération par OpenAI ou Pollinations (images) et Google Veo (vidéo), avec choix du modèle, brouillon conservé et « Envoyer vers l’éditeur ».
 - **Mes créations** (`/galerie`) : images et vidéos générées, conservées sur le serveur.
 - **Paramètres** (`/parametres`) : Apparence, Préférences de création, Stockage et projets, Installation (barre « Installer SOLVEX AI sur mon appareil »), Confidentialité et sécurité, Informations. Il n’y a pas de comptes utilisateurs, donc pas de section Compte.
@@ -113,7 +113,10 @@ Toutes les variables sont listées et commentées dans [`.env.example`](.env.exa
 | `OPENAI_TRANSCRIBE_MODEL` | Transcription automatique des sous-titres (facultatif) | vide, donc désactivée |
 | `POLLINATIONS_ENABLED` | Génération d’images gratuite sans clé (service tiers) | `true` |
 | `POLLINATIONS_MODEL` | Modèle Pollinations à demander (facultatif) | vide, donc modèle par défaut du service |
-| `OPENAI_CHAT_MODEL` | Modèle de l’assistant SOLVEX AI (avec `OPENAI_API_KEY`) | vide, donc `OPENAI_TEXT_MODEL`, sinon assistant désactivé |
+| `AI_PROVIDER` | Cerveau de SOLVEX AI : `openai` ou `openai-compatible` (Ollama, vLLM…) | `openai` |
+| `AI_MODEL` | Nom exact du modèle de l’assistant (accepte les outils) | vide, donc `OPENAI_CHAT_MODEL`, puis `OPENAI_TEXT_MODEL`, sinon assistant désactivé |
+| `AI_BASE_URL`, `AI_API_KEY` | Adresse (et clé éventuelle) d’un serveur compatible | — |
+| `AI_MAX_TOOL_ROUNDS`, `AI_TIMEOUT_S` | Garde-fous de l’assistant | `5`, `120` s |
 | `JAMENDO_CLIENT_ID` | Musiques Creative Commons en ligne dans le panneau Audio (facultatif) | — |
 | `FREESOUND_API_KEY` | Bruitages et ambiances en ligne dans le panneau Audio (facultatif) | — |
 | `GEMINI_API_KEY` | Génération de vidéos | — |
@@ -154,7 +157,7 @@ Aucun agrandissement par IA n’est branché : SOLVEX ne présente jamais une im
 
 - **OpenAI a arrêté l’API vidéo Sora** (`sora-2`, Videos API) **le 24 septembre 2026**, sans remplaçant. La vidéo passe donc par Veo.
 - **`gpt-image-1` est arrêté par OpenAI le 23 octobre 2026.** Gardez `gpt-image-2`, ou un modèle plus récent comme ceux de la famille `gpt-image-2.5` : vérifiez d’abord ses tailles et qualités, puis ajustez `FLEXIBLE_ASPECTS` si besoin.
-- **Assistant :** testé avec un serveur imitant l’API Chat Completions d’OpenAI (même format de requêtes, d’appels d’outils et de réponses), pas avec le vrai service, inaccessible depuis l’environnement de développement. Indiquez dans `OPENAI_CHAT_MODEL` un modèle de discussion de votre compte qui accepte les outils (« function calling »).
+- **Assistant :** testé avec un serveur imitant l’API Chat Completions d’OpenAI (même format de requêtes, d’appels d’outils et de réponses), pas avec le vrai service, inaccessible depuis l’environnement de développement. Indiquez dans `AI_MODEL` un modèle de discussion de votre compte qui accepte les outils (« function calling »), puis mesurez son comportement avec `npm run eval:assistant` (9 scénarios, générations simulées par défaut).
 - **Jamendo et Freesound :** formats d’API (v3 et v2) reproduits dans les tests, services réels non joignables depuis l’environnement de développement. Les licences de chaque morceau sont affichées ; certaines interdisent l’usage commercial.
 - **Pollinations :** adresse et paramètres non vérifiables depuis l’environnement de développement (réseau bloqué). Si le service change d’adresse ou renvoie autre chose qu’une image, l’erreur « Pollinations n’a pas renvoyé d’image » s’affiche ; ajustez alors `POLLINATIONS_BASE_URL`.
 - **Veo, style et caméra :** l’API n’a pas de paramètre « style » ni « mouvement de caméra » ; ces choix sont ajoutés en fin de description (`Style: …`, `Camera: …`), et l’interface le dit. L’instruction négative est envoyée dans `parameters.negativePrompt`.
@@ -178,6 +181,7 @@ server/
   app.js                fichiers statiques, en-têtes de sécurité, routage de l’API, contrôle d’origine
   config.js             variables d’environnement (.env chargé si présent)
   routes/api.js         points d’accès REST et validation des requêtes
+  ai/                   SOLVEX AI : llm.js (modèle connecté), agent.js (boucle outils), tools.js (outils validés), context.js (contexte et mémoire)
   lib/jobs.js           tâches asynchrones : file, concurrence, sondage, délais, reprise après redémarrage
   lib/store.js          créations (data/creations.json), médias, imports temporaires
   lib/files.js          contrôle des fichiers par signature binaire (PNG/JPEG/WebP/MP4) et dimensions
@@ -204,6 +208,8 @@ public/
     pages/                tableau de bord, éditeur vidéo, éditeur photo
   updates/              une fiche JSON par version (nom, date, notes) + index.json
   sw.js                 service worker (version estampillée par scripts/build.js)
+scripts/eval-assistant.js  banc d’évaluation de l’assistant avec le vrai modèle configuré
+docs/ARCHITECTURE-IA.md    architecture de l’IA, options, fournisseurs, sécurité, tests
 tests/                  node:test, avec des fournisseurs factices injectés uniquement dans les tests
 ```
 
@@ -217,6 +223,8 @@ tests/                  node:test, avec des fournisseurs factices injectés uniq
 | POST | `/api/images/generate` | Lance une génération d’image (réponse 202 avec la création) |
 | POST | `/api/images/edit` | Retouche IA (`edit`, `objects`, `background`, `relight`, `variation`) |
 | POST | `/api/videos/generate` | Lance une génération vidéo (réponse 202) |
+| POST | `/api/chat/stream` | Conversation SOLVEX AI en flux (SSE) : étapes, texte, actions, fin ou erreur |
+| POST | `/api/chat` | Même conversation, réponse JSON en une fois |
 | GET | `/api/creations[?type=&sort=]` | Galerie et historique |
 | GET | `/api/creations/:id` | Statut réel d’une tâche : `pending`, `running`, `succeeded` ou `failed` |
 | POST | `/api/creations/:id/retry` | Relance d’une tâche échouée |

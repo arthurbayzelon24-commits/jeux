@@ -1,6 +1,6 @@
 {
   "name": "solvex-ai",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "SOLVEX AI — studio de création d'images et de vidéos par intelligence artificielle.",
   "private": true,
   "type": "module",
@@ -15,6 +15,7 @@
     "check": "node scripts/check.js",
     "build": "node scripts/check.js && node scripts/build.js",
     "build:static": "node scripts/build.js && node scripts/build-static.js",
-    "build:site": "node scripts/build-site.js"
+    "build:site": "node scripts/build-site.js",
+    "eval:assistant": "node scripts/eval-assistant.js"
   }
 }
