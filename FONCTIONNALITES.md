@@ -1,6 +1,6 @@
 # SOLVEX AI — liste de contrôle des fonctionnalités
 
-Version 2.0.0. Signification des statuts :
+Version 2.1.0. Signification des statuts :
 
 | Statut | Sens |
 | --- | --- |
@@ -14,10 +14,15 @@ Version 2.0.0. Signification des statuts :
 - La génération IA, la galerie serveur et la capture (écran, webcam, micro) n’y sont pas disponibles.
 - Les téléchargements passent par une confirmation de la plateforme.
 
-## Tableau de bord et projets
+## Accueil, tableau de bord et projets
 | Fonction | Statut |
 | --- | --- |
-| Nouveau projet (3 cartes : photo, vidéo, IA), ouvrir, récents, recherche, favoris | ✅ |
+| Accueil « Que voulez-vous créer aujourd’hui ? » : illustration originale, hub Créer (image, vidéo, éditer un média), projets récents avec recherche, « Voir tous les projets », état vide | ✅ |
+| Navigation : Accueil, Projets, Bibliothèque, Outils IA, Mes créations, Paramètres (pas de compte : SOLVEX n’a pas de comptes utilisateurs) | ✅ |
+| Nouveau projet (3 cartes illustrées : vidéo, photo, SOLVEX AI), ouvrir, récents, recherche, favoris | ✅ |
+| « Éditer une vidéo » / « Éditer une photo » : le sélecteur de fichiers s’ouvre, puis l’éditeur s’ouvre avec le média dans la bibliothèque du projet | ✅ |
+| Raccourcis : enregistrer l’écran, enregistrer la webcam, projet vierge, reprendre un projet | 🟢 |
+| Carte de projet : miniature, nom, type, date, Ouvrir, menu ⋯ (renommer, dupliquer, exporter, supprimer) | ✅ |
 | Nom, miniature, date, type et état de sauvegarde de chaque projet | ✅ |
 | Bibliothèque multimédia (import, recherche, favoris, suppression avec confirmation) | ✅ |
 | Modèles : 12 modèles, dont les formats verticaux, les tutoriels, les diaporamas et la publicité ; le média se dépose sur un emplacement | 🟢 |
@@ -28,6 +33,12 @@ Version 2.0.0. Signification des statuts :
 ## Éditeur vidéo
 | Fonction | Statut |
 | --- | --- |
+| Barre du haut : logo, retour, nom, état d’enregistrement, catégories, annuler/rétablir, aperçu plein écran, paramètres du projet, exporter | ✅ |
+| Catégories Médias, Audio, Texte, Stickers, Effets, Transitions, Filtres, Sous-titres, Outils IA, chacune avec un vrai panneau | ✅ |
+| Médias filtrés : ce projet, vidéos, images, audio, enregistrements, favoris, ressources SOLVEX ; les imports sont associés au projet | ✅ |
+| Effets, transitions et filtres appliqués en un clic au clip sélectionné (réglages fins dans Propriétés) | ✅ |
+| Volume de l’aperçu (sans effet sur l’export), choix du format, zoom « Ajuster » | ✅ |
+| Téléphone : catégories en bas, bibliothèque et propriétés en feuilles tactiles | 🟢 (vérifié en 390 × 844 dans Chromium, pas sur un vrai téléphone) |
 | Import de plusieurs médias (vidéo, image, audio), glisser-déposer dans la timeline | ✅ |
 | Timeline multipiste : pistes vidéo, audio et texte, verrouillage, masquage, sourdine, rôles « Voix » et « Musique » | ✅ |
 | Découpe aux deux bords, division au curseur, suppression, duplication, copier-coller, déplacement entre pistes | ✅ |
@@ -106,7 +117,14 @@ Version 2.0.0. Signification des statuts :
 | Fonction | Statut |
 | --- | --- |
 | Génération texte → image et image → image (OpenAI) | ✅ (test avec un fournisseur factice ; à confirmer avec une vraie clé) |
-| Génération texte → vidéo et image → vidéo (Google Veo, clips de 4, 6 ou 8 s) | ✅ (idem) |
+| Génération texte → image gratuite sans clé (Pollinations, service tiers signalé) | 🟢 (adaptateur testé avec des réponses simulées ; service réel non joignable depuis l’environnement de développement) |
+| Choix du modèle quand plusieurs services sont configurés ; options affichées selon le modèle (formats, qualité, référence, instruction négative) | ✅ |
+| Formats réseaux sociaux : 1:1, 16:9, 9:16 (Stories/Reels), 4:5 (publication Instagram), 4:3, 3:2, 2:3 | ✅ |
+| Description obligatoire, erreurs claires, progression réelle, brouillon conservé pendant la navigation | ✅ |
+| Résultat : ouvrir en grand, télécharger, régénérer, modifier la description, envoyer vers l’éditeur ; enregistré dans Mes créations | ✅ |
+| Génération texte → vidéo et image → vidéo (Google Veo, clips de 4, 6 ou 8 s) | ✅ (test avec un fournisseur factice ; à confirmer avec une vraie clé) |
+| Vidéo : style et mouvement de caméra (écrits dans la description, le modèle n’ayant pas de réglage dédié), instruction négative | 🟡 |
+| Hors ligne : la génération est bloquée avec un message clair | ✅ |
 | Assistant de montage local : 14 types de demandes, avec un plan à accepter ou refuser, annulable | ✅ |
 | Assistant : moments forts et version courte (selon l’énergie sonore, indicateur simple) | 🟡 |
 | Détection des changements de scène | 🟢 |
@@ -137,12 +155,14 @@ Version 2.0.0. Signification des statuts :
 ## Application, paramètres, mises à jour
 | Fonction | Statut |
 | --- | --- |
-| Paramètres en 11 catégories | 🟢 |
+| Paramètres en 6 sections : Apparence, Préférences de création, Stockage et projets, Installation, Confidentialité et sécurité, Informations | ✅ |
+| Grande barre « Installer SOLVEX AI sur mon appareil » : vraie invite du navigateur, instructions iPhone/iPad et ordinateur, état « déjà installée » | ✅ (invite simulée dans Chromium ; à vérifier sur appareil réel) |
 | Musique d’ambiance de l’application : lecture, sourdine, volume | ✅ |
 | Préférences d’apparence et de montage | 🟢 |
 | Stockage : occupation, stockage persistant, vidage | 🟢 |
 | Effacement de toutes les données locales | 🟢 |
-| Application installable (manifeste, icônes, service worker, bouton « Installer », instructions par navigateur) | 🟢 |
+| Application installable : manifeste complet (id, portée, couleurs, raccourcis), icônes PNG 192/512 et masquables, service worker | 🟢 |
+| Installation depuis la version partagée sur claude.ai | ⛔ (page affichée dans un cadre : l’interface l’explique) |
 | Mises à jour : dossier `public/updates/` (nom et notes de chaque version), proposées avec « Installer maintenant » ou « Plus tard » | ✅ |
 | Historique des versions consultable | ✅ |
 | Application de bureau native (.exe / .dmg) | ⛔ |

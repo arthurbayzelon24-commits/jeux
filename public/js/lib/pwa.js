@@ -19,12 +19,19 @@ window.addEventListener('beforeinstallprompt', (event) => {
   deferredInstall = event;
   window.dispatchEvent(new CustomEvent('solvex:installable'));
 });
+let installedNow = false;
 window.addEventListener('appinstalled', () => {
   deferredInstall = null;
+  installedNow = true;
+  window.dispatchEvent(new CustomEvent('solvex:installed'));
 });
 
 export const canInstall = () => Boolean(deferredInstall);
-export const isInstalled = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+export const isInstalled = () =>
+  installedNow ||
+  window.matchMedia('(display-mode: standalone)').matches ||
+  window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+  navigator.standalone === true;
 
 export async function promptInstall() {
   if (!deferredInstall) return 'unavailable';

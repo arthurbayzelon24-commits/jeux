@@ -2313,3 +2313,138 @@ body.is-app .editor {
 .preview-aspect {
   padding-right: 28px;
 }
+
+/* ---------------------------------------------------------------- install bar */
+.install-wrap {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.install-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(69, 229, 245, 0.4);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(69, 229, 245, 0.18), transparent 60%),
+    linear-gradient(120deg, rgba(66, 99, 255, 0.28), rgba(139, 92, 246, 0.28));
+  color: var(--white);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--glow-violet);
+  transition:
+    transform 0.2s var(--ease),
+    border-color 0.2s;
+}
+.install-bar:hover {
+  transform: translateY(-1px);
+  border-color: var(--cyan);
+}
+.install-bar[data-state='installed'] {
+  cursor: default;
+  box-shadow: none;
+  border-color: rgba(61, 220, 151, 0.5);
+  background: rgba(61, 220, 151, 0.08);
+  transform: none;
+}
+.install-bar__icon {
+  width: 52px;
+  height: 52px;
+  flex: none;
+}
+.install-bar__icon svg {
+  width: 100%;
+  height: 100%;
+}
+.install-bar__text {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.install-bar__text strong {
+  font-size: 17px;
+}
+.install-bar__sub {
+  color: var(--muted);
+  font-size: 14px;
+}
+.install-bar__state {
+  flex: none;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: rgba(8, 11, 22, 0.5);
+  border: 1px solid var(--line-strong);
+}
+.install-bar[data-state='ready'] .install-bar__state {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+.install-bar[data-state='installed'] .install-bar__state {
+  color: var(--success);
+  border-color: var(--success);
+}
+.install-bar__go {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--grad-button);
+}
+.install-bar[data-state='installed'] .install-bar__go {
+  display: none;
+}
+.install-bar__help {
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 14px;
+}
+.install-bar__help p {
+  margin: 0 0 8px;
+}
+.plain-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+}
+.settings-body > .dash-h2:first-of-type {
+  margin-top: 8px;
+}
+@media (max-width: 560px) {
+  .install-bar {
+    flex-wrap: wrap;
+  }
+  .install-bar__state {
+    order: 3;
+  }
+  .install-bar__go {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  body.is-app .editor--photo,
+  .editor--photo {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .photo-layers {
+    position: fixed;
+  }
+}
+@media (max-width: 900px) {
+  .editor-bar .editor-compare {
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+}

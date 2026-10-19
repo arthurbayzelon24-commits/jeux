@@ -3,25 +3,34 @@ import { icon } from '../components/icons.js';
 import { confirmDialog, toast } from '../components/feedback.js';
 import { getPrefs, setPrefs, resetPrefs } from '../lib/prefs.js';
 import { startAmbient, stopAmbient, isAmbientPlaying } from '../lib/ambient.js';
-import { canInstall, isInstalled, promptInstall, installInstructions, fetchReleases, checkForUpdates } from '../lib/pwa.js';
+import { fetchReleases, checkForUpdates } from '../lib/pwa.js';
+import { installBar } from '../components/installBar.js';
 import { APP_VERSION, isStatic } from '../lib/env.js';
 import { getCapabilities } from '../lib/state.js';
 import { storageEstimate, requestPersistence, db } from '../studio/db.js';
 import { deleteMedia } from '../studio/media.js';
 
+// SOLVEX has no user accounts, so there is no « Compte » section.
 const SECTIONS = [
-  ['appearance', 'Apparence'],
-  ['sound', 'Son et musique'],
-  ['editing', 'Préférences de montage'],
-  ['backup', 'Sauvegarde'],
-  ['storage', 'Stockage'],
-  ['accounts', 'Comptes connectés'],
-  ['ai', 'Services IA'],
-  ['privacy', 'Confidentialité'],
-  ['install', 'Installation'],
-  ['version', 'Version et mises à jour'],
-  ['help', 'Aide'],
+  ['appearance', 'Apparence', ['appearance', 'sound']],
+  ['creation', 'Préférences de création', ['editing', 'ai']],
+  ['storage', 'Stockage et projets', ['storage', 'backup']],
+  ['install', 'Installation', ['install']],
+  ['privacy', 'Confidentialité et sécurité', ['privacy', 'accounts']],
+  ['info', 'Informations', ['version', 'help']],
 ];
+const PART_TITLES = {
+  sound: 'Son et musique',
+  editing: 'Montage',
+  ai: 'Services d’IA du serveur',
+  storage: 'Stockage',
+  backup: 'Sauvegarde',
+  accounts: 'Publication vers les réseaux',
+  version: 'Version et mises à jour',
+  help: 'Aide et raccourcis',
+};
+// Old links (e.g. ?section=version) keep working.
+const ALIASES = { sound: 'appearance', editing: 'creation', ai: 'creation', backup: 'storage', accounts: 'privacy', version: 'info', help: 'info' };
 
 const toggle = (label, key, hint) => {
   const input = h('input', { type: 'checkbox', checked: Boolean(getPrefs()[key]), role: 'switch' });
@@ -40,7 +49,9 @@ const range = (label, key, min, max, step, format = (v) => v) => {
 };
 
 export function settingsPage({ params }) {
-  const current = SECTIONS.some(([id]) => id === params.get('section')) ? params.get('section') : 'appearance';
+  const asked = ALIASES[params.get('section')] || params.get('section');
+  const current = SECTIONS.some(([id]) => id === asked) ? asked : 'appearance';
+  const cleanups = [];
   const body = h('div', { class: 'settings-body' });
   const nav = h(
     'nav',
@@ -51,9 +62,14 @@ export function settingsPage({ params }) {
   );
   const title = SECTIONS.find(([id]) => id === current)[1];
   body.append(h('h1', {}, title));
+  const install = installBar();
+  cleanups.push(install.cleanup);
+  if (current !== 'install') body.append(install.el);
   const card = (...children) => h('div', { class: 'panel settings-card' }, ...children);
 
-  if (current === 'appearance') {
+  const renderPart = (part) => {
+  if (PART_TITLES[part]) body.append(h('h2', { class: 'dash-h2' }, PART_TITLES[part]));
+  if (part === 'appearance') {
     body.append(
       card(
         toggle('Réduire les animations', 'reduceMotion', 'Désactive les transitions et l’animation d’ouverture.'),
@@ -61,7 +77,7 @@ export function settingsPage({ params }) {
         toggle('Animation d’ouverture', 'showIntro', 'Jouée une fois par session.'),
       ),
     );
-  } else if (current === 'sound') {
+  } else if (part === 'sound') {
     const play = h('button', { class: 'btn', type: 'button' });
     const sync = () => {
       play.replaceChildren(icon(isAmbientPlaying() ? 'pause' : 'play'), isAmbientPlaying() ? 'Arrêter la musique' : 'Lancer la musique');
@@ -93,7 +109,7 @@ export function settingsPage({ params }) {
         ),
       ),
     );
-  } else if (current === 'editing') {
+  } else if (part === 'editing') {
     const mode = h(
       'select',
       { class: 'select select--sm' },
@@ -110,7 +126,7 @@ export function settingsPage({ params }) {
         toggle('Entendre le son pendant l’export', 'exportMonitor'),
       ),
     );
-  } else if (current === 'backup') {
+  } else if (part === 'backup') {
     body.append(
       card(
         toggle(
@@ -126,7 +142,7 @@ export function settingsPage({ params }) {
         ),
       ),
     );
-  } else if (current === 'storage') {
+  } else if (part === 'storage') {
     const info = h('p', {}, 'Calcul…');
     const persistBtn = h('button', { class: 'btn btn--sm', type: 'button' }, 'Demander un stockage persistant');
     const clearBtn = h('button', { class: 'btn btn--sm btn--danger', type: 'button' }, 'Vider la bibliothèque de médias');
@@ -160,7 +176,7 @@ export function settingsPage({ params }) {
     });
     refresh();
     body.append(card(info, h('div', { class: 'insp-actions' }, persistBtn, clearBtn)));
-  } else if (current === 'accounts') {
+  } else if (part === 'accounts') {
     body.append(
       card(
         ...['YouTube', 'TikTok', 'WhatsApp'].map((name) =>
@@ -187,7 +203,7 @@ export function settingsPage({ params }) {
         ),
       ),
     );
-  } else if (current === 'ai') {
+  } else if (part === 'ai') {
     const caps = getCapabilities();
     if (isStatic() || !caps) {
       body.append(
@@ -255,7 +271,7 @@ export function settingsPage({ params }) {
         ),
       );
     }
-  } else if (current === 'privacy') {
+  } else if (part === 'privacy') {
     const wipe = h('button', { class: 'btn btn--danger', type: 'button' }, 'Effacer toutes les données locales');
     wipe.addEventListener('click', async () => {
       if (
@@ -294,40 +310,23 @@ export function settingsPage({ params }) {
         wipe,
       ),
     );
-  } else if (current === 'install') {
-    const status = h('p', {});
-    const btn = h('button', { class: 'btn btn--primary', type: 'button' }, icon('download'), 'Installer SOLVEX AI');
-    const sync = () => {
-      if (isInstalled()) {
-        status.textContent = 'SOLVEX AI est déjà installé sur cet appareil.';
-        btn.hidden = true;
-      } else if (canInstall()) {
-        status.textContent = 'Votre navigateur permet l’installation en un clic.';
-        btn.hidden = false;
-      } else {
-        status.textContent = installInstructions();
-        btn.hidden = true;
-      }
-    };
-    btn.addEventListener('click', async () => {
-      const outcome = await promptInstall();
-      toast(outcome === 'accepted' ? 'Installation lancée.' : 'Installation annulée.', { type: 'info' });
-      sync();
-    });
-    window.addEventListener('solvex:installable', sync);
-    sync();
+  } else if (part === 'install') {
     body.append(
+      install.el,
       card(
-        status,
-        btn,
+        h('h2', { class: 'dash-h2', style: { marginTop: 0 } }, 'Ce que change l’installation'),
         h(
-          'p',
-          { class: 'field__hint' },
-          'L’application installée s’ouvre dans sa propre fenêtre, fonctionne hors ligne pour l’interface et le montage, et propose chaque mise à jour avant de l’appliquer. Aucune application de bureau native (installateur .exe/.dmg) n’est fournie pour le moment.',
+          'ul',
+          { class: 'plain-list' },
+          h('li', {}, 'SOLVEX AI s’ouvre dans sa propre fenêtre, avec son icône, comme une application.'),
+          h('li', {}, 'L’interface, le montage et la retouche locale fonctionnent hors ligne une fois l’application chargée.'),
+          h('li', {}, 'La génération d’images et de vidéos par IA nécessite toujours une connexion Internet.'),
+          h('li', {}, 'Chaque mise à jour vous est proposée avec son nom et ses notes : vous choisissez de l’installer ou non.'),
         ),
+        h('p', { class: 'field__hint' }, 'Les clés API restent sur le serveur : l’application installée n’en contient aucune.'),
       ),
     );
-  } else if (current === 'version') {
+  } else if (part === 'version') {
     const list = h('div', { class: 'release-list' }, h('p', { class: 'field__hint' }, 'Chargement des mises à jour…'));
     const check = h('button', { class: 'btn', type: 'button' }, icon('refresh'), 'Rechercher des mises à jour');
     check.addEventListener('click', async () => {
@@ -360,7 +359,7 @@ export function settingsPage({ params }) {
       h('h2', { class: 'dash-h2' }, 'Historique des mises à jour'),
       list,
     );
-  } else if (current === 'help') {
+  } else if (part === 'help') {
     const keys = [
       ['Espace', 'Lecture / pause'],
       ['S', 'Diviser au curseur'],
@@ -396,5 +395,12 @@ export function settingsPage({ params }) {
     );
   }
 
-  return { el: h('div', { class: 'page dashboard' }, nav, h('div', { class: 'dash-main' }, body)), title: `Paramètres — ${title}` };
+  };
+  for (const part of SECTIONS.find(([id]) => id === current)[2]) renderPart(part);
+
+  return {
+    el: h('div', { class: 'page dashboard' }, nav, h('div', { class: 'dash-main' }, body)),
+    title: `Paramètres — ${title}`,
+    cleanup: () => cleanups.forEach((fn) => fn()),
+  };
 }

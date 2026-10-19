@@ -10,15 +10,20 @@ Studio créatif complet, en français, qui réunit :
 
 L’identité visuelle est propre à SOLVEX : un losange prismatique bleu, violet et cyan.
 
-- **Studio** (`/studio`) : tableau de bord des projets, bibliothèque multimédia, favoris, modèles.
+- **Accueil** (`/`) : « Que voulez-vous créer aujourd’hui ? », hub Créer (générer une image, générer une vidéo, éditer un média), projets récents avec recherche et menu (ouvrir, renommer, dupliquer, exporter, supprimer).
+- **Nouveau projet** : trois cartes (vidéo, photo, SOLVEX AI) ; importer un fichier ouvre directement l’éditeur avec le média dans la bibliothèque du projet. Raccourcis : enregistrer l’écran ou la webcam, projet vierge, reprendre un projet.
+- **Projets** (`/projets`), **Bibliothèque** (`/bibliotheque`), **Modèles** (`/modeles`).
 - **Éditeur vidéo** :
-  - timeline multipiste, découpe, division, aimantation, groupes, marqueurs ;
+  - barre du haut : logo, retour, nom, état d’enregistrement, catégories (Médias, Audio, Texte, Stickers, Effets, Transitions, Filtres, Sous-titres, Outils IA), annuler/rétablir, aperçu, paramètres du projet, exporter ;
+  - sur téléphone : catégories en bas de l’écran, panneaux et propriétés en feuilles tactiles ;
+  - timeline multipiste, découpe, division, aimantation, groupes, marqueurs, zoom « Ajuster » ;
   - 17 transitions, 20 effets, images clés, masques, incrustation sur fond vert ;
   - textes animés, stickers, formes, sous-titres SRT et VTT ;
   - outils audio, assistant de montage, export vidéo réel.
 - **Éditeur photo** : calques, 14 réglages, filtres, courbe, LUT `.cube`, recadrage, formats réseaux sociaux, collage, outils IA.
-- **Studios IA** (`/images`, `/videos`, `/retouche`, `/galerie`) : génération par OpenAI (images) et Google Veo (vidéo).
-- **Paramètres** (`/parametres`) : apparence, musique d’ambiance de l’application, préférences de montage, stockage, installation, mises à jour.
+- **Outils IA** (`/images`, `/videos`, `/retouche`) : génération par OpenAI ou Pollinations (images) et Google Veo (vidéo), avec choix du modèle, brouillon conservé et « Envoyer vers l’éditeur ».
+- **Mes créations** (`/galerie`) : images et vidéos générées, conservées sur le serveur.
+- **Paramètres** (`/parametres`) : Apparence, Préférences de création, Stockage et projets, Installation (barre « Installer SOLVEX AI sur mon appareil »), Confidentialité et sécurité, Informations. Il n’y a pas de comptes utilisateurs, donc pas de section Compte.
 
 La liste exacte de ce qui est implémenté, limité ou non disponible se trouve dans [`FONCTIONNALITES.md`](FONCTIONNALITES.md).
 
@@ -39,7 +44,16 @@ npm start                 # http://127.0.0.1:3000
 | `npm run build` | Vérifie la syntaxe des fichiers JS, contrôle la cohérence des versions et met à jour le service worker (lancé aussi par `npm start`). |
 | `npm run build:static` | Produit la version publique sans serveur dans `dist-static/`. |
 
-Sans clé, le site fonctionne quand même : accueil, galerie, retouche locale. Les boutons de génération sont désactivés et l’interface indique la variable à ajouter.
+Sans aucune clé, la génération d’images fonctionne quand même grâce à **Pollinations** (service tiers gratuit, activé par défaut, signalé à l’écran) — à condition que le serveur ait accès à Internet. La vidéo, elle, exige `GEMINI_API_KEY` : sans clé, le bouton est désactivé et l’interface indique la variable à ajouter.
+
+### Installer l’application (PWA)
+
+- Servez SOLVEX en **HTTPS** (ou ouvrez `http://localhost:3000` sur votre ordinateur) : c’est une exigence des navigateurs.
+- Ouvrez **Paramètres → Installation** et touchez la barre « Installer SOLVEX AI sur mon appareil ».
+  - Chrome, Edge, Android : la vraie fenêtre d’installation du navigateur s’ouvre.
+  - iPhone / iPad : Safari → Partager → « Sur l’écran d’accueil » (Apple ne permet pas de bouton d’installation).
+  - Déjà installée : la barre l’indique.
+- Le service worker met en cache l’interface uniquement (jamais `/api/`, ni les créations, ni les clés). Hors ligne, le montage et la retouche locale restent utilisables ; la génération IA indique qu’elle a besoin d’une connexion.
 
 ## Version publique sans serveur
 
@@ -70,6 +84,8 @@ Toutes les variables sont listées et commentées dans [`.env.example`](.env.exa
 | `OPENAI_IMAGE_MODEL` | Modèle d’image | `gpt-image-2` |
 | `OPENAI_TEXT_MODEL` | « Améliorer le prompt » par un modèle de langage (facultatif) | vide, donc enrichissement local par règles |
 | `OPENAI_TRANSCRIBE_MODEL` | Transcription automatique des sous-titres (facultatif) | vide, donc désactivée |
+| `POLLINATIONS_ENABLED` | Génération d’images gratuite sans clé (service tiers) | `true` |
+| `POLLINATIONS_MODEL` | Modèle Pollinations à demander (facultatif) | vide, donc modèle par défaut du service |
 | `GEMINI_API_KEY` | Génération de vidéos | — |
 | `GEMINI_VIDEO_MODEL` | Modèle vidéo | `veo-3.1-generate-preview` |
 | `SOLVEX_ACCESS_CODE` | Protéger l’instance par un code | vide, donc aucune protection |
@@ -82,6 +98,7 @@ Les clés ne quittent **jamais** le serveur : le navigateur ne parle qu’à l�
 | Adaptateur | Fichier | Fonctions | Limites annoncées dans l’interface |
 | --- | --- | --- | --- |
 | OpenAI Images | `server/providers/openaiImages.js` | texte vers image (`/images/generations`) ; image vers image, retouche et masque (`/images/edits`) | `gpt-image-2` : 1:1, 16:9, 9:16, 4:3, 3:2, 2:3 en standard (~1,5 Mpx) ou haute définition (~4 Mpx). `gpt-image-1*` : 1:1, 3:2, 2:3 seulement. Qualité `auto/low/medium/high`, 1 à 4 images, 4 références au plus. |
+| Pollinations | `server/providers/pollinations.js` | texte vers image (`GET https://image.pollinations.ai/prompt/{description}?width&height&seed&nologo`), sans clé | Une image par génération, pas d’image de référence, pas d’instruction négative. Formats 1:1, 16:9, 9:16, 4:5, 4:3, 3:2, 2:3. Accès anonyme limité en débit. La description est envoyée à ce service tiers : l’interface le signale. |
 | Google Veo (API Gemini) | `server/providers/googleVeo.js` | texte vers vidéo, image vers vidéo (`:predictLongRunning`, puis sondage de l’opération) | Clips de **4, 6 ou 8 s**, formats 16:9 et 9:16, 720p ou 1080p (1080p seulement en 8 s). Veo ne fournit **pas de pourcentage** d’avancement. |
 
 Ce que l’interface **ne prétend pas** faire :
@@ -95,6 +112,8 @@ Ce que l’interface **ne prétend pas** faire :
 
 - **OpenAI a arrêté l’API vidéo Sora** (`sora-2`, Videos API) **le 24 septembre 2026**, sans remplaçant. La vidéo passe donc par Veo.
 - **`gpt-image-1` est arrêté par OpenAI le 23 octobre 2026.** Gardez `gpt-image-2`, ou un modèle plus récent comme ceux de la famille `gpt-image-2.5` : vérifiez d’abord ses tailles et qualités, puis ajustez `FLEXIBLE_ASPECTS` si besoin.
+- **Pollinations :** adresse et paramètres non vérifiables depuis l’environnement de développement (réseau bloqué). Si le service change d’adresse ou renvoie autre chose qu’une image, l’erreur « Pollinations n’a pas renvoyé d’image » s’affiche ; ajustez alors `POLLINATIONS_BASE_URL`.
+- **Veo, style et caméra :** l’API n’a pas de paramètre « style » ni « mouvement de caméra » ; ces choix sont ajoutés en fin de description (`Style: …`, `Camera: …`), et l’interface le dit. L’instruction négative est envoyée dans `parameters.negativePrompt`.
 - **Veo, image vers vidéo :** l’image de départ est envoyée en `instances[0].image = { bytesBase64Encoded, mimeType }`. Si l’API refuse ce format, le message d’erreur du fournisseur s’affiche tel quel ; il suffit alors d’ajuster cette seule ligne de `googleVeo.js`.
 
 ### Ajouter un fournisseur

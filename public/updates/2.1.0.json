@@ -1,0 +1,15 @@
+{
+  "version": "2.1.0",
+  "name": "Studio Créer",
+  "date": "2026-10-19",
+  "notes": [
+    "Nouvel accueil « Que voulez-vous créer aujourd’hui ? » avec projets récents, recherche et menu par projet (renommer, dupliquer, supprimer).",
+    "Parcours « Nouveau projet » : importer une vidéo ou une photo ouvre directement l’éditeur.",
+    "Éditeur vidéo réorganisé : catégories Médias, Audio, Texte, Stickers, Effets, Transitions, Filtres, Sous-titres et Outils IA dans la barre du haut.",
+    "Interface tactile pour téléphone : catégories en bas, panneaux en feuilles.",
+    "Génération d’images : choix du modèle, formats réseaux sociaux (dont 4:5), service gratuit Pollinations sans clé, envoi vers l’éditeur.",
+    "Génération de vidéos : style et mouvement de caméra, instruction négative si le modèle la gère.",
+    "Paramètres réorganisés et grande barre « Installer SOLVEX AI sur mon appareil ».",
+    "Icônes d’application PNG et manifeste complet pour l’installation."
+  ]
+}

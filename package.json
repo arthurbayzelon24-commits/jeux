@@ -1,6 +1,6 @@
 {
   "name": "solvex-ai",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "SOLVEX AI — studio de création d'images et de vidéos par intelligence artificielle.",
   "private": true,
   "type": "module",

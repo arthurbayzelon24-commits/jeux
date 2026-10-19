@@ -12,6 +12,7 @@ import { createMaskPainter, canvasToBlob } from '../../lib/imageOps.js';
 import { api, watchCreation } from '../../lib/api.js';
 import { getCapabilities, providerFor } from '../../lib/state.js';
 import { isStatic } from '../../lib/env.js';
+import { logoMark } from '../../components/logo.js';
 
 const say = (message, type = 'info') => toast(message, { type });
 const PREVIEW_EDGE = 1600;
@@ -163,6 +164,7 @@ export async function photoEditorPage({ params }) {
   });
   const renderLayers = () => {
     clear(layersPanel);
+    layersPanel.append(h('button', { class: 'btn btn--sm btn--ghost sheet-close', type: 'button', 'aria-label': 'Fermer les calques', onclick: () => setSheet('') }, icon('close')));
     const list = h('ol', { class: 'layer-list', 'aria-label': 'Calques (le premier est au-dessus)' });
     [...store.project.layers].reverse().forEach((layer) => {
       const idx = store.project.layers.indexOf(layer);
@@ -275,6 +277,20 @@ export async function photoEditorPage({ params }) {
 
   // ---------------------------------------------------------------- properties
   const props = h('aside', { class: 'inspector', 'aria-label': 'Propriétés' });
+  const PHOTO_TABS = [
+    ['adjust', 'Réglages', 'sun'],
+    ['curve', 'Courbe & LUT', 'brush'],
+    ['layer', 'Calque', 'layers'],
+    ['canvas', 'Toile', 'image'],
+    ['ai', 'Outils IA', 'wand'],
+  ];
+  let drawCats = null;
+  let root = null;
+  const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+  function setSheet(name) {
+    if (root) root.dataset.sheet = name;
+    drawCats?.();
+  }
   const slider = (label, value, min, max, step, onInput) => {
     const id = `p-${Math.random().toString(36).slice(2, 8)}`;
     const input = h('input', { type: 'range', id, min, max, step, value: String(value) });
@@ -289,14 +305,10 @@ export async function photoEditorPage({ params }) {
 
   const renderProps = () => {
     clear(props);
+    props.append(h('button', { class: 'btn btn--sm btn--ghost sheet-close', type: 'button', 'aria-label': 'Fermer le panneau', onclick: () => setSheet('') }, icon('close')));
+    drawCats?.();
     const l = selected();
-    const tabs = [
-      ['adjust', 'Réglages'],
-      ['curve', 'Courbe & LUT'],
-      ['layer', 'Calque'],
-      ['canvas', 'Toile'],
-      ['ai', 'IA'],
-    ];
+    const tabs = PHOTO_TABS;
     const bar = h(
       'div',
       { class: 'insp-tabs', role: 'tablist' },
@@ -959,7 +971,7 @@ export async function photoEditorPage({ params }) {
   const saveState = h('span', { class: 'save-state', 'aria-live': 'polite' });
   const compareBtn = h(
     'button',
-    { class: 'btn btn--sm btn--ghost', type: 'button', title: 'Maintenir pour voir l’original' },
+    { class: 'btn btn--sm btn--ghost editor-compare', type: 'button', title: 'Maintenir pour voir l’original' },
     'Avant / après',
   );
   compareBtn.addEventListener('pointerdown', () => ((compare = true), render()));
@@ -982,22 +994,45 @@ export async function photoEditorPage({ params }) {
     return t.toDataURL('image/jpeg', 0.7);
   };
   store.thumbnailProvider = thumbnail;
+  // Top-bar categories open the matching panel (bottom sheets on phones).
+  const cats = h('nav', { class: 'editor-cats', 'aria-label': 'Catégories' });
+  drawCats = () => {
+    const sheet = root?.dataset.sheet;
+    cats.replaceChildren(
+      ...[['layers-panel', 'Calques', 'gallery'], ...PHOTO_TABS].map(([id, label, ic]) => {
+        const active = id === 'layers-panel' ? (isMobile() ? sheet === 'library' : root?.dataset.panel !== 'hidden') : tab === id && (!isMobile() || sheet === 'inspector');
+        const b = h('button', { type: 'button', 'aria-pressed': String(active), title: label }, icon(ic, { size: 18 }), h('span', {}, label));
+        b.addEventListener('click', () => {
+          if (id === 'layers-panel') {
+            if (isMobile()) return setSheet(sheet === 'library' ? '' : 'library');
+            root.dataset.panel = root.dataset.panel === 'hidden' ? '' : 'hidden';
+            return drawCats();
+          }
+          tab = id;
+          renderProps();
+          if (isMobile()) setSheet(sheet === 'inspector' && active ? '' : 'inspector');
+        });
+        return b;
+      }),
+    );
+  };
   const bar = h(
     'header',
     { class: 'editor-bar' },
+    h('a', { class: 'editor-logo', href: '/', 'data-link': '', 'aria-label': 'SOLVEX AI, accueil' }, logoMark({ title: '' })),
     h('a', { class: 'btn btn--sm btn--ghost', href: '/projets', 'data-link': '', 'aria-label': 'Retour aux projets' }, '←'),
     nameInput,
     saveState,
+    cats,
     undo,
     redo,
-    h('span', { class: 'tl-spacer' }),
     compareBtn,
     h(
       'button',
-      { class: 'btn btn--sm', type: 'button', onclick: () => store.save(thumbnail()).then(() => say('Image enregistrée.', 'success')) },
+      { class: 'btn btn--sm editor-save', type: 'button', onclick: () => store.save(thumbnail()).then(() => say('Image enregistrée.', 'success')) },
       'Enregistrer',
     ),
-    h('button', { class: 'btn btn--sm btn--primary', type: 'button', onclick: openExport }, icon('download'), 'Exporter'),
+    h('button', { class: 'btn btn--sm btn--primary', type: 'button', onclick: openExport }, icon('download'), h('span', {}, 'Exporter')),
   );
   const updateBar = () => {
     undo.disabled = !store.history.canUndo;
@@ -1034,18 +1069,30 @@ export async function photoEditorPage({ params }) {
   updateBar();
   render();
 
+  const mobileNav = h('div', { class: 'editor-mobile-nav' });
+  root = h(
+    'div',
+    { class: 'editor editor--photo', dataset: { sheet: '' } },
+    h('h1', { class: 'sr-only' }, `Éditeur photo — ${store.project.name}`),
+    bar,
+    h('div', { class: 'editor-main' }, layersPanel, h('section', { class: 'preview', 'aria-label': 'Image' }, stageBox), props),
+    mobileNav,
+  );
+  const mq = window.matchMedia('(max-width: 900px)');
+  const placeCats = () => {
+    if (mq.matches) mobileNav.append(cats);
+    else bar.insertBefore(cats, undo);
+    drawCats();
+  };
+  mq.addEventListener('change', placeCats);
+  placeCats();
   return {
-    el: h(
-      'div',
-      { class: 'editor editor--photo' },
-      h('h1', { class: 'sr-only' }, `Éditeur photo — ${store.project.name}`),
-      bar,
-      h('div', { class: 'editor-main' }, layersPanel, h('section', { class: 'preview', 'aria-label': 'Image' }, stageBox), props),
-    ),
+    el: root,
     title: store.project.name,
     fullscreen: true,
     cleanup: () => {
       window.removeEventListener('keydown', onKey);
+      mq.removeEventListener('change', placeCats);
       resize.disconnect();
       unsub();
       if (!store.project.saved) store.save(thumbnail());
