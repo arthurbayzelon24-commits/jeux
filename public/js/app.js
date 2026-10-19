@@ -13,6 +13,7 @@ import { enhancePage } from './pages/enhance.js';
 import { galleryPage } from './pages/gallery.js';
 import { emptyStage } from './pages/studioShared.js';
 import { dashboardPage } from './studio/pages/dashboard.js';
+import { openNewProject } from './studio/projectActions.js';
 import { videoEditorPage } from './studio/pages/videoEditor.js';
 import { photoEditorPage } from './studio/pages/photoEditor.js';
 import { settingsPage } from './pages/settings.js';
@@ -22,12 +23,21 @@ import { isStatic } from './lib/env.js';
 import { setCapabilities } from './lib/state.js';
 
 const NAV = [
-  { path: '/studio', label: 'Studio' },
-  { path: '/images', label: 'Images' },
-  { path: '/videos', label: 'Vidéos' },
-  { path: '/retouche', label: 'Retouche' },
-  { path: '/galerie', label: 'Galerie' },
-  { path: '/parametres', label: 'Paramètres' },
+  { path: '/', label: 'Accueil', icon: 'home' },
+  { path: '/projets', label: 'Projets', icon: 'folder', match: ['/projets', '/studio'] },
+  { path: '/bibliotheque', label: 'Bibliothèque', icon: 'gallery', match: ['/bibliotheque', '/modeles'] },
+  {
+    label: 'Outils IA',
+    icon: 'sparkles',
+    match: ['/images', '/videos', '/retouche'],
+    children: [
+      { path: '/images', label: 'Générer une image', icon: 'image' },
+      { path: '/videos', label: 'Générer une vidéo', icon: 'video' },
+      { path: '/retouche', label: 'Retouche et amélioration', icon: 'wand' },
+    ],
+  },
+  { path: '/galerie', label: 'Mes créations', icon: 'gallery' },
+  { path: '/parametres', label: 'Paramètres', icon: 'settings' },
 ];
 
 // Capabilities shown by the public static build (no Node server behind it).
@@ -134,7 +144,22 @@ function buildHeader() {
   const nav = h(
     'nav',
     { class: 'nav', id: 'main-nav', 'aria-label': 'Navigation principale' },
-    NAV.map((item) => h('a', { href: item.path, 'data-link': '' }, item.label)),
+    NAV.map((item) => {
+      if (!item.children) return h('a', { href: item.path, 'data-link': '', 'data-match': (item.match || [item.path]).join(' ') }, icon(item.icon, { size: 16 }), item.label);
+      const menu = h('div', { class: 'nav-menu', id: 'nav-ai', hidden: true }, item.children.map((c) => h('a', { href: c.path, 'data-link': '' }, icon(c.icon, { size: 16 }), c.label)));
+      const button = h('button', { class: 'nav-drop', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'nav-ai', 'data-match': item.match.join(' ') }, icon(item.icon, { size: 16 }), item.label, h('span', { class: 'nav-drop__caret', 'aria-hidden': 'true' }, '▾'));
+      const setOpen = (open) => {
+        menu.hidden = !open;
+        button.setAttribute('aria-expanded', String(open));
+      };
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setOpen(menu.hidden);
+      });
+      document.addEventListener('click', () => setOpen(false));
+      document.addEventListener('keydown', (event) => event.key === 'Escape' && setOpen(false));
+      return h('div', { class: 'nav-group' }, button, menu);
+    }),
   );
   const toggle = h(
     'button',
@@ -174,10 +199,10 @@ function buildHeader() {
       { class: 'header__actions' },
       statusEl,
       h(
-        'a',
-        { class: 'btn btn--primary btn--sm btn--create', href: '/studio', 'data-link': '', 'aria-label': 'Créer' },
-        icon('sparkles'),
-        h('span', {}, 'Créer'),
+        'button',
+        { class: 'btn btn--primary btn--sm btn--create', type: 'button', onclick: () => openNewProject(), 'aria-label': 'Nouveau projet' },
+        icon('plus'),
+        h('span', {}, 'Nouveau projet'),
       ),
       toggle,
     ),
@@ -236,9 +261,9 @@ async function boot() {
   document.getElementById('app').replaceChildren(header, buildOfflineBanner(), main, footer);
 
   const highlight = (path) => {
-    for (const link of nav.querySelectorAll('a')) {
-      const href = link.getAttribute('href');
-      if (href === path || (href === '/studio' && path.startsWith('/studio'))) link.setAttribute('aria-current', 'page');
+    for (const link of nav.querySelectorAll('[data-match], .nav-menu a')) {
+      const paths = link.dataset.match ? link.dataset.match.split(' ') : [link.getAttribute('href')];
+      if (paths.includes(path)) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     }
   };
@@ -259,7 +284,10 @@ async function boot() {
       '/videos': guard(videosPage),
       '/retouche': guard(enhancePage),
       '/galerie': guard(galleryPage),
-      '/studio': guard(dashboardPage),
+      '/studio': guard(dashboardPage('projects')),
+      '/projets': guard(dashboardPage('projects')),
+      '/bibliotheque': guard(dashboardPage('media')),
+      '/modeles': guard(dashboardPage('templates')),
       '/studio/video': guard(videoEditorPage),
       '/studio/photo': guard(photoEditorPage),
       '/parametres': guard(settingsPage),

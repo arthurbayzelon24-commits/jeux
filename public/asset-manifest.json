@@ -1,9 +1,10 @@
 {
-  "version": "49c228fc6e6a",
+  "version": "c1a5ffc81cff",
   "assets": [
     "/",
     "/assets/app-icon.svg",
     "/assets/favicon.svg",
+    "/assets/hero-studio.svg",
     "/assets/logo-horizontal-dark.svg",
     "/assets/logo-horizontal-light.svg",
     "/assets/logo-mark.svg",
@@ -51,6 +52,7 @@
     "/js/studio/pages/videoEditor.js",
     "/js/studio/photo/engine.js",
     "/js/studio/project.js",
+    "/js/studio/projectActions.js",
     "/js/studio/sounds.js",
     "/js/studio/stickers.js",
     "/js/studio/subtitles.js",

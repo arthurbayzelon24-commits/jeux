@@ -34,7 +34,7 @@ export async function videoEditorPage({ params }) {
         { class: 'page container', style: { padding: '80px 0' } },
         h('h1', {}, 'Projet introuvable'),
         h('p', {}, 'Ce projet n’existe pas dans ce navigateur.'),
-        h('a', { class: 'btn btn--primary', href: '/studio', 'data-link': '' }, 'Retour au studio'),
+        h('a', { class: 'btn btn--primary', href: '/projets', 'data-link': '' }, 'Retour aux projets'),
       ),
     };
   }
@@ -746,7 +746,7 @@ export async function videoEditorPage({ params }) {
   const toolbar = h(
     'header',
     { class: 'editor-bar' },
-    h('a', { class: 'btn btn--sm btn--ghost', href: '/studio', 'data-link': '', 'aria-label': 'Retour au studio' }, '←'),
+    h('a', { class: 'btn btn--sm btn--ghost', href: '/projets', 'data-link': '', 'aria-label': 'Retour aux projets' }, '←'),
     nameInput,
     saveState,
     undoBtn,

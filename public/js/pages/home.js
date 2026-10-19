@@ -1,194 +1,160 @@
 import { h } from '../lib/dom.js';
 import { icon } from '../components/icons.js';
-import { logoMark } from '../components/logo.js';
-import { startParticles } from '../components/particles.js';
 import { getCapabilities } from '../lib/state.js';
+import { isStatic } from '../lib/env.js';
+import { db } from '../studio/db.js';
+import { openNewProject, openProjectPicker, projectGrid, emptyProjects, recordInto } from '../studio/projectActions.js';
 
-// Decorative CSS compositions. They are labelled as examples and are not AI output.
-const EXAMPLES = [
+// Prompt ideas: clicking one pre-fills the image generator (nothing is generated here).
+const IDEAS = [
   { art: 'aurora', title: 'Aurore sur une cité de verre', prompt: 'Une aurore boréale au-dessus d’une ville de cristal, vue cinématique' },
   { art: 'city', title: 'Néons après la pluie', prompt: 'Rue cyberpunk au crépuscule, reflets roses et violets' },
   { art: 'orb', title: 'Le cœur du prisme', prompt: 'Sphère d’énergie lumineuse en lévitation, rendu 3D' },
   { art: 'dune', title: 'Désert de lumière', prompt: 'Dunes au coucher du soleil, palette chaude, style illustration' },
-  { art: 'wave', title: 'Onde électrique', prompt: 'Ondes lumineuses concentriques, art abstrait' },
-  { art: 'prism', title: 'Réfraction', prompt: 'Faisceau traversant un prisme, photographie studio' },
 ];
 
-function quickCard({ href, iconName, title, text, provider }) {
-  const state = provider
-    ? provider.configured
-      ? h('span', { class: 'tag tag--ok' }, `Connecté · ${provider.model}`)
-      : h('span', { class: 'tag tag--off' }, 'Fournisseur à configurer')
-    : null;
-  const card = h(
-    'a',
-    { class: 'quick-card', href, 'data-link': '' },
-    h('div', { class: 'quick-card__icon' }, icon(iconName)),
-    h('h3', {}, title),
-    h('p', {}, text),
-    state,
-    h('span', { class: 'quick-card__go' }, 'Ouvrir le studio', icon('arrow')),
-  );
-  card.addEventListener('pointermove', (event) => {
-    const rect = card.getBoundingClientRect();
-    card.style.setProperty('--mx', `${event.clientX - rect.left}px`);
-    card.style.setProperty('--my', `${event.clientY - rect.top}px`);
-  });
-  return card;
+function providerState(caps, kind) {
+  if (!caps) return h('span', { class: 'tag tag--off' }, 'Serveur injoignable');
+  if (caps.static) return h('span', { class: 'tag tag--off' }, 'Nécessite le serveur SOLVEX');
+  const list = caps.providers.filter((p) => p.kind === kind);
+  const ready = list.find((p) => p.configured);
+  if (ready) return h('span', { class: 'tag tag--ok' }, `Prêt · ${ready.vendor}`);
+  return h('span', { class: 'tag tag--off' }, list.length ? 'Service à configurer' : 'Aucun service');
 }
 
-export function homePage() {
+function hubCard({ art, title, text, state, action }) {
+  return h(
+    'article',
+    { class: 'hub-card' },
+    h('div', { class: `hub-card__art hub-card__art--${art}`, 'aria-hidden': 'true' }, icon(art === 'edit' ? 'layers' : art === 'video' ? 'video' : 'image', { size: 30 })),
+    h('h3', {}, title),
+    h('p', {}, text),
+    state || null,
+    action,
+  );
+}
+
+export async function homePage() {
   const caps = getCapabilities();
-  const imageProvider = caps?.providers.find((p) => p.kind === 'image');
-  const videoProvider = caps?.providers.find((p) => p.kind === 'video');
-  const canvas = h('canvas', { 'aria-hidden': 'true' });
+  let projects = [];
+  let storageError = null;
+  try {
+    projects = await db.listProjects();
+  } catch (error) {
+    storageError = error;
+  }
+
+  const search = h('input', { class: 'input', type: 'search', placeholder: 'Rechercher un projet', 'aria-label': 'Rechercher un projet récent' });
+  const recent = h('div', { class: 'home-recent' });
+  const drawRecent = () => {
+    const q = search.value.trim().toLowerCase();
+    const list = projects.filter((p) => !q || p.name.toLowerCase().includes(q)).slice(0, 8);
+    recent.replaceChildren(
+      storageError
+        ? h('div', { class: 'notice notice--error' }, h('p', {}, `Stockage local indisponible : ${storageError.message}`))
+        : projectGrid(list, {
+            onChange: async () => {
+              projects = await db.listProjects();
+              drawRecent();
+            },
+            empty: q ? h('p', { class: 'field__hint' }, 'Aucun projet ne correspond à cette recherche.') : emptyProjects(),
+          }),
+    );
+  };
+  search.addEventListener('input', drawRecent);
+  drawRecent();
 
   const el = h(
     'div',
-    { class: 'page' },
+    { class: 'page home' },
     h(
       'section',
-      { class: 'hero' },
-      canvas,
+      { class: 'home-hero container' },
       h(
         'div',
-        { class: 'container hero__inner' },
+        { class: 'home-hero__text' },
+        h('span', { class: 'eyebrow' }, icon('sparkles', { size: 14 }), 'Studio de création SOLVEX'),
+        h('h1', { class: 'home-hero__title' }, 'Que voulez-vous ', h('span', { class: 'gradient-text' }, 'créer aujourd’hui ?')),
+        h('p', { class: 'hero__lead' }, 'Montez une vidéo, retouchez une photo ou générez une image avec l’IA. Vos projets restent enregistrés dans ce navigateur.'),
         h(
           'div',
-          {},
-          h('span', { class: 'eyebrow' }, icon('sparkles', { size: 14 }), 'Studio visuel génératif'),
-          h('h1', { class: 'hero__title' }, 'Donnez vie à ', h('span', { class: 'gradient-text' }, 'votre imagination.')),
-          h(
-            'p',
-            { class: 'hero__lead' },
-            'SOLVEX AI transforme vos idées en images et en vidéos. Décrivez une scène, importez une référence, choisissez un style : le studio s’occupe du reste.',
-          ),
-          h(
-            'div',
-            { class: 'hero__cta' },
-            h('a', { class: 'btn btn--primary btn--lg', href: '/images', 'data-link': '' }, icon('image'), 'Créer une image'),
-            h('a', { class: 'btn btn--lg', href: '/videos', 'data-link': '' }, icon('video'), 'Créer une vidéo'),
-          ),
+          { class: 'hero__cta' },
+          h('button', { class: 'btn btn--primary btn--lg', type: 'button', onclick: () => openNewProject() }, icon('plus'), 'Nouveau projet'),
+          h('button', { class: 'btn btn--lg', type: 'button', onclick: () => openProjectPicker() }, icon('upload'), 'Ouvrir un projet'),
         ),
-        h(
-          'div',
-          { class: 'hero__visual', 'aria-hidden': 'true' },
-          h('div', { class: 'orbit' }),
-          h('div', { class: 'orbit orbit--2' }, h('span', { class: 'orbit__dot' })),
-          h('div', { class: 'orbit orbit--3' }, h('span', { class: 'orbit__dot' })),
-          h(
-            'div',
-            { class: 'hero__tile hero__tile--a' },
-            h('div', { class: 'art art--aurora' }),
-            h('span', { class: 'hero__tile-label' }, 'Exemple'),
-          ),
-          h(
-            'div',
-            { class: 'hero__tile hero__tile--b' },
-            h('div', { class: 'art art--city' }),
-            h('span', { class: 'hero__tile-label' }, 'Exemple'),
-          ),
-          h('div', { class: 'hero__mark' }, logoMark({ title: '' })),
-        ),
+      ),
+      h('img', { class: 'home-hero__art', src: `${isStatic() ? '' : '/'}assets/hero-studio.svg`, alt: 'Illustration : un éditeur vidéo avec aperçu, panneau de propriétés et timeline', width: 640, height: 460 }),
+    ),
+    h(
+      'section',
+      { class: 'container home-section', 'aria-labelledby': 'hub-title' },
+      h('h2', { class: 'home-h2', id: 'hub-title' }, 'Créer'),
+      h(
+        'div',
+        { class: 'hub-grid' },
+        hubCard({
+          art: 'image',
+          title: 'Générer une image',
+          text: 'Décrivez une scène, choisissez un format et un style : l’image est créée par le service d’IA connecté.',
+          state: providerState(caps, 'image'),
+          action: h('a', { class: 'btn btn--primary', href: '/images', 'data-link': '' }, 'Générer une image', icon('arrow')),
+        }),
+        hubCard({
+          art: 'video',
+          title: 'Générer une vidéo',
+          text: 'Texte vers vidéo ou animation d’une image de départ, avec suivi réel de la génération.',
+          state: providerState(caps, 'video'),
+          action: h('a', { class: 'btn btn--primary', href: '/videos', 'data-link': '' }, 'Générer une vidéo', icon('arrow')),
+        }),
+        hubCard({
+          art: 'edit',
+          title: 'Éditer un média',
+          text: 'Importez vos vidéos ou photos et ouvrez directement l’éditeur : timeline, effets, texte, export.',
+          state: h('span', { class: 'tag tag--ok' }, 'Fonctionne hors ligne'),
+          action: h('button', { class: 'btn btn--primary', type: 'button', onclick: () => openNewProject() }, 'Éditer un média', icon('arrow')),
+        }),
+      ),
+      h(
+        'div',
+        { class: 'home-shortcuts' },
+        h('a', { class: 'chip-link', href: '/retouche', 'data-link': '' }, icon('wand', { size: 16 }), 'Retouche rapide'),
+        h('button', { class: 'chip-link', type: 'button', onclick: () => recordInto('screen') }, icon('play', { size: 16 }), 'Enregistrer l’écran'),
+        h('button', { class: 'chip-link', type: 'button', onclick: () => recordInto('camera') }, icon('video', { size: 16 }), 'Enregistrer la webcam'),
+        h('a', { class: 'chip-link', href: '/modeles', 'data-link': '' }, icon('layers', { size: 16 }), 'Modèles de montage'),
+        h('a', { class: 'chip-link', href: '/galerie', 'data-link': '' }, icon('gallery', { size: 16 }), 'Mes créations'),
       ),
     ),
     h(
       'section',
-      { class: 'section', style: { paddingTop: '8px' } },
+      { class: 'container home-section', 'aria-labelledby': 'recent-title' },
       h(
         'div',
-        { class: 'container' },
-        h('span', { class: 'eyebrow' }, 'Accès rapide'),
-        h('h2', { class: 'section__title' }, 'Trois ateliers, un seul studio'),
-        h('p', { class: 'section__lead' }, 'Chaque atelier n’affiche que les options réellement prises en charge par le modèle connecté.'),
-        h(
-          'div',
-          { class: 'quick-grid' },
-          quickCard({
-            href: '/images',
-            iconName: 'image',
-            title: 'Studio d’images',
-            text: 'Texte vers image, image vers image, styles, formats et plusieurs variantes par génération.',
-            provider: imageProvider,
-          }),
-          quickCard({
-            href: '/videos',
-            iconName: 'video',
-            title: 'Studio vidéo',
-            text: 'Texte vers vidéo ou animation d’une image de départ, avec suivi réel de la tâche.',
-            provider: videoProvider,
-          }),
-          quickCard({
-            href: '/retouche',
-            iconName: 'wand',
-            title: 'Retouche',
-            text: 'Agrandissement, netteté, débruitage et couleurs en local ; modifications ciblées par IA.',
-          }),
-        ),
+        { class: 'home-head' },
+        h('h2', { class: 'home-h2', id: 'recent-title' }, 'Projets récents'),
+        h('div', { class: 'home-head__tools' }, search, h('a', { class: 'btn btn--sm', href: '/projets', 'data-link': '' }, `Voir tous les projets (${projects.length})`)),
       ),
+      recent,
     ),
     h(
       'section',
-      { class: 'section', style: { paddingTop: '0' } },
+      { class: 'container home-section', 'aria-labelledby': 'ideas-title' },
+      h('h2', { class: 'home-h2', id: 'ideas-title' }, 'Idées de descriptions'),
+      h('p', { class: 'field__hint' }, 'Visuels décoratifs (pas des générations). Cliquez pour reprendre l’idée dans le générateur d’images.'),
       h(
         'div',
-        { class: 'container' },
-        h('span', { class: 'eyebrow' }, 'Inspiration'),
-        h('h2', { class: 'section__title' }, 'Des idées à explorer'),
-        h(
-          'p',
-          { class: 'section__lead' },
-          'Ces visuels sont des compositions décoratives réalisées pour illustrer le studio : ce ne sont pas des générations. Vos propres créations apparaissent dans la galerie.',
-        ),
-        h(
-          'div',
-          { class: 'showcase' },
-          EXAMPLES.map((example) =>
-            h(
-              'figure',
-              { class: 'showcase__item' },
-              h('span', { class: 'tag example-badge' }, 'Exemple illustratif'),
-              h('div', { class: `art art--${example.art}`, role: 'img', 'aria-label': `Illustration décorative : ${example.title}` }),
-              h('figcaption', {}, h('strong', {}, example.title), h('em', {}, `Idée de prompt : « ${example.prompt} »`)),
-            ),
-          ),
-        ),
-      ),
-    ),
-    h(
-      'section',
-      { class: 'section', style: { paddingTop: '0' } },
-      h(
-        'div',
-        { class: 'container' },
-        h('span', { class: 'eyebrow' }, 'Comment ça marche'),
-        h('h2', { class: 'section__title' }, 'De l’idée au fichier final'),
-        h(
-          'div',
-          { class: 'steps' },
+        { class: 'idea-row' },
+        IDEAS.map((idea) =>
           h(
-            'div',
-            { class: 'step' },
-            h('h3', {}, 'Décrivez'),
-            h('p', {}, 'Une phrase suffit. « Améliorer le prompt » peut l’enrichir en détails visuels.'),
-          ),
-          h(
-            'div',
-            { class: 'step' },
-            h('h3', {}, 'Générez'),
-            h('p', {}, 'La tâche est confiée au fournisseur connecté ; son statut réel s’affiche en direct.'),
-          ),
-          h(
-            'div',
-            { class: 'step' },
-            h('h3', {}, 'Retrouvez'),
-            h('p', {}, 'Chaque résultat est conservé dans la galerie du serveur, prêt à être téléchargé ou retouché.'),
+            'a',
+            { class: 'idea-card', href: `/images?prompt=${encodeURIComponent(idea.prompt)}`, 'data-link': '' },
+            h('div', { class: `art art--${idea.art}`, 'aria-hidden': 'true' }),
+            h('strong', {}, idea.title),
+            h('em', {}, `« ${idea.prompt} »`),
           ),
         ),
       ),
     ),
   );
 
-  const stop = startParticles(canvas, { density: 0.00005, speed: 0.12 });
-  return { el, title: 'Accueil', cleanup: stop };
+  return { el, title: 'Accueil' };
 }
