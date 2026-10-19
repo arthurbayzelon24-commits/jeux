@@ -52,6 +52,24 @@ const assetManifest = JSON.parse(readFileSync(path.join(out, 'asset-manifest.jso
 assetManifest.assets.push('/site-config.js');
 writeFileSync(path.join(out, 'asset-manifest.json'), `${JSON.stringify(assetManifest, null, 2)}\n`);
 
+// Same rules as netlify.toml, for a drag-and-drop deploy (Netlify Drop ignores netlify.toml).
+writeFileSync(path.join(out, '_redirects'), '/*  /index.html  200\n');
+writeFileSync(
+  path.join(out, '_headers'),
+  [
+    '/*',
+    '  X-Content-Type-Options: nosniff',
+    '  Referrer-Policy: strict-origin-when-cross-origin',
+    '  Permissions-Policy: camera=(self), microphone=(self), display-capture=(self), geolocation=()',
+    "  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    '/sw.js',
+    '  Cache-Control: no-cache',
+    '/updates/*',
+    '  Cache-Control: no-cache',
+    '',
+  ].join('\n'),
+);
+
 const pages = ['/', '/projets', '/images', '/videos', '/retouche', '/parametres'];
 writeFileSync(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\n${siteUrl ? `Sitemap: ${siteUrl}/sitemap.xml\n` : ''}`);
 if (siteUrl) {
