@@ -11,6 +11,7 @@ const FLEXIBLE_ASPECTS = [
   { id: '4:3', label: '4:3', sizes: { standard: '1024x768', high: '2048x1536' } },
   { id: '3:2', label: '3:2', sizes: { standard: '1536x1024', high: '2304x1536' } },
   { id: '2:3', label: 'Portrait 2:3', sizes: { standard: '1024x1536', high: '1536x2304' } },
+  { id: '4:5', label: 'Portrait 4:5 (Instagram)', sizes: { standard: '1024x1280', high: '1632x2048' } },
 ];
 
 const FIXED_ASPECTS = [
@@ -33,6 +34,7 @@ export function createOpenAIImageProvider(config, { fetchImpl = fetch } = {}) {
     imageToImage: true,
     // The edits endpoint always needs an instruction; image-only requests are sent as an explicit variation instruction.
     imageOnly: false,
+    negativePrompt: false,
     edit: true,
     mask: true,
     aspects: aspects.map(({ id, label, sizes }) => ({ id, label, resolutions: Object.keys(sizes) })),

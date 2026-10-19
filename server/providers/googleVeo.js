@@ -13,6 +13,7 @@ export function createVeoProvider(config, { fetchImpl = fetch } = {}) {
   const capabilities = {
     textToVideo: true,
     imageToVideo: true,
+    negativePrompt: true,
     durations: [4, 6, 8],
     aspects: [
       { id: '16:9', label: 'Paysage 16:9' },
@@ -64,7 +65,7 @@ export function createVeoProvider(config, { fetchImpl = fetch } = {}) {
       return null;
     },
 
-    async start({ prompt, aspect, duration, resolution, startImage, signal }) {
+    async start({ prompt, negativePrompt, aspect, duration, resolution, startImage, signal }) {
       const instance = { prompt };
       if (startImage) {
         instance.image = { bytesBase64Encoded: startImage.buffer.toString('base64'), mimeType: startImage.mime };
@@ -75,7 +76,7 @@ export function createVeoProvider(config, { fetchImpl = fetch } = {}) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           instances: [instance],
-          parameters: { aspectRatio: aspect, durationSeconds: duration, resolution },
+          parameters: { aspectRatio: aspect, durationSeconds: duration, resolution, ...(negativePrompt ? { negativePrompt } : {}) },
         }),
       });
       const body = await response.json();

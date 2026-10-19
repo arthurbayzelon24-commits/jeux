@@ -1,8 +1,10 @@
 import { createOpenAIImageProvider } from './openaiImages.js';
 import { createVeoProvider } from './googleVeo.js';
+import { createPollinationsProvider } from './pollinations.js';
 
 export function createRegistry(config, { providers } = {}) {
-  const list = providers || [createOpenAIImageProvider(config), createVeoProvider(config)];
+  // Order matters: the first configured provider of a kind is the default.
+  const list = providers || [createOpenAIImageProvider(config), createPollinationsProvider(config), createVeoProvider(config)];
 
   return {
     all: () => list,

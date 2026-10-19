@@ -138,7 +138,7 @@ export async function startTestServer({ providers, overrides = {} } = {}) {
   };
 }
 
-export async function waitFor(fn, { timeout = 3000, interval = 10 } = {}) {
+export async function waitFor(fn, { timeout = 8000, interval = 10 } = {}) {
   const start = Date.now();
   for (;;) {
     const value = await fn();

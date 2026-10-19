@@ -23,7 +23,7 @@ function pickMime(video) {
  * Screen / webcam / microphone recorder. Nothing is captured before the user
  * presses « Démarrer » and grants the browser permission.
  */
-export function openRecorder({ onRecorded }) {
+export function openRecorder({ onRecorded, mode: initialMode = 'screen' } = {}) {
   if (isStatic()) {
     openModal(
       h(
@@ -52,7 +52,7 @@ export function openRecorder({ onRecorded }) {
     );
     return;
   }
-  let mode = 'screen';
+  let mode = initialMode;
   let streams = [];
   let recorder = null;
   let chunks = [];
@@ -64,7 +64,7 @@ export function openRecorder({ onRecorded }) {
   const modeSel = h(
     'select',
     { class: 'select' },
-    MODES.map(([id, label]) => h('option', { value: id }, label)),
+    MODES.map(([id, label]) => h('option', { value: id, selected: id === mode }, label)),
   );
   modeSel.addEventListener('change', () => (mode = modeSel.value));
   const micBox = h('input', { type: 'checkbox', checked: true });

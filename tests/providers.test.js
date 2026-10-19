@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createOpenAIImageProvider, isFixedSizeModel } from '../server/providers/openaiImages.js';
 import { createVeoProvider } from '../server/providers/googleVeo.js';
+import { createPollinationsProvider } from '../server/providers/pollinations.js';
 import { loadConfig } from '../server/config.js';
 import { makePng } from './helpers.js';
 
@@ -137,4 +138,38 @@ test('Veo : refus de sécurité, validation et protection de la clé', async () 
   assert.match(provider.validate({ duration: 8, aspect: '1:1', resolution: '720p' }), /Format/);
   await assert.rejects(provider.download({ uri: 'https://evil.example.com/video.mp4' }), /inattendue/);
   await assert.rejects(provider.poll('../../etc'), /invalide/);
+});
+
+test('Pollinations : requête GET sans clé, taille du format, contrôle du type renvoyé', async () => {
+  const png = makePng(16, 16);
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(url);
+    return new Response(png, { status: 200, headers: { 'Content-Type': 'image/png' } });
+  };
+  const cfg = loadConfig({ pollinations: { enabled: true, baseUrl: 'https://image.pollinations.test', model: '' } });
+  const provider = createPollinationsProvider(cfg, { fetchImpl });
+  const [image] = await provider.generate({ prompt: 'un chat / bleu', aspect: '9:16', resolution: 'standard' });
+  assert.equal(image.mime, 'image/png');
+  const url = new URL(calls[0]);
+  assert.equal(url.pathname, `/prompt/${encodeURIComponent('un chat / bleu')}`);
+  assert.equal(url.searchParams.get('width'), '768');
+  assert.equal(url.searchParams.get('height'), '1344');
+  assert.equal(url.searchParams.has('model'), false);
+  const html = createPollinationsProvider(cfg, { fetchImpl: async () => new Response('<html>moved</html>', { status: 200 }) });
+  await assert.rejects(html.generate({ prompt: 'x', aspect: '1:1' }), /pas renvoyé d’image/);
+  assert.equal(createPollinationsProvider(loadConfig({ pollinations: { enabled: false } })).isConfigured(), false);
+});
+
+test('Veo : instruction négative transmise uniquement si fournie', async () => {
+  const bodies = [];
+  const fetchImpl = async (url, init) => {
+    bodies.push(JSON.parse(init.body));
+    return new Response(JSON.stringify({ name: 'models/m/operations/1' }), { status: 200 });
+  };
+  const provider = createVeoProvider(config(), { fetchImpl });
+  await provider.start({ prompt: 'forêt', negativePrompt: 'texte, filigrane', aspect: '16:9', duration: 8, resolution: '720p' });
+  await provider.start({ prompt: 'forêt', aspect: '16:9', duration: 8, resolution: '720p' });
+  assert.equal(bodies[0].parameters.negativePrompt, 'texte, filigrane');
+  assert.equal('negativePrompt' in bodies[1].parameters, false);
 });

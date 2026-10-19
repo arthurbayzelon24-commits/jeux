@@ -28,6 +28,14 @@ const EDIT_OPERATIONS = {
   variation: { label: 'Variation', needsPrompt: false, build: (p) => p || VARIATION_INSTRUCTION },
 };
 
+/** Negative prompt: accepted only by models that support it, never silently dropped. */
+function negativeFor(caps, value) {
+  const text = v.optionalPrompt(value);
+  if (!text) return '';
+  if (!caps.negativePrompt) throw new HttpError(400, 'Ce modèle ne prend pas en charge les instructions négatives.', { code: 'unsupported_option' });
+  return text;
+}
+
 export function publicCreation(item) {
   const { inputs, providerOperation, ...rest } = item;
   return {
@@ -184,6 +192,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
         'Qualité',
       ),
       count: v.intInRange(body.count ?? 1, 1, caps.maxImages, 'count', 'Le nombre d’images'),
+      negativePrompt: negativeFor(caps, body.negativePrompt),
     };
     provider.sizeFor(params.aspect, params.resolution);
     await ensureUploads(referenceUploadIds);
@@ -244,6 +253,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       aspect: String(body.aspect || ''),
       duration: Number(body.duration),
       resolution: String(body.resolution || ''),
+      negativePrompt: negativeFor(provider.capabilities, body.negativePrompt),
     };
     const startImage = startUploadId ? await store.readUpload(startUploadId) : null;
     if (startUploadId && !startImage)

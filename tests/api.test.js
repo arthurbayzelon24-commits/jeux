@@ -24,7 +24,7 @@ const finished = (base, id) =>
   });
 
 test('capacités : les fournisseurs non configurés sont signalés avec la variable manquante', async (t) => {
-  const srv = await startTestServer({ overrides: { openai: { apiKey: '' }, google: { apiKey: '' } } });
+  const srv = await startTestServer({ overrides: { openai: { apiKey: '' }, google: { apiKey: '' }, pollinations: { enabled: false } } });
   t.after(() => srv.close());
   const { status, data } = await json(srv.base, '/api/capabilities');
   assert.equal(status, 200);

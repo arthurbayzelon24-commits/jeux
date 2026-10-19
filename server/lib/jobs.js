@@ -163,8 +163,8 @@ export class JobManager {
     let operation = item.providerOperation;
     if (!operation) {
       const { images } = await this.loadInputs(item);
-      const { aspect, duration, resolution } = item.params;
-      ({ operation } = await provider.start({ prompt: item.prompt, aspect, duration, resolution, startImage: images[0], signal }));
+      const { aspect, duration, resolution, negativePrompt } = item.params;
+      ({ operation } = await provider.start({ prompt: item.prompt, negativePrompt, aspect, duration, resolution, startImage: images[0], signal }));
       await this.store.update(item.id, {
         status: STATUS.running,
         providerOperation: operation,

@@ -57,6 +57,11 @@ export function loadConfig(overrides = {}) {
       // No default either: transcription is enabled only with an explicitly named model.
       transcribeModel: str('OPENAI_TRANSCRIBE_MODEL'),
     },
+    pollinations: {
+      enabled: str('POLLINATIONS_ENABLED', 'true') === 'true',
+      baseUrl: str('POLLINATIONS_BASE_URL', 'https://image.pollinations.ai'),
+      model: str('POLLINATIONS_MODEL'),
+    },
     google: {
       apiKey: str('GEMINI_API_KEY'),
       baseUrl: str('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
