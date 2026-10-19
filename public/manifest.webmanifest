@@ -1,0 +1,11 @@
+{
+  "name": "SOLVEX AI",
+  "short_name": "SOLVEX",
+  "description": "Studio créatif de génération d'images et de vidéos par IA.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080B16",
+  "theme_color": "#080B16",
+  "lang": "fr",
+  "icons": [{ "src": "/assets/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
