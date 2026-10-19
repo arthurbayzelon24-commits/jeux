@@ -66,7 +66,7 @@ async function importWithFeedback(files, status) {
 }
 
 /** Opens the native picker for a new video project; the editor opens as soon as files are imported. */
-export function videoPickerInput({ onStart } = {}) {
+export function videoPickerInput({ onStart, onOpen } = {}) {
   const input = h('input', { type: 'file', multiple: true, accept: ACCEPT_ATTR, hidden: true });
   input.addEventListener('change', async () => {
     const files = [...input.files];
@@ -75,12 +75,13 @@ export function videoPickerInput({ onStart } = {}) {
     onStart?.();
     const results = await importWithFeedback(files);
     if (!results.length) return;
+    onOpen?.();
     await saveAndOpen(videoProjectFromMedia(results, { aspect: null }));
   });
   return input;
 }
 
-export function photoPickerInput({ onStart } = {}) {
+export function photoPickerInput({ onStart, onOpen } = {}) {
   const input = h('input', { type: 'file', accept: ACCEPT.image.join(','), hidden: true });
   input.addEventListener('change', async () => {
     const file = input.files[0];
@@ -88,7 +89,9 @@ export function photoPickerInput({ onStart } = {}) {
     if (!file) return;
     onStart?.();
     const [media] = await importWithFeedback([file]);
-    if (media) await saveAndOpen(photoProjectFromMedia(media));
+    if (!media) return;
+    onOpen?.();
+    await saveAndOpen(photoProjectFromMedia(media));
   });
   return input;
 }
@@ -104,9 +107,9 @@ const ART = {
 export function openNewProject() {
   const status = h('p', { class: 'field__hint', 'aria-live': 'polite' });
   const busy = () => (status.textContent = 'Import des fichiers… l’éditeur s’ouvre dès que c’est terminé.');
-  const videoInput = videoPickerInput({ onStart: busy });
-  const photoInput = photoPickerInput({ onStart: busy });
   const close = () => modal.close();
+  const videoInput = videoPickerInput({ onStart: busy, onOpen: close });
+  const photoInput = photoPickerInput({ onStart: busy, onOpen: close });
   const card = (art, title, text, actions) =>
     h('article', { class: 'np-card' }, h('div', { class: 'np-art' }, svg(ART[art])), h('h3', {}, title), h('p', {}, text), h('div', { class: 'np-actions' }, ...actions));
 

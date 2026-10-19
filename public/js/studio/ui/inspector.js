@@ -74,6 +74,8 @@ export class Inspector {
 
   render() {
     clear(this.el);
+    if (this.onClose)
+      this.el.append(h('button', { class: 'btn btn--sm btn--ghost sheet-close', type: 'button', 'aria-label': 'Fermer les propriétés', onclick: () => this.onClose() }, icon('close')));
     const clip = this.clip;
     if (!clip) return this.renderProject();
     const tabs = [

@@ -1,3 +1,4 @@
+import { sendToEditor } from '../studio/projectActions.js';
 import { h, clear, formatDate, formatDuration, formatBytes } from '../lib/dom.js';
 import { api, watchCreation } from '../lib/api.js';
 import { icon } from './icons.js';
@@ -233,6 +234,20 @@ export function openCreation(creation, { index = 0, onDelete } = {}) {
         { class: 'btn btn--sm', type: 'button', onclick: () => (modal.close(), regenerateFrom(creation)) },
         icon('refresh'),
         'Régénérer',
+      ),
+    );
+  }
+  if (output) {
+    actions.append(
+      h(
+        'button',
+        {
+          class: 'btn btn--sm',
+          type: 'button',
+          onclick: () => (modal.close(), sendToEditor({ url: output.url, mime: output.mime, name: creation.prompt || creation.operationLabel })),
+        },
+        icon('layers'),
+        'Envoyer vers l’éditeur',
       ),
     );
   }

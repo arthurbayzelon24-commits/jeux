@@ -4,6 +4,7 @@ import { icon } from '../components/icons.js';
 import { confirmDialog, notice, toast } from '../components/feedback.js';
 import { downloadUrl, mediaElement, openCreation, regenerateFrom, statusTag } from '../components/creation.js';
 import { emptyStage } from './studioShared.js';
+import { sendToEditor } from '../studio/projectActions.js';
 
 const FILTERS = [
   { id: '', label: 'Tout' },
@@ -125,6 +126,21 @@ export function galleryPage() {
     if (creation.status === 'failed' && creation.retryable) {
       actions.append(h('button', { class: 'btn btn--sm', type: 'button', onclick: () => retry(creation) }, icon('refresh'), 'Réessayer'));
     }
+    if (output) {
+      actions.append(
+        h(
+          'button',
+          {
+            class: 'btn btn--sm',
+            type: 'button',
+            'aria-label': 'Envoyer vers l’éditeur',
+            title: 'Envoyer vers l’éditeur',
+            onclick: () => sendToEditor({ url: output.url, mime: output.mime, name: creation.prompt || creation.operationLabel }),
+          },
+          icon('layers'),
+        ),
+      );
+    }
     if (creation.type === 'image' && output) {
       actions.append(
         h('a', { class: 'btn btn--sm', href: `/retouche?source=${creation.id}`, 'data-link': '', 'aria-label': 'Retoucher' }, icon('wand')),
@@ -205,9 +221,9 @@ export function galleryPage() {
       h(
         'div',
         {},
-        h('span', { class: 'eyebrow' }, icon('gallery', { size: 14 }), 'Historique'),
-        h('h1', { class: 'section__title', style: { marginBottom: '4px' } }, 'Galerie'),
-        h('p', { class: 'section__lead' }, 'Toutes vos créations, conservées sur le serveur.'),
+        h('span', { class: 'eyebrow' }, icon('gallery', { size: 14 }), 'Créations IA'),
+        h('h1', { class: 'section__title', style: { marginBottom: '4px' } }, 'Mes créations'),
+        h('p', { class: 'section__lead' }, 'Les images et vidéos générées par SOLVEX AI, conservées sur le serveur. Vos montages sont dans « Projets ».'),
         countEl,
       ),
       h('div', { class: 'filters' }, filterGroup, sortSelect),
@@ -216,7 +232,7 @@ export function galleryPage() {
   );
   return {
     el,
-    title: 'Galerie',
+    title: 'Mes créations',
     cleanup: () => {
       alive = false;
       clearTimeout(poll);

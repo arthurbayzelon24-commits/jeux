@@ -56,7 +56,7 @@ export function recentStrip(type) {
       'div',
       { class: 'stage__toolbar' },
       h('h2', { class: 'stage__title' }, 'Récemment'),
-      h('a', { class: 'btn btn--sm btn--ghost', href: '/galerie', 'data-link': '' }, 'Toute la galerie', icon('arrow')),
+      h('a', { class: 'btn btn--sm btn--ghost', href: '/galerie', 'data-link': '' }, 'Mes créations', icon('arrow')),
     ),
     list,
   );
@@ -91,5 +91,5 @@ export function recentStrip(type) {
 }
 
 export function savedNote() {
-  return h('span', { class: 'saved-note' }, icon('check'), 'Enregistré automatiquement dans la galerie');
+  return h('span', { class: 'saved-note' }, icon('check'), 'Enregistré automatiquement dans Mes créations');
 }

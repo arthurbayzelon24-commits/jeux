@@ -165,8 +165,11 @@ export async function initPwa() {
     return;
   }
   let refreshing = false;
+  // First visit: the worker claiming the page is not an update, so no reload
+  // (it would close whatever the user had just opened).
+  const hadController = Boolean(navigator.serviceWorker.controller);
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
+    if (refreshing || !hadController) return;
     refreshing = true;
     location.reload();
   });

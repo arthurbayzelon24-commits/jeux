@@ -39,8 +39,16 @@ export class Player {
     const speakers = ctx.createGain();
     master.connect(speakers);
     speakers.connect(ctx.destination);
+    speakers.gain.value = this.monitorVolume ?? 1;
     this.audio = { ctx, master, speakers };
     return this.audio;
+  }
+
+  /** Preview-only volume (speaker bus); exports read the master bus and are unaffected. */
+  setMonitorVolume(value) {
+    this.monitorVolume = value;
+    const audio = this.ensureAudio();
+    if (audio) audio.speakers.gain.value = value;
   }
 
   connectElement(entry) {

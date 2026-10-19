@@ -10,7 +10,9 @@ import { Library, TEXT_PRESETS } from '../ui/library.js';
 import { openExportDialog } from '../ui/exportDialog.js';
 import { openRecorder } from '../ui/recorder.js';
 import { db, uid } from '../db.js';
-import { createClip, addClip, clipEnd, trackKindFor, createTrack, pasteClips, projectDuration, rippleDelete } from '../project.js';
+import { createClip, addClip, clipEnd, trackKindFor, createTrack, pasteClips, projectDuration, rippleDelete, changeAspect, ASPECTS } from '../project.js';
+import { effectsPanel, transitionsPanel, filtersPanel } from '../ui/editPanels.js';
+import { logoMark } from '../../components/logo.js';
 import { SHAPES } from '../stickers.js';
 import { formatTime } from '../media.js';
 import { detectSilences, normalizationGain, detectPeaks } from '../engine/analysis.js';
@@ -97,6 +99,31 @@ export async function videoEditorPage({ params }) {
     loopBtn.setAttribute('aria-pressed', String(player.loop));
   });
   const step = (dt) => seek(store.time + dt);
+  function volumeCtl() {
+    const input = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: '1', 'aria-label': 'Volume de l’aperçu (n’affecte pas l’export)' });
+    const mute = h('button', { class: 'btn btn--sm btn--ghost', type: 'button', 'aria-label': 'Couper le son de l’aperçu', title: 'Volume de l’aperçu (n’affecte pas l’export)' }, '🔊');
+    let last = 1;
+    const apply = (v) => {
+      player.setMonitorVolume(v);
+      input.value = String(v);
+      mute.textContent = v === 0 ? '🔇' : '🔊';
+    };
+    input.addEventListener('input', () => apply(Number(input.value)));
+    mute.addEventListener('click', () => {
+      if (Number(input.value) > 0) {
+        last = Number(input.value);
+        apply(0);
+      } else apply(last || 1);
+    });
+    return h('span', { class: 'preview-volume' }, mute, input);
+  }
+  const aspectSel = h(
+    'select',
+    { class: 'select select--sm preview-aspect', 'aria-label': 'Format du projet', title: 'Format du projet' },
+    Object.entries(ASPECTS).map(([id, a]) => h('option', { value: id }, a.label)),
+  );
+  aspectSel.value = store.project.settings.aspect;
+  aspectSel.addEventListener('change', () => store.commit('Format du projet', changeAspect(store.project, aspectSel.value)));
   const fullBtn = h(
     'button',
     { class: 'btn btn--sm btn--ghost', type: 'button', title: 'Plein écran', 'aria-label': 'Aperçu plein écran' },
@@ -135,6 +162,9 @@ export async function videoEditorPage({ params }) {
     ),
     timeLabel,
     loopBtn,
+    h('span', { class: 'tl-spacer' }),
+    volumeCtl(),
+    aspectSel,
     fullBtn,
   );
   const stageBox = h('div', { class: 'preview-box' }, canvas);
@@ -260,6 +290,8 @@ export async function videoEditorPage({ params }) {
   }
 
   // ---------------------------------------------------------------- panels
+  const projectMediaIds = () => [...new Set([...(store.project.mediaIds || []), ...store.project.clips.map((c) => c.mediaId).filter(Boolean)])];
+  const panelCtx = { store, say, openInspector: (tab) => openInspector(tab) };
   const library = new Library({
     onAdd: (payload) => addPayload(payload),
     onMediaChange: (list) => {
@@ -268,7 +300,62 @@ export async function videoEditorPage({ params }) {
       timeline?.render();
     },
     toast: say,
+    externalTabs: true,
+    getProjectMediaIds: projectMediaIds,
+    onImported: (results) => {
+      const ids = projectMediaIds();
+      const added = results.map((m) => m.id).filter((id) => !ids.includes(id));
+      if (added.length) store.commit('Importer dans le projet', { ...store.project, mediaIds: [...(store.project.mediaIds || []), ...added] });
+    },
+    onRecord: (mode) => recordToProject(mode),
+    panels: {
+      effects: { label: 'Effets', icon: 'sparkles', render: (body) => effectsPanel(body, panelCtx) },
+      transitions: { label: 'Transitions', icon: 'shuffle', render: (body) => transitionsPanel(body, panelCtx) },
+      filters: { label: 'Filtres', icon: 'sun', render: (body) => filtersPanel(body, panelCtx) },
+      subtitles: { label: 'Sous-titres', icon: 'info', render: (body) => renderSubtitles(body) },
+      ai: { label: 'Outils IA', icon: 'wand', render: (body) => renderAiTools(body) },
+    },
   });
+  library.onClose = () => setSheet('');
+  const CONTEXT_PANELS = ['effects', 'transitions', 'filters', 'subtitles', 'ai'];
+
+  function recordToProject(mode = 'screen') {
+    openRecorder({
+      mode,
+      onRecorded: async (meta) => {
+        library.onImported([meta]);
+        await library.reloadMedia();
+        addPayload({ type: 'media', id: meta.id });
+      },
+    });
+  }
+
+  function renderAiTools(body) {
+    const clip = store.project.clips.find((c) => c.id === store.selection[0]);
+    const media = clip && (clip.kind === 'video' || clip.kind === 'audio') && clip.mediaId ? clip : null;
+    const tool = (label, text, fn, disabled, why) =>
+      h(
+        'div',
+        { class: 'ai-tool' },
+        h('div', {}, h('strong', {}, label), h('p', { class: 'field__hint' }, disabled && why ? why : text)),
+        h('button', { class: 'btn btn--sm', type: 'button', disabled, onclick: fn }, 'Lancer'),
+      );
+    const needClip = 'Sélectionnez d’abord un clip vidéo ou audio dans la timeline.';
+    body.append(
+      h('button', { class: 'btn btn--primary btn--block', type: 'button', onclick: openAssistant }, icon('sparkles'), 'Assistant de montage'),
+      h('p', { class: 'field__hint' }, 'Outils calculés dans votre navigateur ; aucune donnée n’est envoyée, sauf la transcription (service configuré sur le serveur).'),
+      tool('Couper les silences', 'Détecte les passages silencieux du clip et les retire.', () => actions.cutSilences(media), !media, needClip),
+      tool('Normaliser le volume', 'Règle le gain pour un pic à −1 dBFS.', () => actions.normalize(media), !media, needClip),
+      tool('Repérer les saturations', 'Place un marqueur sur chaque pic audio saturé.', () => actions.findPeaks(media), !media, needClip),
+      tool(
+        'Sous-titres automatiques',
+        caps?.transcription?.model ? 'Transcrit l’audio en sous-titres modifiables.' : isStatic() ? 'Indisponible sans le serveur SOLVEX.' : 'Service de transcription non configuré sur le serveur (OPENAI_API_KEY).',
+        () => library.setTab('subtitles'),
+        false,
+      ),
+      tool('Incrustation (fond vert)', 'Retire une couleur de fond du clip sélectionné.', () => openInspector('mask'), !(clip && (clip.kind === 'video' || clip.kind === 'image')), 'Sélectionnez un clip vidéo ou image.'),
+    );
+  }
 
   const timeline = new Timeline({
     store,
@@ -647,10 +734,10 @@ export async function videoEditorPage({ params }) {
             return output.replaceChildren(h('p', { class: 'assistant-msg' }, `Annulé : ${last.label}.`));
           }
           if (plan.kind === 'transcribe') {
-            inspector.tab = 'subtitles';
-            store.select([]);
+            library.setTab('subtitles');
+            drawCats();
             return output.replaceChildren(
-              h('p', { class: 'assistant-msg' }, 'Ouvrez l’onglet Sous-titres et utilisez « Transcrire automatiquement ».'),
+              h('p', { class: 'assistant-msg' }, 'Le panneau Sous-titres est ouvert : utilisez « Transcrire automatiquement ».'),
             );
           }
           const before = store.project;
@@ -730,7 +817,7 @@ export async function videoEditorPage({ params }) {
     },
     h('span', { style: { transform: 'scaleX(-1)', display: 'inline-flex' } }, icon('undo')),
   );
-  const modeBtn = h('button', { class: 'btn btn--sm btn--ghost', type: 'button' });
+  const modeBtn = h('button', { class: 'btn btn--sm btn--ghost editor-mode', type: 'button' });
   const applyMode = () => {
     const mode = getPrefs().editorMode;
     document.documentElement.dataset.editorMode = mode;
@@ -743,48 +830,76 @@ export async function videoEditorPage({ params }) {
     inspector.render();
   });
   applyMode();
+  const settingsBtn = h('button', { class: 'btn btn--sm btn--ghost btn--icon', type: 'button', 'aria-label': 'Paramètres du projet', title: 'Paramètres du projet (format, fréquence, fond)' }, icon('settings'));
+  settingsBtn.addEventListener('click', () => {
+    store.select([]);
+    inspector.tab = 'project';
+    inspector.render();
+    setSheet('inspector');
+  });
+  const previewBtn = h('button', { class: 'btn btn--sm btn--ghost btn--icon', type: 'button', 'aria-label': 'Aperçu plein écran', title: 'Aperçu plein écran' }, icon('play'));
+  previewBtn.addEventListener('click', () => {
+    stage.requestFullscreen?.().catch(() => say('Plein écran indisponible dans ce navigateur.'));
+    player.play?.();
+  });
+  const cats = h('nav', { class: 'editor-cats', 'aria-label': 'Catégories' });
+  const drawCats = () => {
+    cats.replaceChildren(
+      ...library.tabs.map(([id, label, ic]) => {
+        const b = h('button', { type: 'button', 'aria-pressed': String(library.tab === id && el?.dataset.sheet !== 'inspector'), title: label }, icon(ic, { size: 18 }), h('span', {}, label));
+        b.addEventListener('click', () => {
+          const same = library.tab === id;
+          library.setTab(id);
+          if (isMobile()) setSheet(same && el.dataset.sheet === 'library' ? '' : 'library');
+          else if (same) el.dataset.panel = el.dataset.panel === 'hidden' ? '' : 'hidden';
+          else el.dataset.panel = '';
+          drawCats();
+        });
+        return b;
+      }),
+    );
+  };
   const toolbar = h(
     'header',
     { class: 'editor-bar' },
-    h('a', { class: 'btn btn--sm btn--ghost', href: '/projets', 'data-link': '', 'aria-label': 'Retour aux projets' }, '←'),
+    h('a', { class: 'editor-logo', href: '/', 'data-link': '', 'aria-label': 'SOLVEX AI, accueil' }, logoMark({ title: '' })),
+    h('a', { class: 'btn btn--sm btn--ghost', href: '/projets', 'data-link': '', 'aria-label': 'Retour aux projets', title: 'Retour aux projets' }, '←'),
     nameInput,
     saveState,
-    undoBtn,
-    redoBtn,
-    h('span', { class: 'tl-spacer' }),
-    modeBtn,
+    cats,
     h(
-      'button',
-      {
-        class: 'btn btn--sm',
-        type: 'button',
-        onclick: () =>
-          openRecorder({
-            onRecorded: async (meta) => {
-              await library.reloadMedia();
-              addPayload({ type: 'media', id: meta.id });
-            },
-          }),
-      },
-      '● Enregistrer',
-    ),
-    h('button', { class: 'btn btn--sm', type: 'button', onclick: openAssistant }, icon('sparkles'), 'Assistant'),
-    h(
-      'button',
-      { class: 'btn btn--sm', type: 'button', onclick: () => store.save(thumbnail()).then(() => say('Projet enregistré.', 'success')) },
-      'Enregistrer',
-    ),
-    h(
-      'button',
-      {
-        class: 'btn btn--sm btn--primary',
-        type: 'button',
-        onclick: () => openExportDialog({ store, player, onSaved: () => library.reloadMedia() }),
-      },
-      icon('download'),
-      'Exporter',
+      'div',
+      { class: 'editor-bar__right' },
+      undoBtn,
+      redoBtn,
+      previewBtn,
+      settingsBtn,
+      modeBtn,
+      h('button', { class: 'btn btn--sm btn--ghost editor-capture', type: 'button', title: 'Enregistrer l’écran, la webcam ou le micro', onclick: () => recordToProject('screen') }, '● Capturer'),
+      h('button', { class: 'btn btn--sm editor-save', type: 'button', onclick: () => store.save(thumbnail()).then(() => say('Projet enregistré.', 'success')) }, 'Enregistrer'),
+      h(
+        'button',
+        { class: 'btn btn--sm btn--primary', type: 'button', onclick: () => openExportDialog({ store, player, onSaved: () => library.reloadMedia() }) },
+        icon('download'),
+        h('span', {}, 'Exporter'),
+      ),
     ),
   );
+  const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+  function setSheet(name) {
+    el.dataset.sheet = name;
+    drawCats();
+    propsBtn.setAttribute('aria-pressed', String(name === 'inspector'));
+  }
+  function openInspector(tab) {
+    if (store.selection.length) {
+      inspector.tab = tab;
+      inspector.render();
+    }
+    if (isMobile()) setSheet('inspector');
+  }
+  const propsBtn = h('button', { class: 'mobile-props', type: 'button', 'aria-pressed': 'false' }, icon('brush', { size: 18 }), h('span', {}, 'Propriétés'));
+  propsBtn.addEventListener('click', () => setSheet(el.dataset.sheet === 'inspector' ? '' : 'inspector'));
   const updateBar = () => {
     undoBtn.disabled = !store.history.canUndo;
     redoBtn.disabled = !store.history.canRedo;
@@ -875,6 +990,8 @@ export async function videoEditorPage({ params }) {
   // ---------------------------------------------------------------- wiring
   const unsub = store.on((reason) => {
     updateBar();
+    if ((reason === 'selection' || reason === 'project') && CONTEXT_PANELS.includes(library.tab) && !library.el.contains(document.activeElement?.closest?.('textarea, input'))) library.render();
+    if (reason === 'project' && aspectSel.value !== store.project.settings.aspect) aspectSel.value = store.project.settings.aspect;
     if (reason === 'project' || reason === 'preview') {
       if (nameInput.value !== store.project.name && document.activeElement !== nameInput) nameInput.value = store.project.name;
       if (reason === 'project') player.prepare().then(() => player.requestRender());
@@ -891,14 +1008,27 @@ export async function videoEditorPage({ params }) {
   window.addEventListener('beforeunload', onBeforeUnload);
   const resize = new ResizeObserver(fitCanvas);
 
+  const mobileNav = h('div', { class: 'editor-mobile-nav' }, propsBtn);
   const el = h(
     'div',
-    { class: 'editor', dataset: { mode: getPrefs().editorMode } },
+    { class: 'editor', dataset: { mode: getPrefs().editorMode, sheet: '', panel: '' } },
     h('h1', { class: 'sr-only' }, `Éditeur vidéo — ${store.project.name}`),
     toolbar,
     h('div', { class: 'editor-main' }, library.el, stage, inspector.el),
     timeline.el,
+    mobileNav,
   );
+  drawCats();
+  // Phones: the category bar moves to the bottom, panels open as sheets.
+  const placeCats = () => {
+    if (isMobile()) mobileNav.prepend(cats);
+    else toolbar.insertBefore(cats, toolbar.querySelector('.editor-bar__right'));
+  };
+  const mq = window.matchMedia('(max-width: 900px)');
+  mq.addEventListener('change', placeCats);
+  placeCats();
+  inspector.onClose = () => setSheet('');
+  inspector.render();
   requestAnimationFrame(() => {
     resize.observe(stageBox);
     fitCanvas();
@@ -912,6 +1042,7 @@ export async function videoEditorPage({ params }) {
     fullscreen: true,
     cleanup: () => {
       window.removeEventListener('keydown', onKey);
+      mq.removeEventListener('change', placeCats);
       window.removeEventListener('beforeunload', onBeforeUnload);
       resize.disconnect();
       unsub();

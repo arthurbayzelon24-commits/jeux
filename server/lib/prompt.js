@@ -17,6 +17,25 @@ export const STYLES = {
   personnalise: { label: 'Personnalisé', hint: '' },
 };
 
+// Video models used here have no camera parameter: the movement is written into the prompt.
+export const CAMERA_MOVES = {
+  auto: { label: 'Laisser le modèle choisir', hint: '' },
+  fixe: { label: 'Plan fixe', hint: 'static camera, locked-off shot' },
+  'travelling-avant': { label: 'Travelling avant', hint: 'slow dolly-in camera movement toward the subject' },
+  'travelling-arriere': { label: 'Travelling arrière', hint: 'slow dolly-out camera movement away from the subject' },
+  panoramique: { label: 'Panoramique', hint: 'smooth horizontal pan across the scene' },
+  orbite: { label: 'Orbite', hint: 'camera orbiting around the subject' },
+  drone: { label: 'Vue de drone', hint: 'aerial drone shot, smooth forward flight' },
+  'camera-epaule': { label: 'Caméra à l’épaule', hint: 'handheld camera, subtle natural shake' },
+  zoom: { label: 'Zoom lent', hint: 'slow zoom in' },
+};
+
+export function applyCamera(prompt, cameraId) {
+  const move = CAMERA_MOVES[cameraId];
+  if (!move || !move.hint) return prompt;
+  return `${prompt}\n\nCamera: ${move.hint}.`;
+}
+
 /** Appends the selected style's descriptors to the user's prompt. */
 export function applyStyle(prompt, styleId) {
   const style = STYLES[styleId];

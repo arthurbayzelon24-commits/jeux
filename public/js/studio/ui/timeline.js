@@ -14,6 +14,7 @@ import {
   rippleDelete,
   groupClips,
   ungroupClips,
+  projectDuration,
 } from '../project.js';
 import { formatTime } from '../media.js';
 import { getPrefs } from '../../lib/prefs.js';
@@ -76,6 +77,7 @@ export class Timeline {
       h('span', { class: 'tl-spacer' }),
       tool('video', 'Piste', 'Ajouter une piste vidéo', () => this.addTrack('video')),
       tool('play', 'Piste', 'Ajouter une piste audio', () => this.addTrack('audio')),
+      tool('expand', 'Ajuster', 'Afficher tout le montage', () => this.fit()),
       h('label', { class: 'tl-zoom' }, icon('zoom'), this.zoomInput),
     );
 
@@ -111,6 +113,13 @@ export class Timeline {
       if (reason !== 'saving' && reason !== 'saved' && reason !== 'history') this.render();
     });
     this.render();
+  }
+
+  /** Zoom so the whole project fits in the visible width. */
+  fit() {
+    const duration = Math.max(1, projectDuration(this.store.project));
+    this.setZoom((this.scroller.clientWidth - 40) / duration);
+    this.scroller.scrollLeft = 0;
   }
 
   setZoom(value) {

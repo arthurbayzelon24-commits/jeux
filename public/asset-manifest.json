@@ -1,5 +1,5 @@
 {
-  "version": "c1a5ffc81cff",
+  "version": "a9c536e74f2d",
   "assets": [
     "/",
     "/assets/app-icon.svg",
@@ -29,6 +29,7 @@
     "/js/lib/state.js",
     "/js/pages/enhance.js",
     "/js/pages/gallery.js",
+    "/js/pages/generationShared.js",
     "/js/pages/home.js",
     "/js/pages/images.js",
     "/js/pages/settings.js",
@@ -56,6 +57,7 @@
     "/js/studio/sounds.js",
     "/js/studio/stickers.js",
     "/js/studio/subtitles.js",
+    "/js/studio/ui/editPanels.js",
     "/js/studio/ui/exportDialog.js",
     "/js/studio/ui/inspector.js",
     "/js/studio/ui/library.js",

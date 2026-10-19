@@ -1,6 +1,8 @@
 import { h, clear } from '../lib/dom.js';
 import { api } from '../lib/api.js';
-import { getCapabilities, providerFor } from '../lib/state.js';
+import { getCapabilities } from '../lib/state.js';
+import { render } from '../router.js';
+import { chosenProvider, draft, modeSwitch, modelSelect, offlineNotice, resultActions, thirdPartyNotice } from './generationShared.js';
 import { icon } from '../components/icons.js';
 import { setBusy, toast } from '../components/feedback.js';
 import { chipGroup, imageDropzone, promptField, selectField, stepper } from '../components/controls.js';
@@ -11,27 +13,32 @@ import { emptyStage, providerBadge, providerNotice, recentStrip, savedNote } fro
 const ALL_ASPECTS = [
   { id: '1:1', label: 'Carré 1:1' },
   { id: '16:9', label: 'Paysage 16:9' },
-  { id: '9:16', label: 'Portrait 9:16' },
+  { id: '9:16', label: 'Portrait 9:16 (Stories, Reels)' },
+  { id: '4:5', label: 'Portrait 4:5 (publication Instagram)' },
   { id: '4:3', label: '4:3' },
   { id: '3:2', label: '3:2' },
   { id: '2:3', label: 'Portrait 2:3' },
 ];
 
-export function imagesPage() {
+export function imagesPage({ params } = {}) {
   const caps = getCapabilities();
-  const provider = providerFor('image');
+  const saved = draft('image');
+  const prefill = takePrefill('image') || (params?.get('prompt') ? { prompt: params.get('prompt').slice(0, 4000), params: {} } : null);
+  const d = prefill ? { prompt: prefill.prompt, ...prefill.params, provider: saved.data.provider } : saved.data;
+  const provider = chosenProvider('image', d.provider);
   const pc = provider?.capabilities;
-  const prefill = takePrefill('image');
   const supported = new Set(pc?.aspects.map((a) => a.id) || []);
+  const allowsReference = Boolean(pc?.imageToImage && pc?.maxReferenceImages > 0);
 
   const state = {
-    style: prefill?.params?.style || 'personnalise',
-    aspect: supported.has(prefill?.params?.aspect) ? prefill.params.aspect : pc?.aspects[0]?.id || '1:1',
-    resolution: prefill?.params?.resolution || 'standard',
-    quality: prefill?.params?.quality || 'auto',
-    count: Math.min(prefill?.params?.count || 1, pc?.maxImages || 1),
+    style: d.style || 'personnalise',
+    aspect: supported.has(d.aspect) ? d.aspect : pc?.aspects[0]?.id || '1:1',
+    resolution: d.resolution || 'standard',
+    quality: d.quality || 'auto',
+    count: Math.min(d.count || 1, pc?.maxImages || 1),
     references: [],
   };
+  const keep = () => saved.save({ ...state, references: undefined, prompt: prompt.textarea.value, negative: negative?.value ?? saved.data.negative, provider: provider?.id });
   let stopTracking = null;
   let lastPayload = null;
 
@@ -42,7 +49,19 @@ export function imagesPage() {
     maxLength: caps?.limits.maxPromptLength || 4000,
     enhancement: caps?.promptEnhancement,
     getStyle: () => state.style,
-    initial: prefill?.prompt || '',
+    initial: d.prompt || '',
+  });
+  prompt.textarea.required = true;
+  prompt.textarea.addEventListener('input', () => keep());
+  // Only shown when the selected model accepts negative instructions.
+  const negative = pc?.negativePrompt ? h('textarea', { class: 'textarea', id: 'neg-image', rows: 2, maxLength: 1000, placeholder: 'Ex. : texte, filigrane, flou' }) : null;
+  if (negative) {
+    negative.value = d.negative || '';
+    negative.addEventListener('input', () => keep());
+  }
+  const models = modelSelect('image', provider, (id) => {
+    saved.save({ provider: id, prompt: prompt.textarea.value });
+    render();
   });
 
   const styles = chipGroup({
@@ -50,7 +69,7 @@ export function imagesPage() {
     name: 'style',
     options: (caps?.styles || []).map((s) => ({ id: s.id, label: s.label })),
     value: state.style,
-    onChange: (value) => (state.style = value),
+    onChange: (value) => ((state.style = value), keep()),
   });
 
   const aspectOptions = () =>
@@ -69,6 +88,7 @@ export function imagesPage() {
     onChange: (value) => {
       state.aspect = value;
       syncResolution();
+      keep();
     },
   });
 
@@ -80,7 +100,7 @@ export function imagesPage() {
     label: 'Résolution',
     options: resolutionOptions(),
     value: state.resolution,
-    onChange: (value) => (state.resolution = value),
+    onChange: (value) => ((state.resolution = value), keep()),
   });
   function syncResolution() {
     const options = resolutionOptions();
@@ -94,7 +114,7 @@ export function imagesPage() {
     label: 'Qualité',
     options: pc?.qualities || [{ id: 'auto', label: 'Automatique' }],
     value: state.quality,
-    onChange: (value) => (state.quality = value),
+    onChange: (value) => ((state.quality = value), keep()),
   });
 
   const count = stepper({
@@ -102,10 +122,10 @@ export function imagesPage() {
     min: 1,
     max: pc?.maxImages || 1,
     value: state.count,
-    onChange: (v) => (state.count = v),
+    onChange: (v) => ((state.count = v), keep()),
   });
 
-  const references = imageDropzone({
+  const references = allowsReference && imageDropzone({
     label: 'Images de référence',
     max: pc?.maxReferenceImages || 1,
     maxBytes: caps?.limits.maxUploadBytes,
@@ -118,8 +138,11 @@ export function imagesPage() {
   const footerHint = h('p', { class: 'field__hint' }, 'Ctrl + Entrée pour générer');
   if (!provider?.configured) {
     generateBtn.disabled = true;
-    footerHint.textContent = 'Configurez un fournisseur d’images sur le serveur pour activer la génération.';
+    footerHint.textContent = caps?.static
+      ? 'Génération indisponible dans cette version sans serveur.'
+      : 'Configurez un fournisseur d’images sur le serveur pour activer la génération.';
   }
+  const offline = offlineNotice();
 
   const stageBody = h('div', { class: 'stage__body', 'aria-live': 'polite' });
   stageBody.append(
@@ -134,19 +157,16 @@ export function imagesPage() {
   function showResultBar(creation) {
     clear(resultBar);
     resultBar.hidden = false;
-    const again = h('button', { class: 'btn btn--sm', type: 'button' }, icon('refresh'), 'Nouvelle génération');
-    again.addEventListener('click', () => lastPayload && submit(lastPayload));
     resultBar.append(
       savedNote(),
-      h(
-        'div',
-        { class: 'result-bar__actions' },
-        again,
-        creation.outputs.length === 1
-          ? h('a', { class: 'btn btn--sm', href: `${creation.outputs[0].url}?download=1`, download: '' }, icon('download'), 'Télécharger')
-          : null,
-        h('a', { class: 'btn btn--sm btn--ghost', href: '/galerie', 'data-link': '' }, icon('gallery'), 'Galerie'),
-      ),
+      resultActions(creation, {
+        onRegenerate: () => lastPayload && submit(lastPayload),
+        onEditPrompt: () => {
+          prompt.textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          prompt.textarea.focus();
+          prompt.textarea.select();
+        },
+      }),
     );
   }
 
@@ -182,13 +202,17 @@ export function imagesPage() {
 
   function onGenerate() {
     if (generateBtn.disabled) return;
-    if (references.busy()) {
+    if (!navigator.onLine) {
+      toast('Pas de connexion Internet : la génération ne peut pas être lancée.', { type: 'error' });
+      return;
+    }
+    if (references && references.busy()) {
       toast('Patientez : une image de référence est encore en cours d’envoi.', { type: 'info' });
       return;
     }
     const text = prompt.value();
     if (!text && state.references.length === 0) {
-      toast('Décrivez l’image souhaitée ou importez une image de référence.', { type: 'info' });
+      toast(references ? 'Décrivez l’image souhaitée ou importez une image de référence.' : 'La description est obligatoire : décrivez l’image souhaitée.', { type: 'error' });
       prompt.textarea.focus();
       return;
     }
@@ -200,6 +224,7 @@ export function imagesPage() {
       quality: state.quality,
       count: state.count,
       referenceUploadIds: state.references,
+      negativePrompt: negative?.value.trim() || undefined,
       provider: provider.id,
     });
   }
@@ -217,12 +242,14 @@ export function imagesPage() {
       h(
         'div',
         {},
-        h('span', { class: 'eyebrow' }, icon('image', { size: 14 }), 'Atelier'),
-        h('h1', {}, 'Studio d’images'),
-        h('p', {}, 'Du texte ou d’une référence à l’image finale.'),
+        h('span', { class: 'eyebrow' }, icon('image', { size: 14 }), 'Créer avec SOLVEX AI'),
+        h('h1', {}, 'Générer une image'),
+        h('p', {}, allowsReference ? 'Du texte ou d’une référence à l’image finale.' : 'Décrivez l’image : le modèle la crée à partir du texte.'),
       ),
       providerBadge(provider),
     ),
+    modeSwitch('image'),
+    offline.el,
     providerNotice(provider, 'La génération d’images est')
       ? h('div', { style: { marginTop: '20px' } }, providerNotice(provider, 'La génération d’images est'))
       : null,
@@ -235,14 +262,16 @@ export function imagesPage() {
         h(
           'div',
           { class: 'controls__scroll' },
+          models,
           prompt.el,
+          negative ? h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'neg-image' }, 'À éviter (instruction négative)', h('span', { class: 'tag' }, 'facultatif')), negative) : null,
           h('div', { class: 'field' }, styles.el),
           h('div', { class: 'field' }, aspects.el),
           h('div', { class: 'field grid-2' }, resolution.el, quality.el),
-          h('div', { class: 'field' }, count.el),
-          h('div', { class: 'field' }, references.el),
+          pc?.maxImages > 1 ? h('div', { class: 'field' }, count.el) : null,
+          references ? h('div', { class: 'field' }, references.el) : h('p', { class: 'field__hint' }, provider ? `Image de référence : non prise en charge par ${provider.vendor} · ${provider.model}.` : ''),
         ),
-        h('div', { class: 'controls__footer' }, generateBtn, footerHint),
+        h('div', { class: 'controls__footer' }, thirdPartyNotice(provider), generateBtn, footerHint),
       ),
       h(
         'section',
@@ -251,7 +280,7 @@ export function imagesPage() {
           'div',
           { class: 'stage__toolbar' },
           h('h2', { class: 'stage__title' }, 'Aperçu'),
-          pc?.notes ? h('span', { class: 'field__hint' }, pc.notes[0]) : null,
+          pc?.notes?.[pc.thirdParty ? 1 : 0] ? h('span', { class: 'field__hint' }, pc.notes[pc.thirdParty ? 1 : 0]) : null,
         ),
         stageBody,
         resultBar,
@@ -260,5 +289,5 @@ export function imagesPage() {
     ),
   );
 
-  return { el, title: 'Studio d’images', cleanup: () => stopTracking?.() };
+  return { el, title: 'Générer une image', cleanup: () => (stopTracking?.(), offline.cleanup()) };
 }

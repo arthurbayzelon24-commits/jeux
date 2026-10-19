@@ -3,7 +3,7 @@ import { stat } from 'node:fs/promises';
 import { HttpError, readBody, readJson, sendJson } from '../lib/http.js';
 import { inspectImage, mimeFromExtension } from '../lib/files.js';
 import { isValidId } from '../lib/store.js';
-import { canEnhanceWithModel, enhanceLocally, enhanceWithModel, STYLES } from '../lib/prompt.js';
+import { canEnhanceWithModel, enhanceLocally, enhanceWithModel, STYLES, CAMERA_MOVES } from '../lib/prompt.js';
 import { transcribe } from '../lib/transcribe.js';
 import * as v from '../lib/validate.js';
 
@@ -114,6 +114,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
     sendJson(res, 200, {
       providers: registry.describe(),
       styles: Object.entries(STYLES).map(([id, style]) => ({ id, label: style.label })),
+      cameraMoves: Object.entries(CAMERA_MOVES).map(([id, move]) => ({ id, label: move.label })),
       promptEnhancement: canEnhanceWithModel(config) ? { method: 'model', model: config.openai.textModel } : { method: 'local' },
       limits: { maxUploadBytes: config.maxUploadBytes, maxPromptLength: v.MAX_PROMPT_LENGTH },
       editOperations: Object.entries(EDIT_OPERATIONS).map(([id, op]) => ({ id, label: op.label, needsPrompt: op.needsPrompt })),
@@ -253,6 +254,8 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       aspect: String(body.aspect || ''),
       duration: Number(body.duration),
       resolution: String(body.resolution || ''),
+      style: v.styleId(body.style),
+      camera: v.oneOf(body.camera || 'auto', Object.keys(CAMERA_MOVES), 'camera', 'Mouvement de caméra'),
       negativePrompt: negativeFor(provider.capabilities, body.negativePrompt),
     };
     const startImage = startUploadId ? await store.readUpload(startUploadId) : null;

@@ -88,11 +88,17 @@ export const TEXT_PRESETS = [
  * Items are draggable onto the timeline, or added at the playhead with +.
  */
 export class Library {
-  constructor({ onAdd, onMediaChange, toast }) {
+  constructor({ onAdd, onMediaChange, toast, panels = {}, getProjectMediaIds, onImported, onRecord, externalTabs = false }) {
     this.onAdd = onAdd;
     this.onMediaChange = onMediaChange;
     this.toast = toast;
+    this.panels = panels;
+    this.getProjectMediaIds = getProjectMediaIds;
+    this.onImported = onImported;
+    this.onRecord = onRecord;
+    this.externalTabs = externalTabs;
     this.tab = 'media';
+    this.mediaFilter = getProjectMediaIds ? 'project' : 'all';
     this.media = [];
     this.stickerState = { category: '', search: '', page: 0 };
     this.soundCategory = SOUND_CATEGORIES[0];
@@ -113,7 +119,7 @@ export class Library {
       this.media = [];
     }
     this.onMediaChange?.(this.media);
-    if (this.tab === 'media') this.render();
+    if (this.tab === 'media' || this.tab === 'audio') this.render();
   }
 
   drag(el, payload) {
@@ -125,40 +131,50 @@ export class Library {
     return el;
   }
 
-  render() {
-    clear(this.el);
-    const tabs = [
+  /** Categories shown in the editor's top bar (or in the panel itself when used alone). */
+  get tabs() {
+    const base = [
       ['media', 'Médias', 'gallery'],
+      ['audio', 'Audio', 'play'],
       ['text', 'Texte', 'info'],
       ['stickers', 'Stickers', 'sparkles'],
-      ['shapes', 'Formes', 'layers'],
-      ['sounds', 'Sons', 'play'],
-      ['ai', 'IA', 'wand'],
     ];
-    const bar = h('div', { class: 'lib-tabs', role: 'tablist', 'aria-label': 'Catégories de la bibliothèque' });
-    for (const [id, label, ic] of tabs) {
-      const b = h(
-        'button',
-        { type: 'button', role: 'tab', 'aria-selected': String(this.tab === id), title: label },
-        icon(ic),
-        h('span', {}, label),
-      );
-      b.addEventListener('click', () => {
-        this.tab = id;
-        this.render();
-      });
-      bar.append(b);
+    const extra = Object.entries(this.panels).map(([id, p]) => [id, p.label, p.icon]);
+    const ai = extra.find(([id]) => id === 'ai');
+    return [...base, ...extra.filter(([id]) => id !== 'ai'), ['ai', 'Outils IA', ai?.[2] || 'wand']];
+  }
+
+  setTab(id) {
+    if (!this.tabs.some(([t]) => t === id)) return;
+    this.tab = id;
+    this.render();
+  }
+
+  render() {
+    clear(this.el);
+    const label = this.tabs.find(([id]) => id === this.tab)?.[1] || '';
+    this.el.setAttribute('aria-label', `Panneau ${label}`);
+    if (!this.externalTabs) {
+      const bar = h('div', { class: 'lib-tabs', role: 'tablist', 'aria-label': 'Catégories de la bibliothèque' });
+      for (const [id, text, ic] of this.tabs) {
+        const b = h('button', { type: 'button', role: 'tab', 'aria-selected': String(this.tab === id), title: text }, icon(ic), h('span', {}, text));
+        b.addEventListener('click', () => this.setTab(id));
+        bar.append(b);
+      }
+      this.el.append(bar);
+    } else {
+      this.el.append(h('div', { class: 'lib-title' }, h('h2', {}, label), this.onClose ? h('button', { class: 'btn btn--sm btn--ghost lib-close', type: 'button', 'aria-label': 'Fermer le panneau', onclick: () => this.onClose() }, icon('close')) : null));
     }
     const body = h('div', { class: 'lib-body' });
-    this.el.append(bar, body);
-    ({
+    this.el.append(body);
+    const own = {
       media: () => this.renderMedia(body),
+      audio: () => this.renderAudio(body),
       text: () => this.renderText(body),
-      stickers: () => this.renderStickers(body),
-      shapes: () => this.renderShapes(body),
-      sounds: () => this.renderSounds(body),
-      ai: () => this.renderAi(body),
-    })[this.tab]();
+      stickers: () => (this.renderStickers(body), body.append(h('h4', {}, 'Formes')), this.renderShapes(body)),
+      ai: () => (this.panels.ai?.render(body), this.renderAi(body)),
+    };
+    (own[this.tab] || (() => this.panels[this.tab]?.render(body)))();
   }
 
   renderMedia(body) {
@@ -189,13 +205,28 @@ export class Library {
     const draw = () => {
       clear(grid);
       const q = filter.value.trim().toLowerCase();
-      const list = this.media.filter((m) => !q || m.name.toLowerCase().includes(q) || m.kind.includes(q));
+      const inProject = new Set(this.getProjectMediaIds?.() || []);
+      const test = {
+        all: () => true,
+        project: (m) => inProject.has(m.id),
+        video: (m) => m.kind === 'video',
+        image: (m) => m.kind === 'image',
+        audio: (m) => m.kind === 'audio',
+        recording: (m) => m.origin === 'recording',
+        fav: (m) => m.favorite,
+        solvex: (m) => m.origin?.startsWith('solvex'),
+      }[this.mediaFilter];
+      const list = this.media.filter((m) => test(m) && (!q || m.name.toLowerCase().includes(q) || m.kind.includes(q)));
       if (!list.length)
         grid.append(
           h(
             'p',
             { class: 'field__hint' },
-            this.media.length ? 'Aucun résultat.' : 'Importez vos fichiers : ils restent stockés dans ce navigateur.',
+            !this.media.length
+              ? 'Importez vos fichiers : ils restent stockés dans ce navigateur.'
+              : this.mediaFilter === 'project' && !q
+                ? 'Aucun média dans ce projet. Importez un fichier ou choisissez « Tout ».'
+                : 'Aucun résultat.',
           ),
         );
       for (const m of list) {
@@ -273,8 +304,59 @@ export class Library {
       }
     };
     filter.addEventListener('input', draw);
+    const chips = h('div', { class: 'chips chips--scroll', role: 'group', 'aria-label': 'Filtrer les médias' });
+    const filters = [
+      ['project', 'Ce projet'],
+      ['all', 'Tout'],
+      ['video', 'Vidéos'],
+      ['image', 'Images'],
+      ['audio', 'Audio'],
+      ['recording', 'Enregistrements'],
+      ['fav', '★ Favoris'],
+      ['solvex', 'Ressources SOLVEX'],
+    ].filter(([id]) => id !== 'project' || this.getProjectMediaIds);
+    for (const [id, label] of filters) {
+      const b = h('button', { type: 'button', class: `btn btn--sm${this.mediaFilter === id ? ' btn--primary' : ''}`, 'aria-pressed': String(this.mediaFilter === id) }, label);
+      b.addEventListener('click', () => {
+        this.mediaFilter = id;
+        chips.querySelectorAll('button').forEach((x) => {
+          const on = x === b;
+          x.classList.toggle('btn--primary', on);
+          x.setAttribute('aria-pressed', String(on));
+        });
+        draw();
+      });
+      chips.append(b);
+    }
+    body.append(drop, status, chips, filter, grid);
     draw();
-    body.append(drop, status, filter, grid);
+  }
+
+  renderAudio(body) {
+    const input = h('input', { type: 'file', multiple: true, accept: 'audio/*', hidden: true });
+    const status = h('p', { class: 'field__hint', 'aria-live': 'polite' });
+    input.addEventListener('change', () => this.importList([...input.files], status));
+    body.append(
+      h(
+        'div',
+        { class: 'insp-actions' },
+        h('label', { class: 'btn btn--sm btn--primary' }, icon('upload'), 'Importer une musique', input),
+        this.onRecord ? h('button', { class: 'btn btn--sm', type: 'button', onclick: () => this.onRecord('audio') }, '● Enregistrer une voix') : null,
+      ),
+      status,
+    );
+    const mine = this.media.filter((m) => m.kind === 'audio');
+    if (mine.length) {
+      const list = h('div', { class: 'sound-list' });
+      for (const m of mine) {
+        const add = h('button', { class: 'btn btn--sm', type: 'button' }, '+ Ajouter');
+        add.addEventListener('click', () => this.onAdd({ type: 'media', id: m.id }));
+        list.append(this.drag(h('div', { class: 'sound-item' }, h('span', { class: 'sound-item__ic' }, icon('play', { size: 16 })), h('div', {}, h('strong', {}, m.name), h('span', { class: 'field__hint' }, m.duration ? formatTime(m.duration) : '')), add), { type: 'media', id: m.id }));
+      }
+      body.append(h('h4', {}, 'Vos fichiers audio'), list);
+    }
+    body.append(h('h4', {}, 'Sons SOLVEX (libres de droits)'));
+    this.renderSounds(body);
   }
 
   async importList(files, status) {
@@ -282,6 +364,7 @@ export class Library {
     const { results, errors } = await importFiles(files, (i, n, name) => (status.textContent = `Import ${i}/${n} : ${name}…`));
     status.textContent = results.length ? `${results.length} fichier(s) importé(s).` : '';
     errors.forEach((e) => this.toast(e, 'error'));
+    if (results.length) this.onImported?.(results);
     await this.reloadMedia();
   }
 
@@ -428,6 +511,7 @@ export class Library {
           const blob = await renderSound(sound.id);
           const file = new File([blob], `${sound.name}.wav`, { type: 'audio/wav' });
           const meta = await importFile(file, { name: `${sound.name} (SOLVEX)`, origin: 'solvex-sound' });
+          this.onImported?.([meta]);
           await this.reloadMedia();
           this.onAdd({ type: 'media', id: meta.id, role: /musique|ambiance/i.test(sound.category) ? 'music' : null });
         } catch (error) {
@@ -465,6 +549,7 @@ export class Library {
 
   async renderAi(body) {
     body.append(
+      h('h4', {}, 'Créer avec SOLVEX AI'),
       h('p', { class: 'field__hint' }, 'Générez dans les studios IA, puis importez le résultat ici.'),
       h(
         'div',
@@ -500,6 +585,7 @@ export class Library {
             const blob = await (await fetch(output.url)).blob();
             const file = new File([blob], `solvex-${creation.id}.${output.mime.split('/')[1]}`, { type: output.mime });
             const meta = await importFile(file, { name: (creation.prompt || 'Création IA').slice(0, 60), origin: 'solvex-ai' });
+            this.onImported?.([meta]);
             await this.reloadMedia();
             this.toast('Création importée dans la bibliothèque.', 'success');
             this.onAdd({ type: 'media', id: meta.id });
