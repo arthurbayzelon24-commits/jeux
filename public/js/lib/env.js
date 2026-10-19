@@ -5,4 +5,11 @@
  */
 export const isStatic = () => window.SOLVEX_STATIC === true;
 
+/**
+ * Static build shown inside the claude.ai sharing frame (no own URL, no
+ * service worker, downloads through the platform). The public website build
+ * (Netlify…) is static too but owns its address: window.SOLVEX_SITE = true.
+ */
+export const isEmbedded = () => isStatic() && window.SOLVEX_SITE !== true;
+
 export const APP_VERSION = '2.1.0';

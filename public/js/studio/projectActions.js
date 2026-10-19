@@ -8,7 +8,7 @@ import { createProject, createClip, addClip, ASPECTS, validateProject } from './
 import { ACCEPT, ACCEPT_ATTR, importFiles, importFile } from './media.js';
 import { openRecorder } from './ui/recorder.js';
 import { saveFile } from '../lib/download.js';
-import { isStatic } from '../lib/env.js';
+import { isEmbedded } from '../lib/env.js';
 
 /**
  * Everything that creates, opens or manages a project, shared by the home
@@ -260,7 +260,7 @@ export async function exportProject(project) {
       data.embeddedMedia.push({ meta: { ...meta, peaks: undefined }, data: dataUrl });
     }
   }
-  await saveFile(new Blob([JSON.stringify(data)], { type: 'application/json' }), `${project.name}.solvex${isStatic() ? '.json' : ''}`).catch((error) => toast(error.message, { type: 'error' }));
+  await saveFile(new Blob([JSON.stringify(data)], { type: 'application/json' }), `${project.name}.solvex${isEmbedded() ? '.json' : ''}`).catch((error) => toast(error.message, { type: 'error' }));
 }
 
 /** Project cards with a ⋯ menu (open, rename, duplicate, export, delete). */

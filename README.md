@@ -63,6 +63,20 @@ Sans aucune clé, la génération d’images fonctionne quand même grâce à **
 
 C’est cette version qui est publiée en lien partageable. Ses projets restent dans le navigateur de chaque visiteur.
 
+## Publier sur Internet (Netlify)
+
+Le dépôt contient `netlify.toml` : Netlify sait construire et publier le site sans autre réglage.
+
+1. Créez un compte gratuit sur [netlify.com](https://www.netlify.com) (connexion avec GitHub).
+2. **Add new site → Import an existing project → GitHub**, puis choisissez ce dépôt et la branche à publier.
+3. Laissez les réglages proposés (ils viennent de `netlify.toml`) et cliquez sur **Deploy**.
+4. Dans **Site configuration → Change site name**, choisissez l’adresse, par exemple `solvex-ai` → `https://solvex-ai.netlify.app` (si ce nom est libre).
+5. Pour Google : ouvrez [Google Search Console](https://search.google.com/search-console), ajoutez l’adresse du site, validez-la (balise HTML ou fichier fourni par Google, à ajouter dans `public/`), puis envoyez `sitemap.xml`. L’apparition dans les résultats prend en général quelques jours.
+
+Ce site public n’a pas de serveur Node : le studio, les éditeurs, l’export, l’installation de l’application et la capture d’écran fonctionnent, mais la génération IA est affichée comme indisponible. Pour la génération, il faut héberger le serveur (`npm start`) avec vos clés, par exemple sur Render ou Railway.
+
+En local : `npm run build:site` produit `dist-site/` (variable `SITE_URL` pour remplir le sitemap et les balises de partage).
+
 ## Mises à jour
 
 Chaque version a son fichier dans [`public/updates/`](public/updates) : `X.Y.Z.json`, avec `version`, `name`, `date` et `notes`. `index.json` indique la dernière version.

@@ -1,5 +1,5 @@
 import { h } from './dom.js';
-import { APP_VERSION, isStatic } from './env.js';
+import { APP_VERSION, isEmbedded } from './env.js';
 import { openModal } from '../components/feedback.js';
 
 /**
@@ -62,7 +62,7 @@ export function compareVersions(a, b) {
   return 0;
 }
 
-const base = () => (isStatic() ? '' : '/');
+const base = () => (isEmbedded() ? '' : '/');
 
 export async function fetchReleases() {
   const index = await fetch(`${base()}updates/index.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => {
@@ -161,7 +161,7 @@ async function promptWaiting(worker, manual) {
 }
 
 export async function initPwa() {
-  if (isStatic() || !('serviceWorker' in navigator) || !window.isSecureContext) {
+  if (isEmbedded() || !('serviceWorker' in navigator) || !window.isSecureContext) {
     setTimeout(() => checkForUpdates(), 4000);
     setInterval(() => checkForUpdates(), 30 * 60 * 1000);
     return;

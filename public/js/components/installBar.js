@@ -3,11 +3,11 @@ import { icon } from './icons.js';
 import { logoMark } from './logo.js';
 import { toast } from './feedback.js';
 import { canInstall, isInstalled, promptInstall, installInstructions } from '../lib/pwa.js';
-import { isStatic } from '../lib/env.js';
+import { isEmbedded } from '../lib/env.js';
 
 /** Why one-click installation is not offered here, if a reason is known. */
 function blocker() {
-  if (isStatic()) return 'Cette version est affichée dans une page de partage (claude.ai) : l’installation n’est possible que depuis votre propre adresse SOLVEX servie en HTTPS.';
+  if (isEmbedded()) return 'Cette version est affichée dans une page de partage (claude.ai) : l’installation n’est possible que depuis votre propre adresse SOLVEX servie en HTTPS.';
   if (!window.isSecureContext) return 'L’installation exige une connexion sécurisée (HTTPS, ou localhost sur votre ordinateur).';
   if (!('serviceWorker' in navigator)) return 'Ce navigateur ne prend pas en charge les applications web installables.';
   return null;

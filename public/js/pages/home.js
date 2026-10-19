@@ -2,7 +2,7 @@ import { h } from '../lib/dom.js';
 import { icon } from '../components/icons.js';
 import { livingMark } from '../components/livingMark.js';
 import { getCapabilities } from '../lib/state.js';
-import { isStatic } from '../lib/env.js';
+import { isEmbedded } from '../lib/env.js';
 import { db } from '../studio/db.js';
 import { openNewProject, openProjectPicker, projectGrid, emptyProjects, recordInto } from '../studio/projectActions.js';
 
@@ -85,7 +85,7 @@ export async function homePage() {
           h('button', { class: 'btn btn--lg', type: 'button', onclick: () => openProjectPicker() }, icon('upload'), 'Ouvrir un projet'),
         ),
       ),
-      h('img', { class: 'home-hero__art', src: `${isStatic() ? '' : '/'}assets/hero-studio.svg`, alt: 'Illustration : un éditeur vidéo avec aperçu, panneau de propriétés et timeline', width: 640, height: 460 }),
+      h('img', { class: 'home-hero__art', src: `${isEmbedded() ? '' : '/'}assets/hero-studio.svg`, alt: 'Illustration : un éditeur vidéo avec aperçu, panneau de propriétés et timeline', width: 640, height: 460 }),
     ),
     h(
       'section',
@@ -158,5 +158,5 @@ export async function homePage() {
     ),
   );
 
-  return { el, title: 'Accueil' };
+  return { el, title: 'Studio créatif : montage vidéo, retouche photo et IA' };
 }

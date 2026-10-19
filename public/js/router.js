@@ -1,4 +1,4 @@
-import { isStatic } from './lib/env.js';
+import { isEmbedded } from './lib/env.js';
 
 const routes = new Map();
 let outlet;
@@ -12,7 +12,7 @@ let memoryPath = null;
 
 /** Current app location as "/path?query". */
 export function currentLocation() {
-  if (isStatic()) {
+  if (isEmbedded()) {
     memoryPath ??= /^#[\w-]+$/.test(location.hash) ? `/${location.hash.slice(1)}` : '/';
     return memoryPath;
   }
@@ -32,12 +32,12 @@ export function defineRoutes(table, { root, afterNavigate }) {
     event.preventDefault();
     navigate(href.replace(/^#/, ''));
   });
-  if (!isStatic()) window.addEventListener('popstate', () => render());
+  if (!isEmbedded()) window.addEventListener('popstate', () => render());
 }
 
 export function navigate(path, { replace = false } = {}) {
   if (path === currentLocation()) return;
-  if (isStatic()) {
+  if (isEmbedded()) {
     memoryPath = path;
     render();
     return;

@@ -1,4 +1,4 @@
-import { isStatic } from './env.js';
+import { isEmbedded } from './env.js';
 
 /**
  * Saves a generated file. On the SOLVEX server a normal browser download is
@@ -14,7 +14,7 @@ export function staticFilename(filename) {
 }
 
 export async function saveFile(blob, filename) {
-  if (isStatic()) {
+  if (isEmbedded()) {
     const downloads = await window.claude?.use?.('downloads');
     if (!downloads) throw new Error('Le téléchargement n’est pas disponible dans cette vue.');
     try {

@@ -1,5 +1,5 @@
 import { h } from '../../lib/dom.js';
-import { isStatic } from '../../lib/env.js';
+import { isEmbedded } from '../../lib/env.js';
 import { icon } from '../../components/icons.js';
 import { openModal, toast } from '../../components/feedback.js';
 import { importFile, formatTime } from '../media.js';
@@ -24,7 +24,7 @@ function pickMime(video) {
  * presses « Démarrer » and grants the browser permission.
  */
 export function openRecorder({ onRecorded, mode: initialMode = 'screen' } = {}) {
-  if (isStatic()) {
+  if (isEmbedded()) {
     openModal(
       h(
         'div',
