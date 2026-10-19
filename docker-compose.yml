@@ -1,0 +1,45 @@
+# SOLVEX AI sur votre serveur : l'application + Caddy (HTTPS automatique).
+#   sudo ./deploy/install.sh        (première installation, voir docs/HEBERGEMENT.md)
+#   docker compose up -d --build    (mise à jour après un git pull)
+services:
+  solvex:
+    build: .
+    image: solvex-ai:latest
+    # Redémarre tout seul après un plantage et au démarrage du serveur.
+    restart: always
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      SOLVEX_DATA_DIR: /app/data
+      SOLVEX_TRUST_PROXY: "true"
+      SOLVEX_SECURE_COOKIES: "true"
+    volumes:
+      - solvex-data:/app/data
+    expose:
+      - "3000"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    depends_on:
+      solvex:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Indiquez DOMAIN dans .env (ex. solvex.mondomaine.fr)}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  solvex-data:
+  caddy-data:
+  caddy-config:

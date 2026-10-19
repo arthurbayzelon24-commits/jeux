@@ -64,6 +64,10 @@ Sans aucune clé, la génération d’images fonctionne quand même grâce à **
 
 C’est cette version qui est publiée en lien partageable. Ses projets restent dans le navigateur de chaque visiteur.
 
+## Héberger sur votre serveur
+
+Installation complète, avec HTTPS, redémarrage automatique et surveillance : `sudo ./deploy/install.sh`. Le guide est dans [docs/HEBERGEMENT.md](docs/HEBERGEMENT.md).
+
 ## Publier sur Internet (Netlify)
 
 Le dépôt contient `netlify.toml` : Netlify sait construire et publier le site sans autre réglage.

@@ -1,0 +1,10 @@
+.git
+.env
+data
+node_modules
+tests
+docs
+dist-site
+dist-static
+solvex-site.zip
+*.log

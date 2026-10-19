@@ -1,0 +1,5 @@
+# Certificat HTTPS Let's Encrypt obtenu et renouvelé automatiquement pour {$DOMAIN}.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy solvex:3000
+}
