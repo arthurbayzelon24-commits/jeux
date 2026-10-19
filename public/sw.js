@@ -1,5 +1,5 @@
 /* SOLVEX AI service worker — generated version line, do not edit by hand. */
-const VERSION = '1f85afba3449';
+const VERSION = '1401b0c74a1f';
 const CACHE = `solvex-shell-${VERSION}`;
 
 // The asset list is produced by `npm run build` (scripts/build.js).

@@ -1,6 +1,6 @@
 # SOLVEX AI — liste de contrôle des fonctionnalités
 
-Version 2.1.0. Signification des statuts :
+Version 2.2.0. Signification des statuts :
 
 | Statut | Sens |
 | --- | --- |
@@ -116,6 +116,14 @@ Version 2.1.0. Signification des statuts :
 ## IA et assistant
 | Fonction | Statut |
 | --- | --- |
+| SOLVEX AI conversationnel : vrai modèle de langage OpenAI, outils réels (image, vidéo, musique), contexte conservé, génération seulement sur demande | ✅ (testé avec un serveur imitant l’API OpenAI ; à confirmer avec une vraie clé) |
+| SOLVEX AI dans la version claude.ai : réponses de Claude (sans génération) | 🟢 (dépend de l’autorisation donnée dans claude.ai ; non testable hors de claude.ai) |
+| Bouton « Générer l’image » toujours visible, clavier, souris, tactile | ✅ |
+| Formats 1:1, 2:3, 3:4, 4:5, 9:16, 3:2, 4:3, 16:9, 21:9 ; résolutions 512 px à 4K selon le modèle, raison affichée si indisponible | ✅ |
+| Qualité Standard / Élevée / Très élevée / Ultra reliée au paramètre réel du modèle | ✅ (OpenAI) · 🟡 Pollinations : un seul niveau |
+| 4K native (gpt-image-2 en 16:9, 9:16, 21:9) ; agrandissement par IA | ✅ native · ⛔ agrandissement IA non branché |
+| Dimensions prévues avant et dimensions réelles après la génération | ✅ |
+| Site public : génération d’images depuis le navigateur (Pollinations) et « Mes créations » locales | ✅ (service simulé dans les tests ; service réel non joignable depuis l’environnement de développement) |
 | Génération texte → image et image → image (OpenAI) | ✅ (test avec un fournisseur factice ; à confirmer avec une vraie clé) |
 | Génération texte → image gratuite sans clé (Pollinations, service tiers signalé) | 🟢 (adaptateur testé avec des réponses simulées ; service réel non joignable depuis l’environnement de développement) |
 | Choix du modèle quand plusieurs services sont configurés ; options affichées selon le modèle (formats, qualité, référence, instruction négative) | ✅ |
@@ -151,6 +159,24 @@ Version 2.1.0. Signification des statuts :
 | 4 préréglages réseaux sociaux | 🟢 |
 | Partage natif (Web Share) quand le navigateur le permet | 🟢 |
 | Publication directe sur YouTube, TikTok ou WhatsApp (nécessite une application OAuth officielle) | ⛔ |
+
+## Audio (2.2)
+| Fonction | Statut |
+| --- | --- |
+| Panneau Audio : recherche, 14 catégories, écoute, ajout à la timeline | ✅ |
+| 30 musiques et 6 ambiances originales SOLVEX (libres de droits) + 19 effets | ✅ (les 55 rendus vérifiés non silencieux) |
+| Bibliothèques en ligne Jamendo et Freesound, avec licence | 🟢 (formats d’API testés ; services réels à confirmer avec vos clés) |
+| Import MP3, WAV, OGG, FLAC ; M4A/AAC selon le navigateur | ✅ (M4A/AAC refusés par Chromium sans codecs propriétaires, avec message clair) |
+| Clip audio : déplacer, couper, volume, fondus, remplacer, ajuster à la vidéo, retirer | ✅ |
+| Bouton Audio à côté du lecteur ; son dans l’aperçu et dans l’export | ✅ (niveau mesuré dans l’aperçu et dans le fichier exporté) |
+| Synthèse vocale par IA | ⛔ |
+
+## Textes stylisés (2.2)
+| Fonction | Statut |
+| --- | --- |
+| 34 modèles en 12 catégories dans Stickers (vidéo) et dans l’éditeur photo | ✅ |
+| Police, taille, couleur, dégradé, contour, ombre, lueur, fond, alignement, opacité, rotation, animations | ✅ |
+| Texte présent dans l’aperçu et dans l’export (vidéo et PNG) | ✅ (pixels vérifiés dans les fichiers exportés) |
 
 ## Application, paramètres, mises à jour
 | Fonction | Statut |

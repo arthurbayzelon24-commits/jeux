@@ -2828,3 +2828,15 @@ body.is-app .editor {
     grid-template-columns: minmax(200px, 240px) minmax(0, 1fr) minmax(240px, 280px);
   }
 }
+@media (max-width: 900px) {
+  .audio-pop {
+    position: fixed;
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+    bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+  }
+  .audio-pop__row {
+    grid-template-columns: minmax(0, 1fr) minmax(90px, 1.2fr) 44px;
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "version": "2.2.0",
+  "name": "IA créative",
+  "date": "2026-10-19",
+  "notes": [
+    "Génération d’images réparée : le bouton « Générer l’image » reste toujours visible, avec validation, progression et nouvel essai.",
+    "Formats 1:1, 2:3, 3:4, 4:5, 9:16, 3:2, 4:3, 16:9 et 21:9 ; résolutions de 512 px à 4K selon les limites réelles du modèle ; qualité Standard, Élevée, Très élevée, Ultra.",
+    "Dimensions prévues avant la génération et dimensions réelles du fichier après, sans agrandissement caché.",
+    "Le site public génère des images directement depuis le navigateur (Pollinations, sans clé).",
+    "SOLVEX AI conversationnel : un vrai modèle de langage qui propose des idées et lance de vraies générations d’images et de vidéos.",
+    "Audio : bibliothèque organisée en 14 catégories, 30 musiques et 6 ambiances originales libres de droits, import de vos musiques, bouton Audio à côté du lecteur.",
+    "Textes stylisés : 34 modèles (néon, cinéma, dégradé, bulles, badges…) entièrement personnalisables dans les éditeurs vidéo et photo.",
+    "Interface plus compacte, plus de place pour l’aperçu et la timeline."
+  ]
+}

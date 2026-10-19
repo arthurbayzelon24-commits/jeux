@@ -21,6 +21,7 @@ L’identité visuelle est propre à SOLVEX : un losange prismatique bleu, viole
   - textes animés, stickers, formes, sous-titres SRT et VTT ;
   - outils audio, assistant de montage, export vidéo réel.
 - **Éditeur photo** : calques, 14 réglages, filtres, courbe, LUT `.cube`, recadrage, formats réseaux sociaux, collage, outils IA.
+- **SOLVEX AI** (`/assistant`) : assistant conversationnel branché sur un vrai modèle de langage (OpenAI). Il propose des idées, rédige des descriptions détaillées et lance de vraies générations d’images et de vidéos quand on le lui demande ; il garde le contexte (« rends les couleurs plus froides »). Dans la version claude.ai, c’est Claude qui répond (sans génération).
 - **Outils IA** (`/images`, `/videos`, `/retouche`) : génération par OpenAI ou Pollinations (images) et Google Veo (vidéo), avec choix du modèle, brouillon conservé et « Envoyer vers l’éditeur ».
 - **Mes créations** (`/galerie`) : images et vidéos générées, conservées sur le serveur.
 - **Paramètres** (`/parametres`) : Apparence, Préférences de création, Stockage et projets, Installation (barre « Installer SOLVEX AI sur mon appareil »), Confidentialité et sécurité, Informations. Il n’y a pas de comptes utilisateurs, donc pas de section Compte.
@@ -77,6 +78,18 @@ Ce site public n’a pas de serveur Node : le studio, les éditeurs, l’export,
 
 En local : `npm run build:site` produit `dist-site/` (variable `SITE_URL` pour remplir le sitemap et les balises de partage).
 
+## Audio et textes
+
+- **Panneau Audio** de l’éditeur vidéo : recherche, 14 catégories (musiques d’ambiance, cinématiques, électroniques, calmes, dynamiques, joyeuses, dramatiques, vidéos courtes, vlogs, présentations, sons d’ambiance, bruitages, effets sonores, voix et narration), écoute, ajout sur la piste Musique ou Voix.
+  - **Bibliothèque SOLVEX** : 30 musiques et 6 ambiances originales synthétisées dans le navigateur, plus 19 effets — libres de droits (CC0). Ce n’est pas un catalogue commercial : pour plus de choix, branchez Jamendo et Freesound ou importez vos musiques.
+  - **Vos fichiers** : MP3, WAV, OGG, FLAC ; M4A/AAC selon le navigateur (Chrome, Edge, Safari). Écoute, ajout, déplacement, découpe, volume, fondus, remplacement, « Ajuster à la durée de la vidéo ».
+  - **Bouton Audio** à côté du lecteur : volume de lecture (sans effet sur l’export), volume du clip sélectionné, bibliothèque, import direct.
+- **Textes stylisés** (Stickers) : 34 modèles en 12 catégories, puis police, taille, couleur, dégradé, contour, ombre, lueur néon, fond (boîte, pilule, bulle, soulignement, cadre), alignement, opacité, rotation, animations. Dessinés par le même moteur dans l’aperçu et l’export, en vidéo comme en photo.
+
+## Notifications « VoltStack »
+
+Aucune ligne du code de SOLVEX (application, serveur, configuration Netlify) ne mentionne VoltStack et l’application n’affiche aucune notification de ce nom. Ces messages viennent donc de l’extérieur de SOLVEX : le plus souvent une extension du navigateur, ou l’outil de prévisualisation ou d’hébergement utilisé. Pour les faire disparaître : désactivez l’extension concernée (ouvrez SOLVEX dans une fenêtre de navigation privée pour vérifier), ou ouvrez SOLVEX à sa propre adresse plutôt que dans l’outil de prévisualisation.
+
 ## Mises à jour
 
 Chaque version a son fichier dans [`public/updates/`](public/updates) : `X.Y.Z.json`, avec `version`, `name`, `date` et `notes`. `index.json` indique la dernière version.
@@ -100,6 +113,9 @@ Toutes les variables sont listées et commentées dans [`.env.example`](.env.exa
 | `OPENAI_TRANSCRIBE_MODEL` | Transcription automatique des sous-titres (facultatif) | vide, donc désactivée |
 | `POLLINATIONS_ENABLED` | Génération d’images gratuite sans clé (service tiers) | `true` |
 | `POLLINATIONS_MODEL` | Modèle Pollinations à demander (facultatif) | vide, donc modèle par défaut du service |
+| `OPENAI_CHAT_MODEL` | Modèle de l’assistant SOLVEX AI (avec `OPENAI_API_KEY`) | vide, donc `OPENAI_TEXT_MODEL`, sinon assistant désactivé |
+| `JAMENDO_CLIENT_ID` | Musiques Creative Commons en ligne dans le panneau Audio (facultatif) | — |
+| `FREESOUND_API_KEY` | Bruitages et ambiances en ligne dans le panneau Audio (facultatif) | — |
 | `GEMINI_API_KEY` | Génération de vidéos | — |
 | `GEMINI_VIDEO_MODEL` | Modèle vidéo | `veo-3.1-generate-preview` |
 | `SOLVEX_ACCESS_CODE` | Protéger l’instance par un code | vide, donc aucune protection |
@@ -122,10 +138,24 @@ Ce que l’interface **ne prétend pas** faire :
 - **Les visuels de l’accueil sont des compositions CSS décoratives.** Ils sont étiquetés « Exemple illustratif » et ne sont pas des générations.
 - **Pas de génération à partir d’une image seule chez OpenAI.** L’API exige une instruction : SOLVEX envoie alors une consigne de variation explicite, signalée dans le détail de la création.
 
+### Formats, résolutions et qualité des images
+
+Les résolutions fixent le côté long : 512 px, 720p (1280 px), 1080p (1920 px), 1440p (2560 px), 4K (3840 px). Les dimensions exactes dépendent du format (16:9 en 4K = 3840 × 2160) et sont affichées avant de lancer la génération ; le fichier réellement obtenu est mesuré et affiché après.
+
+| Modèle | Formats | Résolutions natives | Qualité |
+| --- | --- | --- | --- |
+| `gpt-image-2` (OpenAI) | 1:1, 2:3, 3:4, 4:5, 9:16, 3:2, 4:3, 16:9, 21:9 | 720p à 1440p partout ; **4K native en 16:9, 9:16 et 21:9** (le carré 4K, 3840 × 3840, dépasse la limite de 8,3 Mpx du modèle et est refusé avec la raison) ; 512 px refusé (sous le minimum de 655 360 px) | Standard → `quality=low`, Élevée → `medium`, Très élevée → `high`, Ultra/4K → `high` + plus grande taille native du format |
+| `gpt-image-1*` | 1:1, 3:2, 2:3 | tailles fixes 1024 × 1024, 1536 × 1024, 1024 × 1536 | idem |
+| Pollinations | les 9 formats | toutes demandées telles quelles ; **le service ne garantit pas la taille** : la taille réelle est affichée | un seul niveau (pas de réglage de qualité) |
+
+Aucun agrandissement par IA n’est branché : SOLVEX ne présente jamais une image agrandie comme générée en 4K. L’agrandissement local de la page Retouche est une interpolation, signalée comme telle.
+
 ### Points à vérifier au premier essai réel
 
 - **OpenAI a arrêté l’API vidéo Sora** (`sora-2`, Videos API) **le 24 septembre 2026**, sans remplaçant. La vidéo passe donc par Veo.
 - **`gpt-image-1` est arrêté par OpenAI le 23 octobre 2026.** Gardez `gpt-image-2`, ou un modèle plus récent comme ceux de la famille `gpt-image-2.5` : vérifiez d’abord ses tailles et qualités, puis ajustez `FLEXIBLE_ASPECTS` si besoin.
+- **Assistant :** testé avec un serveur imitant l’API Chat Completions d’OpenAI (même format de requêtes, d’appels d’outils et de réponses), pas avec le vrai service, inaccessible depuis l’environnement de développement. Indiquez dans `OPENAI_CHAT_MODEL` un modèle de discussion de votre compte qui accepte les outils (« function calling »).
+- **Jamendo et Freesound :** formats d’API (v3 et v2) reproduits dans les tests, services réels non joignables depuis l’environnement de développement. Les licences de chaque morceau sont affichées ; certaines interdisent l’usage commercial.
 - **Pollinations :** adresse et paramètres non vérifiables depuis l’environnement de développement (réseau bloqué). Si le service change d’adresse ou renvoie autre chose qu’une image, l’erreur « Pollinations n’a pas renvoyé d’image » s’affiche ; ajustez alors `POLLINATIONS_BASE_URL`.
 - **Veo, style et caméra :** l’API n’a pas de paramètre « style » ni « mouvement de caméra » ; ces choix sont ajoutés en fin de description (`Style: …`, `Camera: …`), et l’interface le dit. L’instruction négative est envoyée dans `parameters.negativePrompt`.
 - **Veo, image vers vidéo :** l’image de départ est envoyée en `instances[0].image = { bytesBase64Encoded, mimeType }`. Si l’API refuse ce format, le message d’erreur du fournisseur s’affiche tel quel ; il suffit alors d’ajuster cette seule ligne de `googleVeo.js`.

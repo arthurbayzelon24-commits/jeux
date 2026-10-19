@@ -12,4 +12,4 @@ export const isStatic = () => window.SOLVEX_STATIC === true;
  */
 export const isEmbedded = () => isStatic() && window.SOLVEX_SITE !== true;
 
-export const APP_VERSION = '2.1.0';
+export const APP_VERSION = '2.2.0';
