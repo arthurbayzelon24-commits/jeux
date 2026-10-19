@@ -12,13 +12,46 @@ import { videosPage } from './pages/videos.js';
 import { enhancePage } from './pages/enhance.js';
 import { galleryPage } from './pages/gallery.js';
 import { emptyStage } from './pages/studioShared.js';
+import { dashboardPage } from './studio/pages/dashboard.js';
+import { videoEditorPage } from './studio/pages/videoEditor.js';
+import { photoEditorPage } from './studio/pages/photoEditor.js';
+import { settingsPage } from './pages/settings.js';
+import { applyPrefs, getPrefs } from './lib/prefs.js';
+import { initPwa } from './lib/pwa.js';
+import { isStatic } from './lib/env.js';
+import { setCapabilities } from './lib/state.js';
 
 const NAV = [
+  { path: '/studio', label: 'Studio' },
   { path: '/images', label: 'Images' },
   { path: '/videos', label: 'Vidéos' },
   { path: '/retouche', label: 'Retouche' },
   { path: '/galerie', label: 'Galerie' },
+  { path: '/parametres', label: 'Paramètres' },
 ];
+
+// Capabilities shown by the public static build (no Node server behind it).
+const STATIC_CAPABILITIES = {
+  static: true,
+  providers: [],
+  styles: [
+    ['realiste', 'Réaliste'],
+    ['cinematique', 'Cinématique'],
+    ['anime', 'Anime'],
+    ['illustration', 'Illustration'],
+    ['3d', '3D'],
+    ['fantaisie', 'Fantaisie'],
+    ['cyberpunk', 'Cyberpunk'],
+    ['artistique', 'Artistique'],
+    ['photographie', 'Photographie'],
+    ['publicite', 'Publicité'],
+    ['personnalise', 'Personnalisé'],
+  ].map(([id, label]) => ({ id, label })),
+  promptEnhancement: { method: 'local' },
+  limits: { maxUploadBytes: 20 * 1024 * 1024, maxPromptLength: 4000 },
+  editOperations: [],
+  transcription: null,
+};
 
 function notFoundPage() {
   return {
@@ -76,6 +109,12 @@ function renderHeaderStatus(capabilities) {
   if (!capabilities) {
     statusEl.dataset.state = 'off';
     statusEl.lastChild.textContent = 'Hors ligne';
+    return;
+  }
+  if (capabilities.static) {
+    statusEl.dataset.state = 'partial';
+    statusEl.lastChild.textContent = 'Version sans serveur';
+    statusEl.title = 'Le studio de montage fonctionne entièrement dans le navigateur. La génération IA nécessite le serveur SOLVEX.';
     return;
   }
   const configured = capabilities.providers.filter((p) => p.configured).length;
@@ -136,7 +175,7 @@ function buildHeader() {
       statusEl,
       h(
         'a',
-        { class: 'btn btn--primary btn--sm btn--create', href: '/images', 'data-link': '', 'aria-label': 'Créer' },
+        { class: 'btn btn--primary btn--sm btn--create', href: '/studio', 'data-link': '', 'aria-label': 'Créer' },
         icon('sparkles'),
         h('span', {}, 'Créer'),
       ),
@@ -178,7 +217,9 @@ function buildOfflineBanner() {
 }
 
 async function boot() {
-  const intro = playIntro();
+  applyPrefs();
+  const prefs = getPrefs();
+  const intro = prefs.showIntro ? playIntro() : { track: (promise) => promise, done: () => {} };
   const { header, nav } = buildHeader();
   const main = h('main', { id: 'contenu' });
   const footer = h(
@@ -188,22 +229,26 @@ async function boot() {
       'div',
       { class: 'container' },
       h('span', {}, '© ', String(new Date().getFullYear()), ' SOLVEX AI — studio créatif génératif'),
-      h('span', {}, 'Les résultats dépendent des fournisseurs d’IA configurés sur ce serveur.'),
+      h('span', {}, 'Studio de montage local · génération selon les fournisseurs d’IA configurés'),
+      h('a', { href: '/parametres?section=version', 'data-link': '' }, 'Version et mises à jour'),
     ),
   );
   document.getElementById('app').replaceChildren(header, buildOfflineBanner(), main, footer);
 
   const highlight = (path) => {
     for (const link of nav.querySelectorAll('a')) {
-      if (link.getAttribute('href') === path) link.setAttribute('aria-current', 'page');
+      const href = link.getAttribute('href');
+      if (href === path || (href === '/studio' && path.startsWith('/studio'))) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     }
   };
 
-  try {
-    session = await intro.track(api.session(), 'Connexion au serveur');
-  } catch {
-    // Offline: keep going so the interface stays usable.
+  if (!isStatic()) {
+    try {
+      session = await intro.track(api.session(), 'Connexion au serveur');
+    } catch {
+      // Offline: keep going so the interface stays usable.
+    }
   }
 
   const guard = (page) => (ctx) => (session.authRequired && !session.authenticated ? loginPage() : page(ctx));
@@ -214,6 +259,10 @@ async function boot() {
       '/videos': guard(videosPage),
       '/retouche': guard(enhancePage),
       '/galerie': guard(galleryPage),
+      '/studio': guard(dashboardPage),
+      '/studio/video': guard(videoEditorPage),
+      '/studio/photo': guard(photoEditorPage),
+      '/parametres': guard(settingsPage),
       '*': notFoundPage,
     },
     { root: main, afterNavigate: highlight },
@@ -223,7 +272,10 @@ async function boot() {
     render();
   });
 
-  if (!session.authRequired || session.authenticated) {
+  if (isStatic()) {
+    setCapabilities(STATIC_CAPABILITIES);
+    renderHeaderStatus(STATIC_CAPABILITIES);
+  } else if (!session.authRequired || session.authenticated) {
     try {
       renderHeaderStatus(await intro.track(loadCapabilities(), 'Lecture des capacités des modèles'));
     } catch {
@@ -235,6 +287,7 @@ async function boot() {
   }
   await intro.track(render(), 'Préparation du studio');
   intro.done();
+  initPwa();
 }
 
 boot();

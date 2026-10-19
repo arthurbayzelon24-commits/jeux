@@ -4,6 +4,7 @@ import { HttpError, readBody, readJson, sendJson } from '../lib/http.js';
 import { inspectImage, mimeFromExtension } from '../lib/files.js';
 import { isValidId } from '../lib/store.js';
 import { canEnhanceWithModel, enhanceLocally, enhanceWithModel, STYLES } from '../lib/prompt.js';
+import { transcribe } from '../lib/transcribe.js';
 import * as v from '../lib/validate.js';
 
 const VARIATION_INSTRUCTION =
@@ -108,6 +109,10 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       promptEnhancement: canEnhanceWithModel(config) ? { method: 'model', model: config.openai.textModel } : { method: 'local' },
       limits: { maxUploadBytes: config.maxUploadBytes, maxPromptLength: v.MAX_PROMPT_LENGTH },
       editOperations: Object.entries(EDIT_OPERATIONS).map(([id, op]) => ({ id, label: op.label, needsPrompt: op.needsPrompt })),
+      transcription:
+        config.openai.apiKey && config.openai.transcribeModel
+          ? { model: config.openai.transcribeModel, maxBytes: config.maxTranscribeBytes }
+          : null,
     });
   });
 
@@ -119,6 +124,18 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
     const { ok, ...meta } = info;
     const id = await store.saveUpload(buffer, meta);
     sendJson(res, 201, { id, ...meta, bytes: buffer.length });
+  });
+
+  add('POST', /^\/api\/transcribe$/, async (req, res) => {
+    if (!config.openai.apiKey || !config.openai.transcribeModel) {
+      throw new HttpError(503, 'La transcription n’est pas configurée (OPENAI_TRANSCRIBE_MODEL).', { code: 'provider_not_configured' });
+    }
+    const type = String(req.headers['content-type'] || '').split(';')[0];
+    if (!/^(audio|video)\//.test(type)) throw new HttpError(415, 'Envoyez un fichier audio ou vidéo.', { code: 'invalid_file' });
+    limiter.check(`generate:${ip(req)}`, config.rateLimit.generatePerMinute);
+    const buffer = await readBody(req, config.maxTranscribeBytes);
+    const result = await transcribe(config, { buffer, mime: type }, { signal: AbortSignal.timeout(280_000) });
+    sendJson(res, 200, result);
   });
 
   add('POST', /^\/api\/prompt\/enhance$/, async (req, res) => {

@@ -35,6 +35,7 @@ export function loadConfig(overrides = {}) {
     secureCookies: str('SOLVEX_SECURE_COOKIES', 'false') === 'true',
     trustProxy: str('SOLVEX_TRUST_PROXY', 'false') === 'true',
     maxUploadBytes: int('SOLVEX_MAX_UPLOAD_MB', 20) * 1024 * 1024,
+    maxTranscribeBytes: 25 * 1024 * 1024,
     uploadTtlMs: int('SOLVEX_UPLOAD_TTL_MIN', 60) * 60 * 1000,
     rateLimit: {
       generatePerMinute: int('SOLVEX_RATE_GENERATE_PER_MIN', 6),
@@ -53,6 +54,8 @@ export function loadConfig(overrides = {}) {
       imageModel: str('OPENAI_IMAGE_MODEL', 'gpt-image-2'),
       // No default: prompt enhancement by LLM is only enabled when a model is named explicitly.
       textModel: str('OPENAI_TEXT_MODEL'),
+      // No default either: transcription is enabled only with an explicitly named model.
+      transcribeModel: str('OPENAI_TRANSCRIBE_MODEL'),
     },
     google: {
       apiKey: str('GEMINI_API_KEY'),

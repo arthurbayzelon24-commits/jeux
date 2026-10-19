@@ -29,3 +29,9 @@ export function providerFor(kind) {
   const list = capabilities?.providers?.filter((provider) => provider.kind === kind) || [];
   return list.find((provider) => provider.configured) || list[0] || null;
 }
+
+/** Used by the static build, which has no server to ask. */
+export function setCapabilities(data) {
+  capabilities = data;
+  window.dispatchEvent(new CustomEvent('solvex:capabilities', { detail: data }));
+}

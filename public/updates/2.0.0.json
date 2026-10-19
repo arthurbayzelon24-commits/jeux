@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "name": "SOLVEX Creative Studio",
+  "date": "2026-10-19",
+  "notes": [
+    "Nouveau logo SOLVEX (losange prismatique).",
+    "Éditeur vidéo multipiste : découpe, fractionnement, aimantation, groupes, marqueurs, points d’entrée/sortie, annulation illimitée.",
+    "Transitions (17), effets visuels (20), images clés, masques, incrustation sur fond vert, textes animés, stickers et formes.",
+    "Audio : volumes, fondus, panoramique, détachement, normalisation, détection des silences et des pics, atténuation automatique de la musique.",
+    "Sous-titres manuels, import/export SRT et VTT, contrôle de lisibilité.",
+    "Éditeur photo à calques : réglages, courbe, LUT .cube, filtres, recadrage, formats réseaux sociaux, collages, outils IA.",
+    "Enregistreur d’écran, de webcam et de micro, assistant de montage, export vidéo réel.",
+    "Paramètres complets, musique d’ambiance de l’application, installation et mises à jour."
+  ]
+}

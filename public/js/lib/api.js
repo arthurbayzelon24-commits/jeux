@@ -1,3 +1,5 @@
+import { isStatic } from './env.js';
+
 export class ApiError extends Error {
   constructor(message, { status = 0, code = 'error', details } = {}) {
     super(message);
@@ -18,6 +20,12 @@ function notify(online) {
 }
 
 async function request(path, { method = 'GET', body, headers = {}, signal, timeout = 30_000 } = {}) {
+  if (isStatic()) {
+    throw new ApiError(
+      'Fonction indisponible dans la version publique : elle nécessite le serveur SOLVEX (voir le README pour le lancer).',
+      { code: 'static' },
+    );
+  }
   const init = { method, headers: { ...headers }, credentials: 'same-origin' };
   if (body instanceof Blob || body instanceof ArrayBuffer) {
     init.body = body;
@@ -75,6 +83,13 @@ export const api = {
   retry: (id) => request(`/api/creations/${encodeURIComponent(id)}/retry`, { method: 'POST' }),
   remove: (id) => request(`/api/creations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   saveLocal: (payload) => request('/api/creations/local', { method: 'POST', body: payload }),
+  transcribe: (blob) =>
+    request('/api/transcribe', {
+      method: 'POST',
+      body: blob,
+      headers: { 'Content-Type': blob.type || 'application/octet-stream' },
+      timeout: 300_000,
+    }),
 };
 
 /**

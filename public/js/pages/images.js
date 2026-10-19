@@ -65,7 +65,7 @@ export function imagesPage() {
     name: 'aspect',
     options: aspectOptions(),
     value: state.aspect,
-    hint: supported.size < ALL_ASPECTS.length ? `Formats barrés : non pris en charge par ${provider?.model}.` : null,
+    hint: provider && supported.size < ALL_ASPECTS.length ? `Formats barrés : non pris en charge par ${provider.model}.` : null,
     onChange: (value) => {
       state.aspect = value;
       syncResolution();

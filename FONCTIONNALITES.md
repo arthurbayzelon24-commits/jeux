@@ -1,0 +1,148 @@
+# SOLVEX AI — liste de contrôle des fonctionnalités
+
+Version 2.0.0. Signification des statuts :
+
+| Statut | Sens |
+| --- | --- |
+| ✅ **Implémenté et testé** | Vérifié par les tests automatisés (`npm test`) ou par le test navigateur de bout en bout (Chromium). |
+| 🟢 **Implémenté** | Code réel, vérifié manuellement ou partiellement. |
+| 🟡 **Limité** | Fonctionne, avec une restriction expliquée. |
+| ⛔ **Non disponible** | Non implémenté. L’interface l’indique ; rien n’est simulé. |
+
+**Version publique en ligne (lien claude.ai) :**
+- Elle fonctionne sans serveur : studio, éditeur vidéo, éditeur photo et retouche locale.
+- La génération IA, la galerie serveur et la capture (écran, webcam, micro) n’y sont pas disponibles.
+- Les téléchargements passent par une confirmation de la plateforme.
+
+## Tableau de bord et projets
+| Fonction | Statut |
+| --- | --- |
+| Nouveau projet (3 cartes : photo, vidéo, IA), ouvrir, récents, recherche, favoris | ✅ |
+| Nom, miniature, date, type et état de sauvegarde de chaque projet | ✅ |
+| Bibliothèque multimédia (import, recherche, favoris, suppression avec confirmation) | ✅ |
+| Modèles : 12 modèles, dont les formats verticaux, les tutoriels, les diaporamas et la publicité ; le média se dépose sur un emplacement | 🟢 |
+| Renommer, dupliquer, supprimer (avec confirmation), exporter/importer `.solvex` (médias inclus en option) | 🟢 |
+| Sauvegarde automatique, sauvegarde manuelle (Ctrl+S), journal de récupération après interruption | ✅ |
+| Stockage : IndexedDB du navigateur. Pas de synchronisation entre appareils (transfert par l’export `.solvex`) | 🟡 |
+
+## Éditeur vidéo
+| Fonction | Statut |
+| --- | --- |
+| Import de plusieurs médias (vidéo, image, audio), glisser-déposer dans la timeline | ✅ |
+| Timeline multipiste : pistes vidéo, audio et texte, verrouillage, masquage, sourdine, rôles « Voix » et « Musique » | ✅ |
+| Découpe aux deux bords, division au curseur, suppression, duplication, copier-coller, déplacement entre pistes | ✅ |
+| Points d’entrée et de sortie, suppression de la portion avec resserrage, marqueurs | 🟢 |
+| Aimantation, zoom de la timeline, sélection multiple, groupes | 🟢 |
+| Annuler et rétablir illimités, historique cliquable | ✅ |
+| Aperçu temps réel sur canvas, image par image, boucle, plein écran | ✅ |
+| Mode débutant / avancé | 🟢 |
+| Superposition de vidéos, d’images, de textes, de stickers et de formes ; opacité, ordre des calques, 10 modes de fusion | 🟢 |
+| Masques rectangle, ellipse et tracé libre, contour progressif, inversion, masques animés | 🟢 |
+| Incrustation sur fond vert ou bleu (pipette, tolérance, contour, suppression du débordement) | 🟢 |
+| 17 transitions (durée, direction, intensité), applicables à toute une piste | ✅ |
+| 20 effets réglables : flou, netteté, lueur, VHS, glitch, grain, pixelisation, tremblement, etc. | ✅ |
+| Vitesse constante de 0,25× à 4× (hauteur du son conservée en option) | 🟢 |
+| Images clés (position, échelle, rotation, opacité, volume, couleur, masque), 5 interpolations, préréglages, copier-coller d’animation | ✅ |
+| Correction des couleurs (exposition, contraste, saturation, température, teinte, rotation de teinte, vignettage), préréglages, copier-coller | ✅ |
+| Rampes de vitesse, courbes de vitesse, lecture inversée, interpolation d’images | ⛔ |
+| Séquences imbriquées et compositions réutilisables | ⛔ |
+| Courbes, roues chromatiques, LUT et histogramme pour la vidéo (disponibles en photo) | ⛔ |
+| Suivi de mouvement (objet, visage, planaire) | ⛔ |
+| Stabilisation, correction fisheye, anti-scintillement, super-résolution IA vidéo | ⛔ |
+| Montage multicaméra, vidéo à 360° | ⛔ (feuille de route) |
+
+## Audio
+| Fonction | Statut |
+| --- | --- |
+| Pistes audio multiples, forme d’onde, volume par clip et par piste, fondus, panoramique, sourdine | ✅ |
+| Détacher l’audio d’une vidéo, normalisation (−1 dBFS), détection des pics (marqueurs) | 🟢 |
+| Détection et coupe des silences (seuil −40 dB, 0,6 s minimum) | ✅ |
+| Atténuation automatique de la musique pendant la voix | 🟢 |
+| Bibliothèque de 19 sons synthétisés par SOLVEX (CC0) : interface, transitions, bruitages, gaming, ambiances | 🟢 |
+| Réduction de bruit, égaliseur, compresseur, réverbération, amélioration de voix | ⛔ |
+| Musique et effets sonores générés par IA, bibliothèque musicale commerciale | ⛔ |
+
+## Texte et sous-titres
+| Fonction | Statut |
+| --- | --- |
+| Textes et titres | 🟢 |
+| 8 modèles de textes | 🟢 |
+| 6 polices système | 🟢 |
+| Taille, graisse, italique, espacement, interligne, alignement | 🟢 |
+| Couleur, dégradé, contour, ombre, fond | 🟢 |
+| Animations : 7 entrées, 7 sorties, 3 animations en continu | 🟢 |
+| Déplacement du texte à la souris dans l’aperçu | 🟢 |
+| Sous-titres manuels avec mot mis en évidence (`*mot*`) | ✅ |
+| Import et export SRT / VTT | ✅ |
+| Alertes de lisibilité (chevauchements, durée trop courte, lecture trop rapide) | ✅ |
+| Transcription automatique (avec `OPENAI_TRANSCRIBE_MODEL`, minutage avec Whisper) | 🟡 |
+| Traduction et import de polices | ⛔ |
+
+## Stickers, formes, modèles
+| Fonction | Statut |
+| --- | --- |
+| Catalogue de stickers : environ 350 émojis Unicode en 12 catégories | 🟢 |
+| Recherche, pagination et favoris des stickers ; l’API est prévue pour 100 000 éléments | 🟢 |
+| 8 formes (cadre, bandeau de titre, contour lumineux…) | 🟢 |
+| Stickers animés, éléments 3D, stickers générés par IA | ⛔ |
+
+## Éditeur photo
+| Fonction | Statut |
+| --- | --- |
+| Calques (image, texte, forme, sticker) : ordre, visibilité, opacité, fusion, transformation | ✅ |
+| Recadrage, rotation, retournement | 🟢 |
+| Taille de toile et 8 formats réseaux sociaux | 🟢 |
+| Fond uni, dégradé ou transparent | 🟢 |
+| Collage en grille | 🟢 |
+| 14 réglages (exposition, hautes lumières, ombres, blancs, noirs, vibrance, netteté, débruitage…) | ✅ |
+| 10 filtres, courbe de tonalité, LUT 3D `.cube` | ✅ |
+| Avant / après, annuler / rétablir, export PNG, JPEG ou WebP (taille et qualité au choix) | ✅ |
+| IA (avec `OPENAI_API_KEY`) : modification par instruction, suppression d’objet (masque peint) | 🟢 |
+| IA : remplacement de l’arrière-plan, fond uni, extension de l’image, style, variante | 🟢 |
+| Colorisation | 🟡 (expérimental) |
+| Correction de perspective, détourage précis sans IA | ⛔ |
+
+## IA et assistant
+| Fonction | Statut |
+| --- | --- |
+| Génération texte → image et image → image (OpenAI) | ✅ (test avec un fournisseur factice ; à confirmer avec une vraie clé) |
+| Génération texte → vidéo et image → vidéo (Google Veo, clips de 4, 6 ou 8 s) | ✅ (idem) |
+| Assistant de montage local : 14 types de demandes, avec un plan à accepter ou refuser, annulable | ✅ |
+| Assistant : moments forts et version courte (selon l’énergie sonore, indicateur simple) | 🟡 |
+| Détection des changements de scène | 🟢 |
+| Analyse sémantique des scènes, recherche par description, traduction | ⛔ |
+
+## Enregistrement
+| Fonction | Statut |
+| --- | --- |
+| Écran, fenêtre ou onglet | 🟢 |
+| Webcam | ✅ |
+| Écran et webcam en incrustation | 🟢 |
+| Microphone (narration) | 🟢 |
+| Son système (si le navigateur le permet) | 🟡 |
+| Compte à rebours, chronomètre, pause, envoi direct dans la timeline | ✅ |
+| Musique de l’application coupée pendant l’enregistrement | 🟢 |
+| Capture dans la version publique en ligne | ⛔ (refusée par la plateforme) |
+
+## Export et partage
+| Fonction | Statut |
+| --- | --- |
+| Export vidéo réel (MediaRecorder) : nom, format proposé par le navigateur, résolution de 480p à 4K | ✅ |
+| Export vidéo : images par seconde, débit, plage, taille estimée, progression réelle, annulation, aperçu du fichier | ✅ |
+| L’export se fait en temps réel et l’onglet doit rester visible | 🟡 |
+| 4 préréglages réseaux sociaux | 🟢 |
+| Partage natif (Web Share) quand le navigateur le permet | 🟢 |
+| Publication directe sur YouTube, TikTok ou WhatsApp (nécessite une application OAuth officielle) | ⛔ |
+
+## Application, paramètres, mises à jour
+| Fonction | Statut |
+| --- | --- |
+| Paramètres en 11 catégories | 🟢 |
+| Musique d’ambiance de l’application : lecture, sourdine, volume | ✅ |
+| Préférences d’apparence et de montage | 🟢 |
+| Stockage : occupation, stockage persistant, vidage | 🟢 |
+| Effacement de toutes les données locales | 🟢 |
+| Application installable (manifeste, icônes, service worker, bouton « Installer », instructions par navigateur) | 🟢 |
+| Mises à jour : dossier `public/updates/` (nom et notes de chaque version), proposées avec « Installer maintenant » ou « Plus tard » | ✅ |
+| Historique des versions consultable | ✅ |
+| Application de bureau native (.exe / .dmg) | ⛔ |

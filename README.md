@@ -1,15 +1,26 @@
 # SOLVEX AI
 
-Studio créatif pour **générer des images et des vidéos par IA**, les **retoucher** et les **organiser** dans une galerie.
-Interface en français, responsive, accessible au clavier, avec une identité visuelle propre (bleu nuit, bleu électrique, violet, cyan).
+Studio créatif complet, en français, qui réunit :
 
-- **Studio d’images** : texte vers image, image(s) de référence vers image, 11 styles, formats, résolution, qualité, 1 à 4 images.
-- **Studio vidéo** : texte vers vidéo et image de départ vers vidéo, avec le suivi réel de la tâche chez le fournisseur.
-- **Retouche** :
-  - outils locaux, sans IA, exécutés dans le navigateur : agrandissement ×2/×4, réduction du bruit, netteté, lumière et couleurs, niveaux automatiques ;
-  - outils IA : modification d’une zone peinte au pinceau (masque), ajout ou suppression d’objets, remplacement de l’arrière-plan, correction de lumière, variation.
-- **Galerie** : filtres Images / Vidéos, tri par date, grand format, téléchargement, suppression confirmée, relance d’un prompt, reprise en retouche.
-- **Animation d’ouverture** : jouée une fois par session, elle respecte `prefers-reduced-motion`. Sa barre de progression ne suit que les vraies étapes de démarrage.
+- la **génération d’images et de vidéos par IA** ;
+- le **montage vidéo multipiste** ;
+- un **éditeur photo à calques** ;
+- l’**enregistrement d’écran, de webcam et de micro** ;
+- l’**export**.
+
+L’identité visuelle est propre à SOLVEX : un losange prismatique bleu, violet et cyan.
+
+- **Studio** (`/studio`) : tableau de bord des projets, bibliothèque multimédia, favoris, modèles.
+- **Éditeur vidéo** :
+  - timeline multipiste, découpe, division, aimantation, groupes, marqueurs ;
+  - 17 transitions, 20 effets, images clés, masques, incrustation sur fond vert ;
+  - textes animés, stickers, formes, sous-titres SRT et VTT ;
+  - outils audio, assistant de montage, export vidéo réel.
+- **Éditeur photo** : calques, 14 réglages, filtres, courbe, LUT `.cube`, recadrage, formats réseaux sociaux, collage, outils IA.
+- **Studios IA** (`/images`, `/videos`, `/retouche`, `/galerie`) : génération par OpenAI (images) et Google Veo (vidéo).
+- **Paramètres** (`/parametres`) : apparence, musique d’ambiance de l’application, préférences de montage, stockage, installation, mises à jour.
+
+La liste exacte de ce qui est implémenté, limité ou non disponible se trouve dans [`FONCTIONNALITES.md`](FONCTIONNALITES.md).
 
 ## Démarrage
 
@@ -25,9 +36,29 @@ npm start                 # http://127.0.0.1:3000
 | `npm start` | Lance le serveur. |
 | `npm run dev` | Lance le serveur et le relance à chaque modification. |
 | `npm test` | Lance les tests unitaires et d’intégration (API, tâches, sécurité, adaptateurs). |
-| `npm run check` (alias `npm run build`) | Vérifie la syntaxe de tous les fichiers JS. Le front est servi en modules ES natifs, donc il n’y a rien à compiler. |
+| `npm run build` | Vérifie la syntaxe des fichiers JS, contrôle la cohérence des versions et met à jour le service worker (lancé aussi par `npm start`). |
+| `npm run build:static` | Produit la version publique sans serveur dans `dist-static/`. |
 
 Sans clé, le site fonctionne quand même : accueil, galerie, retouche locale. Les boutons de génération sont désactivés et l’interface indique la variable à ajouter.
+
+## Version publique sans serveur
+
+`npm run build:static` produit `dist-static/` : une version qui tourne entièrement dans le navigateur, sans le serveur Node.
+- **Disponible :** le studio, les éditeurs et la retouche locale.
+- **Indisponible :** la génération IA et la galerie serveur, affichées comme telles.
+
+C’est cette version qui est publiée en lien partageable. Ses projets restent dans le navigateur de chaque visiteur.
+
+## Mises à jour
+
+Chaque version a son fichier dans [`public/updates/`](public/updates) : `X.Y.Z.json`, avec `version`, `name`, `date` et `notes`. `index.json` indique la dernière version.
+
+Pour publier une mise à jour :
+1. Ajoutez le fichier de la version.
+2. Mettez à jour `index.json` et `APP_VERSION` dans `public/js/lib/env.js`.
+3. Lancez `npm run build`. Le script vérifie la cohérence et horodate le service worker.
+
+Les visiteurs et l’application installée voient alors une fenêtre qui affiche le **nom** et les **notes** de la mise à jour, avec **Installer maintenant** ou **Plus tard**. L’historique complet se trouve dans Paramètres → Version et mises à jour.
 
 ## Variables d’environnement
 
@@ -38,6 +69,7 @@ Toutes les variables sont listées et commentées dans [`.env.example`](.env.exa
 | `OPENAI_API_KEY` | Génération et retouche d’images par IA | — |
 | `OPENAI_IMAGE_MODEL` | Modèle d’image | `gpt-image-2` |
 | `OPENAI_TEXT_MODEL` | « Améliorer le prompt » par un modèle de langage (facultatif) | vide, donc enrichissement local par règles |
+| `OPENAI_TRANSCRIBE_MODEL` | Transcription automatique des sous-titres (facultatif) | vide, donc désactivée |
 | `GEMINI_API_KEY` | Génération de vidéos | — |
 | `GEMINI_VIDEO_MODEL` | Modèle vidéo | `veo-3.1-generate-preview` |
 | `SOLVEX_ACCESS_CODE` | Protéger l’instance par un code | vide, donc aucune protection |
@@ -98,6 +130,17 @@ public/
   js/components/        logo, intro, particules, contrôles, suivi des tâches, dialogues
   js/pages/             accueil, studio d’images, studio vidéo, retouche, galerie
   js/lib/               API, état, outils DOM, traitement d’image local (canvas)
+  js/studio/            studio de création (tout côté navigateur)
+    db.js, media.js       stockage IndexedDB des projets et médias, import et analyse des fichiers
+    project.js            modèle de projet et opérations de montage (pures, testées)
+    editorStore.js        état, annuler/rétablir, sauvegarde auto, journal de récupération
+    engine/               compositeur canvas, lecture synchronisée + Web Audio, effets, transitions,
+                          images clés, analyse audio/scènes, export MediaRecorder
+    ui/                   timeline, inspecteur, bibliothèque, export, enregistreur
+    photo/engine.js       rendu photo non destructif (réglages, courbe, LUT)
+    pages/                tableau de bord, éditeur vidéo, éditeur photo
+  updates/              une fiche JSON par version (nom, date, notes) + index.json
+  sw.js                 service worker (version estampillée par scripts/build.js)
 tests/                  node:test, avec des fournisseurs factices injectés uniquement dans les tests
 ```
 

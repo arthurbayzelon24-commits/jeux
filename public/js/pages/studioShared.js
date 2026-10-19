@@ -1,3 +1,4 @@
+import { isStatic } from '../lib/env.js';
 import { h, clear } from '../lib/dom.js';
 import { api } from '../lib/api.js';
 import { icon } from '../components/icons.js';
@@ -14,6 +15,17 @@ export function providerBadge(provider) {
 
 export function providerNotice(provider, what) {
   if (provider?.configured) return null;
+  if (isStatic()) {
+    return notice(
+      'info',
+      h(
+        'p',
+        {},
+        h('strong', {}, `${what} indisponible dans la version publique.`),
+        ' Cette version en ligne fonctionne sans serveur : le studio de montage, l’éditeur photo et la retouche locale sont utilisables, mais la génération par IA nécessite le serveur SOLVEX et une clé API (voir le README).',
+      ),
+    );
+  }
   const missing = provider?.missing?.length ? provider.missing : ['une clé API'];
   return notice(
     'warn',

@@ -1,4 +1,5 @@
 import { h, clear, formatDate } from '../lib/dom.js';
+import { saveFile } from '../lib/download.js';
 import { api } from '../lib/api.js';
 import { getCapabilities, providerFor } from '../lib/state.js';
 import { icon } from '../components/icons.js';
@@ -179,9 +180,7 @@ export function enhancePage({ params }) {
 
   downloadBtn.addEventListener('click', async () => {
     const blob = await ops.canvasToBlob(working);
-    const link = h('a', { href: URL.createObjectURL(blob), download: `solvex-retouche.${blob.type.split('/')[1]}` });
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+    await saveFile(blob, `solvex-retouche.${blob.type.split('/')[1]}`).catch((error) => toast(error.message, { type: 'error' }));
   });
 
   saveBtn.addEventListener('click', async () => {
