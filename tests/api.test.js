@@ -460,3 +460,60 @@ test('assistant SOLVEX AI : vrai modèle, outils réels, contexte de conversatio
   assert.equal((await json(srv.base, '/api/chat', { method: 'POST', body: { messages: [] } })).status, 400);
   assert.equal((await json(srv.base, '/api/chat', { method: 'POST', body: { messages: [{ role: 'system', content: 'x' }] } })).status, 400);
 });
+
+test('audio en ligne : Jamendo et Freesound passent par le serveur, avec licence, sans URL venant du navigateur', async (t) => {
+  const { createServer } = await import('node:http');
+  const seen = [];
+  const mp3 = Buffer.from([0xff, 0xfb, 0x90, 0x00, ...Array(64).fill(0)]);
+  const server = createServer((req, res) => {
+    const url = new URL(req.url, 'http://x');
+    seen.push(url.pathname + url.search);
+    if (url.pathname === '/jamendo/tracks/') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ results: [{ id: '123', name: 'Matin calme', artist_name: 'Artiste', duration: 95, license_ccurl: 'http://creativecommons.org/licenses/by-nc/3.0/', audio: `http://127.0.0.1:${server.address().port}/cdn/123.mp3`, shareurl: 'https://jamendo.test/123' }] }));
+    }
+    if (url.pathname === '/freesound/search/text/') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ results: [{ id: 456, name: 'Pluie sur le toit', username: 'auteur', duration: 12.5, license: 'http://creativecommons.org/publicdomain/zero/1.0/' }] }));
+    }
+    if (url.pathname === '/freesound/sounds/456/') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ id: 456, name: 'Pluie sur le toit', username: 'auteur', license: 'http://creativecommons.org/publicdomain/zero/1.0/', previews: { 'preview-hq-mp3': `http://127.0.0.1:${server.address().port}/cdn/456.mp3` } }));
+    }
+    if (url.pathname.startsWith('/cdn/')) {
+      res.writeHead(200, { 'Content-Type': 'audio/mpeg' });
+      return res.end(mp3);
+    }
+    res.writeHead(404).end();
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const srv = await startTestServer({
+    providers: fakeProviders().providers,
+    overrides: { audio: { jamendoClientId: 'jam-id', jamendoBaseUrl: `${base}/jamendo`, freesoundApiKey: 'fs-key', freesoundBaseUrl: `${base}/freesound` } },
+  });
+  t.after(() => srv.close());
+
+  const caps = await json(srv.base, '/api/capabilities');
+  assert.deepEqual(caps.data.audioLibraries.map((s) => [s.id, s.configured]), [['jamendo', true], ['freesound', true]]);
+  assert.ok(!JSON.stringify(caps.data).includes('jam-id') && !JSON.stringify(caps.data).includes('fs-key'), 'aucune clé envoyée au navigateur');
+
+  const music = await json(srv.base, `/api/audio/search?source=jamendo&q=matin&category=${encodeURIComponent('Musiques calmes')}`);
+  assert.equal(music.status, 200);
+  assert.deepEqual(music.data.results[0], { id: '123', source: 'jamendo', title: 'Matin calme', author: 'Artiste', duration: 95, license: 'CC BY-NC (attribution, pas d’usage commercial)', licenseUrl: 'http://creativecommons.org/licenses/by-nc/3.0/', pageUrl: 'https://jamendo.test/123', category: 'Musiques calmes' });
+  assert.match(seen.find((s) => s.startsWith('/jamendo/tracks/?')), /client_id=jam-id.*search=matin\+relaxation/);
+
+  const sfx = await json(srv.base, `/api/audio/search?source=freesound&q=pluie&category=${encodeURIComponent('Sons d’ambiance')}`);
+  assert.equal(sfx.data.results[0].license, 'CC0 (domaine public)');
+
+  const file = await fetch(`${srv.base}/api/audio/file?source=freesound&id=456`);
+  assert.equal(file.status, 200);
+  assert.equal(file.headers.get('content-type'), 'audio/mpeg');
+  assert.equal(JSON.parse(decodeURIComponent(file.headers.get('x-solvex-audio'))).author, 'auteur');
+  assert.equal((await fetch(`${srv.base}/api/audio/file?source=jamendo&id=123`)).status, 200);
+
+  // Only numeric ids, only configured sources.
+  assert.equal((await fetch(`${srv.base}/api/audio/file?source=jamendo&id=http://evil`)).status, 400);
+  assert.equal((await fetch(`${srv.base}/api/audio/search?source=spotify`)).status, 400);
+});

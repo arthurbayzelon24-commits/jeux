@@ -2,9 +2,9 @@ import { h, clear, formatBytes } from '../../lib/dom.js';
 import { icon } from '../../components/icons.js';
 import { confirmDialog } from '../../components/feedback.js';
 import { db } from '../db.js';
+import { renderAudioPanel } from './audioPanel.js';
 import { ACCEPT_ATTR, importFiles, importFile, deleteMedia, formatTime } from '../media.js';
 import { queryStickers, STICKER_CATEGORIES, SHAPES, stickerCount } from '../stickers.js';
-import { SOUNDS, SOUND_CATEGORIES, SOUND_LICENSE, renderSound } from '../sounds.js';
 import { api } from '../../lib/api.js';
 import { isStatic } from '../../lib/env.js';
 
@@ -99,9 +99,10 @@ export class Library {
     this.externalTabs = externalTabs;
     this.tab = 'media';
     this.mediaFilter = getProjectMediaIds ? 'project' : 'all';
+    this.audioState = {};
+    this.lastImport = '';
     this.media = [];
     this.stickerState = { category: '', search: '', page: 0 };
-    this.soundCategory = SOUND_CATEGORIES[0];
     this.favorites = new Set();
     this.el = h('aside', { class: 'library', 'aria-label': 'Bibliothèque' });
     db.get('stickerFavorites')
@@ -179,7 +180,7 @@ export class Library {
 
   renderMedia(body) {
     const input = h('input', { type: 'file', multiple: true, accept: ACCEPT_ATTR, hidden: true });
-    const status = h('p', { class: 'field__hint', 'aria-live': 'polite' });
+    const status = h('p', { class: 'field__hint', 'aria-live': 'polite' }, this.lastImport);
     input.addEventListener('change', () => this.importList([...input.files], status));
     const drop = h(
       'label',
@@ -333,36 +334,15 @@ export class Library {
   }
 
   renderAudio(body) {
-    const input = h('input', { type: 'file', multiple: true, accept: 'audio/*', hidden: true });
-    const status = h('p', { class: 'field__hint', 'aria-live': 'polite' });
-    input.addEventListener('change', () => this.importList([...input.files], status));
-    body.append(
-      h(
-        'div',
-        { class: 'insp-actions' },
-        h('label', { class: 'btn btn--sm btn--primary' }, icon('upload'), 'Importer une musique', input),
-        this.onRecord ? h('button', { class: 'btn btn--sm', type: 'button', onclick: () => this.onRecord('audio') }, '● Enregistrer une voix') : null,
-      ),
-      status,
-    );
-    const mine = this.media.filter((m) => m.kind === 'audio');
-    if (mine.length) {
-      const list = h('div', { class: 'sound-list' });
-      for (const m of mine) {
-        const add = h('button', { class: 'btn btn--sm', type: 'button' }, '+ Ajouter');
-        add.addEventListener('click', () => this.onAdd({ type: 'media', id: m.id }));
-        list.append(this.drag(h('div', { class: 'sound-item' }, h('span', { class: 'sound-item__ic' }, icon('play', { size: 16 })), h('div', {}, h('strong', {}, m.name), h('span', { class: 'field__hint' }, m.duration ? formatTime(m.duration) : '')), add), { type: 'media', id: m.id }));
-      }
-      body.append(h('h4', {}, 'Vos fichiers audio'), list);
-    }
-    body.append(h('h4', {}, 'Sons SOLVEX (libres de droits)'));
-    this.renderSounds(body);
+    renderAudioPanel(body, { library: this, state: this.audioState });
   }
 
   async importList(files, status) {
     if (!files.length) return;
     const { results, errors } = await importFiles(files, (i, n, name) => (status.textContent = `Import ${i}/${n} : ${name}…`));
-    status.textContent = results.length ? `${results.length} fichier(s) importé(s).` : '';
+    status.textContent = results.length ? `${results.length} fichier(s) importé(s).` : errors.length ? 'Import impossible : voir le message.' : '';
+    this.lastImport = status.textContent;
+    this.audioState.audioStatus = status.textContent;
     errors.forEach((e) => this.toast(e, 'error'));
     if (results.length) this.onImported?.(results);
     await this.reloadMedia();
@@ -482,69 +462,6 @@ export class Library {
       grid.append(this.drag(card, { type: 'shape', id: shape.id }));
     }
     body.append(grid);
-  }
-
-  renderSounds(body) {
-    const cats = h('div', { class: 'chips chips--scroll' });
-    for (const cat of SOUND_CATEGORIES) {
-      const b = h('button', { type: 'button', class: `btn btn--sm${this.soundCategory === cat ? ' btn--primary' : ''}` }, cat);
-      b.addEventListener('click', () => {
-        this.soundCategory = cat;
-        this.render();
-      });
-      cats.append(b);
-    }
-    const list = h('div', { class: 'sound-list' });
-    let current = null;
-    for (const sound of SOUNDS.filter((s) => s.category === this.soundCategory)) {
-      const play = h('button', { class: 'btn btn--sm btn--icon', type: 'button', 'aria-label': `Écouter ${sound.name}` }, icon('play'));
-      play.addEventListener('click', async () => {
-        current?.pause();
-        const blob = await renderSound(sound.id);
-        current = new Audio(URL.createObjectURL(blob));
-        current.play();
-      });
-      const add = h('button', { class: 'btn btn--sm', type: 'button' }, '+ Ajouter');
-      add.addEventListener('click', async () => {
-        add.disabled = true;
-        try {
-          const blob = await renderSound(sound.id);
-          const file = new File([blob], `${sound.name}.wav`, { type: 'audio/wav' });
-          const meta = await importFile(file, { name: `${sound.name} (SOLVEX)`, origin: 'solvex-sound' });
-          this.onImported?.([meta]);
-          await this.reloadMedia();
-          this.onAdd({ type: 'media', id: meta.id, role: /musique|ambiance/i.test(sound.category) ? 'music' : null });
-        } catch (error) {
-          this.toast(error.message, 'error');
-        } finally {
-          add.disabled = false;
-        }
-      });
-      list.append(
-        h(
-          'div',
-          { class: 'sound-item' },
-          play,
-          h(
-            'div',
-            {},
-            h('strong', {}, sound.name),
-            h('span', { class: 'field__hint' }, `${sound.duration} s${sound.loop ? ' · boucle' : ''}`),
-          ),
-          add,
-        ),
-      );
-    }
-    body.append(
-      cats,
-      list,
-      h('p', { class: 'field__hint license' }, SOUND_LICENSE),
-      h(
-        'p',
-        { class: 'field__hint' },
-        'Bibliothèque musicale commerciale : non incluse. Importez vos propres musiques en vérifiant leurs droits.',
-      ),
-    );
   }
 
   async renderAi(body) {

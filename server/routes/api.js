@@ -4,6 +4,7 @@ import { HttpError, readBody, readJson, sendJson } from '../lib/http.js';
 import { inspectImage, mimeFromExtension } from '../lib/files.js';
 import { isValidId } from '../lib/store.js';
 import { largestResolution } from '../../public/js/shared/imageSizes.js';
+import { createAudioLibraries } from '../providers/audioLibraries.js';
 import { assistantModel, chatTurn, isAssistantConfigured, searchCatalog } from '../lib/assistant.js';
 import { canEnhanceWithModel, enhanceLocally, enhanceWithModel, STYLES, CAMERA_MOVES } from '../lib/prompt.js';
 import { transcribe } from '../lib/transcribe.js';
@@ -117,6 +118,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       providers: registry.describe(),
       styles: Object.entries(STYLES).map(([id, style]) => ({ id, label: style.label })),
       cameraMoves: Object.entries(CAMERA_MOVES).map(([id, move]) => ({ id, label: move.label })),
+      audioLibraries: createAudioLibraries(config).describe(),
       assistant: { configured: isAssistantConfigured(config), model: assistantModel(config) || null, missing: isAssistantConfigured(config) ? [] : ['OPENAI_API_KEY', 'OPENAI_CHAT_MODEL'].filter((k) => (k === 'OPENAI_API_KEY' ? !config.openai.apiKey : !assistantModel(config))) },
       promptEnhancement: canEnhanceWithModel(config) ? { method: 'model', model: config.openai.textModel } : { method: 'local' },
       limits: { maxUploadBytes: config.maxUploadBytes, maxPromptLength: v.MAX_PROMPT_LENGTH },
@@ -352,6 +354,39 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       { signal: AbortSignal.timeout(120_000) },
     );
     sendJson(res, 200, out);
+  });
+
+  const audioLibraries = createAudioLibraries(config);
+  const audioSource = (url) => {
+    const source = audioLibraries.get(url.searchParams.get('source'));
+    if (!source) throw new HttpError(400, 'Bibliothèque audio inconnue ou non configurée.', { code: 'not_configured' });
+    return source;
+  };
+
+  add('GET', /^\/api\/audio\/search$/, async (req, res, match, url) => {
+    const source = audioSource(url);
+    limiter.check(`audio:${ip(req)}`, config.rateLimit.enhancePerMinute);
+    const results = await source.search({
+      query: (url.searchParams.get('q') || '').slice(0, 120),
+      category: (url.searchParams.get('category') || '').slice(0, 60),
+      signal: AbortSignal.timeout(20_000),
+    });
+    sendJson(res, 200, { results });
+  });
+
+  add('GET', /^\/api\/audio\/file$/, async (req, res, match, url) => {
+    const source = audioSource(url);
+    const id = url.searchParams.get('id') || '';
+    if (!/^\d{1,12}$/.test(id)) throw new HttpError(400, 'Identifiant de son invalide.', { code: 'invalid_request' });
+    limiter.check(`audio:${ip(req)}`, config.rateLimit.enhancePerMinute);
+    const file = await source.file({ id, signal: AbortSignal.timeout(60_000) });
+    res.writeHead(200, {
+      'Content-Type': file.mime,
+      'Content-Length': file.buffer.length,
+      'Cache-Control': 'no-store',
+      'X-Solvex-Audio': encodeURIComponent(JSON.stringify({ title: file.title, author: file.author, license: file.license, licenseUrl: file.licenseUrl })),
+    });
+    res.end(file.buffer);
   });
 
   add('GET', /^\/api\/creations$/, (req, res, match, url) => {

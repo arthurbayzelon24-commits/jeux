@@ -1,4 +1,4 @@
-import { h } from '../../lib/dom.js';
+import { h, clear } from '../../lib/dom.js';
 import { saveFile } from '../../lib/download.js';
 import { icon } from '../../components/icons.js';
 import { confirmDialog, openModal, toast, setBusy } from '../../components/feedback.js';
@@ -14,7 +14,7 @@ import { createClip, addClip, clipEnd, trackKindFor, createTrack, pasteClips, pr
 import { effectsPanel, transitionsPanel, filtersPanel } from '../ui/editPanels.js';
 import { logoMark } from '../../components/logo.js';
 import { SHAPES } from '../stickers.js';
-import { formatTime } from '../media.js';
+import { formatTime, AUDIO_ACCEPT, ACCEPT_ATTR, importFile, importFiles } from '../media.js';
 import { detectSilences, normalizationGain, detectPeaks } from '../engine/analysis.js';
 import { parseSubtitles, toSrt, toVtt, lintSubtitles, cuesFromSegments } from '../subtitles.js';
 import { planRequest, ASSISTANT_EXAMPLES } from '../assistant.js';
@@ -99,14 +99,20 @@ export async function videoEditorPage({ params }) {
     loopBtn.setAttribute('aria-pressed', String(player.loop));
   });
   const step = (dt) => seek(store.time + dt);
+  let syncMute = () => {};
   function volumeCtl() {
     const input = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: '1', 'aria-label': 'Volume de l’aperçu (n’affecte pas l’export)' });
     const mute = h('button', { class: 'btn btn--sm btn--ghost', type: 'button', 'aria-label': 'Couper le son de l’aperçu', title: 'Volume de l’aperçu (n’affecte pas l’export)' }, '🔊');
     let last = 1;
     const apply = (v) => {
+      monitor = v;
       player.setMonitorVolume(v);
       input.value = String(v);
       mute.textContent = v === 0 ? '🔇' : '🔊';
+    };
+    syncMute = () => {
+      input.value = String(monitor);
+      mute.textContent = monitor === 0 ? '🔇' : '🔊';
     };
     input.addEventListener('input', () => apply(Number(input.value)));
     mute.addEventListener('click', () => {
@@ -117,6 +123,76 @@ export async function videoEditorPage({ params }) {
     });
     return h('span', { class: 'preview-volume' }, mute, input);
   }
+  // « Audio » shortcut next to the player: playback volume, library, import, selected clip volume.
+  let monitor = 1;
+  function audioButton() {
+    const pop = h('div', { class: 'audio-pop', role: 'dialog', 'aria-label': 'Audio', hidden: true });
+    const button = h('button', { class: 'btn btn--sm preview-audio-btn', type: 'button', 'aria-expanded': 'false', 'aria-haspopup': 'dialog' }, icon('music', { size: 16 }), h('span', {}, 'Audio'));
+    const fileInput = h('input', { type: 'file', multiple: true, accept: AUDIO_ACCEPT, hidden: true });
+    fileInput.addEventListener('change', async () => {
+      const files = [...fileInput.files];
+      fileInput.value = '';
+      const { results, errors } = await importFiles(files);
+      errors.forEach((e) => say(e, 'error'));
+      if (results.length) library.onImported(results);
+      await library.reloadMedia();
+      for (const m of results) await addPayload({ type: 'media', id: m.id, role: 'music' });
+      if (results.length) say(`${results.length} fichier(s) audio ajouté(s) sur la piste Musique.`, 'success');
+    });
+    const close = () => {
+      pop.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+    };
+    const draw = () => {
+      const clip = store.project.clips.find((c) => c.id === store.selection[0] && (c.kind === 'audio' || c.kind === 'video'));
+      const vol = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: String(monitor), 'aria-label': 'Volume de lecture' });
+      vol.addEventListener('input', () => {
+        monitor = Number(vol.value);
+        player.setMonitorVolume(monitor);
+        syncMute();
+      });
+      const clipVol = clip
+        ? (() => {
+            const input = h('input', { type: 'range', min: 0, max: 2, step: 0.01, value: String(clip.audio?.volume ?? 1), 'aria-label': 'Volume du clip sélectionné' });
+            const out = h('output', {}, `${Math.round((clip.audio?.volume ?? 1) * 100)} %`);
+            input.addEventListener('input', () => (out.textContent = `${Math.round(Number(input.value) * 100)} %`));
+            input.addEventListener('change', () => inspector.edit('Volume du clip', (c) => ((c.audio.volume = Number(input.value)), c)));
+            return h('label', { class: 'audio-pop__row' }, h('span', {}, `Clip « ${clip.name || clip.kind} »`), input, out);
+          })()
+        : h('p', { class: 'field__hint' }, 'Sélectionnez un clip pour régler son volume ici.');
+      clear(pop).append(
+        h('strong', {}, 'Audio du montage'),
+        h('label', { class: 'audio-pop__row' }, h('span', {}, 'Volume de lecture'), vol, h('output', {}, `${Math.round(monitor * 100)} %`)),
+        h('p', { class: 'field__hint' }, 'N’affecte que l’écoute, pas l’export.'),
+        clipVol,
+        h(
+          'div',
+          { class: 'insp-actions' },
+          h('button', { class: 'btn btn--sm', type: 'button', onclick: () => (close(), openAudioLibrary()) }, icon('music', { size: 16 }), 'Bibliothèque audio'),
+          h('label', { class: 'btn btn--sm' }, icon('upload', { size: 16 }), 'Importer un fichier audio', fileInput),
+        ),
+      );
+    };
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (!pop.hidden) return close();
+      draw();
+      pop.hidden = false;
+      button.setAttribute('aria-expanded', 'true');
+      pop.querySelector('input')?.focus();
+    });
+    pop.addEventListener('click', (event) => event.stopPropagation());
+    document.addEventListener('click', close);
+    pop.addEventListener('keydown', (event) => event.key === 'Escape' && (close(), button.focus()));
+    return h('span', { class: 'audio-pop-wrap' }, button, pop);
+  }
+  function openAudioLibrary() {
+    library.setTab('audio');
+    el.dataset.panel = '';
+    if (window.matchMedia('(max-width: 900px)').matches) el.dataset.sheet = 'library';
+    drawCats?.();
+  }
+
   const aspectSel = h(
     'select',
     { class: 'select select--sm preview-aspect', 'aria-label': 'Format du projet', title: 'Format du projet' },
@@ -164,6 +240,7 @@ export async function videoEditorPage({ params }) {
     loopBtn,
     h('span', { class: 'tl-spacer' }),
     volumeCtl(),
+    audioButton(),
     aspectSel,
     fullBtn,
   );
@@ -496,6 +573,39 @@ export async function videoEditorPage({ params }) {
       store.emit('project');
     },
     renderSubtitles: (body) => renderSubtitles(body),
+    replaceMedia(clip) {
+      const input = h('input', { type: 'file', accept: clip.kind === 'audio' ? AUDIO_ACCEPT : ACCEPT_ATTR });
+      input.addEventListener('change', async () => {
+        const file = input.files[0];
+        if (!file) return;
+        try {
+          const media = await importFile(file);
+          if (media.kind !== clip.kind && !(clip.kind === 'video' && media.kind === 'image')) throw new Error('Choisissez un fichier du même type que le clip.');
+          library.onImported([media]);
+          await library.reloadMedia();
+          const max = media.duration ? Math.max(0.1, media.duration / (clip.speed || 1)) : clip.duration;
+          inspector.edit('Remplacer le fichier', (c) => ((c.mediaId = media.id), (c.name = media.name), (c.in = 0), (c.duration = Math.min(c.duration, max)), c));
+          await player.prepare();
+          say(`Fichier remplacé par « ${media.name} ».`, 'success');
+        } catch (error) {
+          say(error.message, 'error');
+        }
+      });
+      input.click();
+    },
+    fitToVideo(clip) {
+      // Ends the music with the last image of the montage, with a 2 s fade-out.
+      const end = Math.max(0, ...store.project.clips.filter((c) => c.kind !== 'audio').map(clipEnd));
+      if (end <= clip.start) return say('Aucune image après le début de ce son : ajoutez d’abord des clips vidéo ou image.');
+      const media = mediaIndex.get(clip.mediaId);
+      const available = media?.duration ? (media.duration - clip.in) / (clip.speed || 1) : Infinity;
+      const duration = Math.min(end - clip.start, available);
+      inspector.edit('Ajuster à la durée de la vidéo', (c) => ((c.duration = duration), (c.audio.fadeOut = Math.min(2, duration / 2)), c));
+      say(duration < end - clip.start ? 'Le son est plus court que la vidéo : il s’arrête à la fin du fichier.' : 'Le son se termine avec la vidéo (fondu de 2 s).', 'success');
+    },
+    removeClip(clip) {
+      store.commit('Supprimer le son', { ...store.project, clips: store.project.clips.filter((c) => c.id !== clip.id) }, { select: [] });
+    },
   };
   const inspector = new Inspector({ store, player, mediaIndex, actions });
 

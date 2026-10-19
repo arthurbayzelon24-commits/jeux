@@ -73,6 +73,7 @@ export const api = {
   generateImage: (payload) => request('/api/images/generate', { method: 'POST', body: payload }),
   editImage: (payload) => request('/api/images/edit', { method: 'POST', body: payload }),
   generateVideo: (payload) => request('/api/videos/generate', { method: 'POST', body: payload }),
+  audioSearch: ({ source, q = '', category = '' }) => request(`/api/audio/search?${new URLSearchParams({ source, q, category })}`, { timeout: 25_000 }),
   chat: (messages, signal) => request('/api/chat', { method: 'POST', body: { messages }, signal, timeout: 130_000 }),
   creations: ({ type, sort } = {}) => {
     const params = new URLSearchParams();

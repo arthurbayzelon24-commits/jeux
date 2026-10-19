@@ -725,6 +725,9 @@ export class Inspector {
           clip.kind === 'video'
             ? h('button', { class: 'btn btn--sm', type: 'button', onclick: () => this.actions.detachAudio(clip) }, 'Détacher l’audio')
             : null,
+          h('button', { class: 'btn btn--sm', type: 'button', onclick: () => this.actions.replaceMedia(clip) }, 'Remplacer le fichier…'),
+          clip.kind === 'audio' ? h('button', { class: 'btn btn--sm', type: 'button', onclick: () => this.actions.fitToVideo(clip) }, 'Ajuster à la durée de la vidéo') : null,
+          clip.kind === 'audio' ? h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onclick: () => this.actions.removeClip(clip) }, 'Retirer du projet') : null,
           h('button', { class: 'btn btn--sm', type: 'button', onclick: () => this.actions.normalize(clip) }, 'Normaliser (−1 dB)'),
           h('button', { class: 'btn btn--sm', type: 'button', onclick: () => this.actions.cutSilences(clip) }, 'Couper les silences'),
           h('button', { class: 'btn btn--sm', type: 'button', onclick: () => this.actions.findPeaks(clip) }, 'Détecter les pics'),

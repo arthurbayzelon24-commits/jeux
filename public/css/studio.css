@@ -2602,3 +2602,73 @@ body.is-app .editor {
     justify-content: flex-end;
   }
 }
+
+/* ---------------------------------------------------------------- audio 2.2 */
+.audio-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sound-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sound-item__main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.sound-item__main strong,
+.sound-item__main .field__hint {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sound-item__license {
+  font-size: 11px;
+  color: var(--muted);
+}
+.sound-item__license a {
+  color: var(--cyan);
+}
+.audio-pop-wrap {
+  position: relative;
+}
+.preview-audio-btn {
+  gap: 5px;
+}
+.audio-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: min(320px, 86vw);
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: rgba(12, 17, 34, 0.98);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.8);
+}
+.audio-pop__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 44px;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.audio-pop__row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.audio-pop p {
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .preview-audio-btn span {
+    display: none;
+  }
+}

@@ -60,6 +60,13 @@ export function loadConfig(overrides = {}) {
       // No default either: transcription is enabled only with an explicitly named model.
       transcribeModel: str('OPENAI_TRANSCRIBE_MODEL'),
     },
+    // Optional online audio catalogues (free keys): music from Jamendo, sounds from Freesound.
+    audio: {
+      jamendoClientId: str('JAMENDO_CLIENT_ID'),
+      jamendoBaseUrl: str('JAMENDO_BASE_URL', 'https://api.jamendo.com/v3.0'),
+      freesoundApiKey: str('FREESOUND_API_KEY'),
+      freesoundBaseUrl: str('FREESOUND_BASE_URL', 'https://freesound.org/apiv2'),
+    },
     pollinations: {
       enabled: str('POLLINATIONS_ENABLED', 'true') === 'true',
       baseUrl: str('POLLINATIONS_BASE_URL', 'https://image.pollinations.ai'),

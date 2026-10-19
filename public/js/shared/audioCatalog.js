@@ -86,6 +86,10 @@ export const EFFECTS = [
   sfx('laser', 'Laser', 'Effets sonores', ['jeu vidéo', 'laser', 'arcade'], 0.5),
   sfx('coin', 'Pièce', 'Effets sonores', ['jeu vidéo', 'pièce', 'récompense'], 0.4),
   sfx('level-up', 'Niveau supérieur', 'Effets sonores', ['jeu vidéo', 'victoire'], 1),
+  // Earlier SOLVEX loops, kept in their music categories.
+  sfx('ambient-pad', 'Nappe d’ambiance (boucle)', 'Musiques d’ambiance', ['nappe', 'boucle', 'futuriste'], 30),
+  sfx('cinematic-drone', 'Drone cinématique', 'Musiques cinématiques', ['drone', 'tension', 'grave'], 20),
+  sfx('pulse-beat', 'Pulsation électro (boucle)', 'Musiques électroniques', ['boucle', '120 bpm', 'électro'], 16),
 ];
 
 export const CATALOG = [...MUSIC, ...AMBIENCES, ...EFFECTS];

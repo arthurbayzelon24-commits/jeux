@@ -17,14 +17,16 @@ export const ACCEPT = {
     'audio/flac',
   ],
 };
-export const ACCEPT_ATTR = [...ACCEPT.video, ...ACCEPT.image, ...ACCEPT.audio, '.mov', '.mkv', '.m4a'].join(',');
+const AUDIO_EXT = /\.(mp3|wav|m4a|aac|ogg|oga|opus|flac|weba)$/i;
+export const AUDIO_ACCEPT = [...ACCEPT.audio, '.mp3', '.wav', '.m4a', '.aac', '.ogg', '.oga', '.opus', '.flac'].join(',');
+export const ACCEPT_ATTR = [...ACCEPT.video, ...ACCEPT.image, AUDIO_ACCEPT, '.mov', '.mkv'].join(',');
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024 * 1024; // 2 Go per file
 
 export function kindOf(file) {
   const type = file.type || '';
   if (type.startsWith('video/') || /\.(mov|mkv)$/i.test(file.name)) return 'video';
   if (type.startsWith('image/')) return 'image';
-  if (type.startsWith('audio/') || /\.m4a$/i.test(file.name)) return 'audio';
+  if (type.startsWith('audio/') || AUDIO_EXT.test(file.name || '')) return 'audio';
   return null;
 }
 
@@ -52,11 +54,18 @@ export function releaseMedia(id) {
   urlCache.delete(id);
 }
 
+function unreadable(target) {
+  const audio = target instanceof HTMLAudioElement;
+  return audio
+    ? 'Format audio non lisible par ce navigateur. M4A/AAC se lisent dans Chrome, Edge et Safari ; sinon convertissez le fichier en MP3 ou WAV.'
+    : 'Format non lisible par ce navigateur (essayez MP4/H.264 ou WebM).';
+}
+
 function waitEvent(target, ok, timeout = 15000) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Le fichier met trop de temps à se charger.')), timeout);
     target.addEventListener(ok, () => (clearTimeout(timer), resolve()), { once: true });
-    target.addEventListener('error', () => (clearTimeout(timer), reject(new Error('Format non lisible par ce navigateur.'))), {
+    target.addEventListener('error', () => (clearTimeout(timer), reject(new Error(unreadable(target)))), {
       once: true,
     });
   });
