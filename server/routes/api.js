@@ -3,6 +3,7 @@ import { stat } from 'node:fs/promises';
 import { HttpError, readBody, readJson, sendJson } from '../lib/http.js';
 import { inspectImage, mimeFromExtension } from '../lib/files.js';
 import { isValidId } from '../lib/store.js';
+import { largestResolution } from '../../public/js/shared/imageSizes.js';
 import { canEnhanceWithModel, enhanceLocally, enhanceWithModel, STYLES, CAMERA_MOVES } from '../lib/prompt.js';
 import { transcribe } from '../lib/transcribe.js';
 import * as v from '../lib/validate.js';
@@ -172,30 +173,39 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       autoPrompt = true;
     }
     if (!prompt) v.requiredPrompt(prompt);
+    const aspect = v.oneOf(
+      body.aspect,
+      caps.aspects.map((a) => a.id),
+      'aspect',
+      'Format',
+    );
+    const quality = v.oneOf(
+      body.quality || caps.qualities[0].id,
+      caps.qualities.map((q) => q.id),
+      'quality',
+      'Qualité',
+    );
+    // « Ultra / 4K » always asks for the largest size the model produces natively for this format.
+    const resolution =
+      quality === 'ultra'
+        ? largestResolution(caps.aspects, aspect)
+        : v.oneOf(
+            body.resolution || caps.aspects.find((a) => a.id === aspect)?.resolutions[0]?.id,
+            caps.resolutions.map((r) => r.id),
+            'resolution',
+            'Résolution',
+          );
+    const size = provider.sizeFor(aspect, resolution); // throws a clear 400 when the combination is not native
     const params = {
       style: v.styleId(body.style),
-      aspect: v.oneOf(
-        body.aspect,
-        caps.aspects.map((a) => a.id),
-        'aspect',
-        'Format',
-      ),
-      resolution: v.oneOf(
-        body.resolution || 'standard',
-        caps.resolutions.map((r) => r.id),
-        'resolution',
-        'Résolution',
-      ),
-      quality: v.oneOf(
-        body.quality || 'auto',
-        caps.qualities.map((q) => q.id),
-        'quality',
-        'Qualité',
-      ),
+      aspect,
+      resolution,
+      quality,
+      requestedWidth: size.width,
+      requestedHeight: size.height,
       count: v.intInRange(body.count ?? 1, 1, caps.maxImages, 'count', 'Le nombre d’images'),
       negativePrompt: negativeFor(caps, body.negativePrompt),
     };
-    provider.sizeFor(params.aspect, params.resolution);
     await ensureUploads(referenceUploadIds);
     limiter.check(`generate:${ip(req)}`, config.rateLimit.generatePerMinute);
     const item = await jobs.submit({

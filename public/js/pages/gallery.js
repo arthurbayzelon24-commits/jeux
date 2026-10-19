@@ -4,7 +4,12 @@ import { icon } from '../components/icons.js';
 import { confirmDialog, notice, toast } from '../components/feedback.js';
 import { downloadUrl, mediaElement, openCreation, regenerateFrom, statusTag } from '../components/creation.js';
 import { emptyStage } from './studioShared.js';
-import { sendToEditor } from '../studio/projectActions.js';
+import { sendToEditor, photoProjectFromMedia, videoProjectFromMedia, saveAndOpen } from '../studio/projectActions.js';
+import { isEmbedded, isStatic } from '../lib/env.js';
+import { db } from '../studio/db.js';
+import { deleteMedia, mediaUrl } from '../studio/media.js';
+import { saveFile } from '../lib/download.js';
+import { openModal } from '../components/feedback.js';
 
 const FILTERS = [
   { id: '', label: 'Tout' },
@@ -28,6 +33,7 @@ function writePref(key, value) {
 }
 
 export function galleryPage() {
+  if (isStatic()) return localGalleryPage();
   let type = readPref('gallery-type', '');
   let sort = readPref('gallery-sort', 'desc');
   let poll = null;
@@ -237,5 +243,89 @@ export function galleryPage() {
       alive = false;
       clearTimeout(poll);
     },
+  };
+}
+
+/**
+ * Without the SOLVEX server, « Mes créations » lists the images generated in
+ * this browser (kept in the local library) instead of the server gallery.
+ */
+async function localGalleryPage() {
+  const grid = h('div', { class: 'gallery-grid', 'aria-live': 'polite' });
+  const countEl = h('span', { class: 'field__hint' });
+  async function load() {
+    const items = (await db.listMedia().catch(() => [])).filter((m) => m.origin === 'solvex-ai');
+    countEl.textContent = `${items.length} création${items.length > 1 ? 's' : ''} dans ce navigateur`;
+    clear(grid);
+    if (!items.length) {
+      grid.append(
+        h(
+          'div',
+          { style: { gridColumn: '1 / -1' } },
+          emptyStage({
+            title: 'Aucune création pour le moment',
+            text: isEmbedded()
+              ? 'La génération par IA n’est pas possible dans la page claude.ai. Utilisez le site public SOLVEX ou le serveur.'
+              : 'Les images que vous générez sont enregistrées ici, dans ce navigateur.',
+          }),
+          isEmbedded() ? null : h('div', { class: 'hero__cta', style: { justifyContent: 'center' } }, h('a', { class: 'btn btn--primary', href: '/images', 'data-link': '' }, icon('image'), 'Générer une image')),
+        ),
+      );
+      return;
+    }
+    for (const m of items) {
+      const open = async () => {
+        const url = await mediaUrl(m.id);
+        openModal(
+          h(
+            'div',
+            { class: 'lightbox__inner' },
+            h('div', { class: 'lightbox__media' }, m.kind === 'video' ? h('video', { src: url, controls: true }) : h('img', { src: url, alt: m.prompt || m.name })),
+            h('div', { class: 'lightbox__side' }, h('h2', {}, 'Création'), h('p', { class: 'prompt-quote' }, m.prompt || m.name), h('p', { class: 'field__hint' }, `${m.width} × ${m.height} px · ${formatDate(m.createdAt)}`)),
+          ),
+          { className: 'lightbox', label: 'Création' },
+        );
+      };
+      const actions = h(
+        'div',
+        { class: 'card__actions' },
+        h('button', { class: 'btn btn--sm', type: 'button', 'aria-label': 'Télécharger', onclick: async () => saveFile(await db.getBlob(m.id), `${m.name.slice(0, 40)}.${(m.mime || 'image/png').split('/')[1]}`).catch((e) => toast(e.message, { type: 'error' })) }, icon('download')),
+        h('button', { class: 'btn btn--sm', type: 'button', onclick: () => saveAndOpen(m.kind === 'image' ? photoProjectFromMedia(m) : videoProjectFromMedia([m], { aspect: null })) }, icon('layers'), 'Envoyer vers l’éditeur'),
+        h(
+          'button',
+          {
+            class: 'btn btn--sm btn--ghost',
+            type: 'button',
+            'aria-label': 'Supprimer',
+            onclick: async () => {
+              if (!(await confirmDialog({ title: 'Supprimer cette création ?', message: 'Elle sera retirée de ce navigateur. Irréversible.', confirmLabel: 'Supprimer', danger: true }))) return;
+              await deleteMedia(m.id);
+              toast('Création supprimée.', { type: 'success', duration: 2500 });
+              load();
+            },
+          },
+          icon('trash'),
+        ),
+      );
+      grid.append(
+        h(
+          'article',
+          { class: 'card' },
+          h('button', { class: 'card__media', type: 'button', 'aria-label': `Ouvrir : ${m.prompt || m.name}`, onclick: open }, h('img', { src: m.thumb, alt: '' }), h('span', { class: 'tag' }, icon('image', { size: 12 }), 'Image')),
+          h('div', { class: 'card__body' }, h('p', { class: 'card__prompt' }, m.prompt || m.name), h('div', { class: 'card__meta' }, h('time', { datetime: m.createdAt }, formatDate(m.createdAt)), h('span', {}, m.generation?.provider || 'SOLVEX'), m.width ? h('span', {}, `${m.width} × ${m.height}`) : null)),
+          actions,
+        ),
+      );
+    }
+  }
+  await load();
+  return {
+    el: h(
+      'div',
+      { class: 'page container' },
+      h('header', { class: 'gallery-head' }, h('div', {}, h('span', { class: 'eyebrow' }, icon('gallery', { size: 14 }), 'Créations IA'), h('h1', { class: 'section__title', style: { marginBottom: '4px' } }, 'Mes créations'), countEl)),
+      grid,
+    ),
+    title: 'Mes créations',
   };
 }

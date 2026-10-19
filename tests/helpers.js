@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { loadConfig } from '../server/config.js';
 import { createApp } from '../server/app.js';
+import { buildAspects, QUALITY_TIERS, RESOLUTIONS } from '../public/js/shared/imageSizes.js';
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
   let c = n;
@@ -47,6 +48,7 @@ export function makePng(width = 32, height = 32, [r, g, b, a] = [66, 99, 255, 25
 export const FAKE_MP4 = Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from('ftypisom'), Buffer.alloc(64)]);
 
 /** In-memory providers that follow the adapter contract, for tests only. */
+
 export function fakeProviders({ imageDelay = 0, videoPolls = 2, failVideo = false } = {}) {
   const calls = { generate: [], edit: [], start: [], poll: 0 };
   const image = {
@@ -63,22 +65,28 @@ export function fakeProviders({ imageDelay = 0, videoPolls = 2, failVideo = fals
       imageOnly: false,
       edit: true,
       mask: true,
-      aspects: [
-        { id: '1:1', label: 'Carré', resolutions: ['standard'] },
-        { id: '16:9', label: 'Paysage', resolutions: ['standard'] },
-      ],
-      resolutions: [{ id: 'standard', label: 'Standard' }],
-      qualities: [{ id: 'auto', label: 'Auto' }],
+      // Same limits as gpt-image-2, so sizes and « 4K » paths can be tested end to end.
+      aspects: buildAspects(['1:1', '16:9', '9:16', '21:9'], ({ width, height }) =>
+        width * height > 8_294_400 ? 'Trop grand pour ce modèle.' : width * height < 400_000 ? 'Trop petit pour ce modèle.' : null,
+      ),
+      resolutions: RESOLUTIONS.map(({ id, label }) => ({ id, label })),
+      qualities: QUALITY_TIERS,
+      qualitiesUnavailable: [],
       maxImages: 2,
       maxReferenceImages: 2,
       acceptedTypes: ['image/png', 'image/jpeg', 'image/webp'],
       notes: [],
     },
-    sizeFor: () => '64x64',
+    sizeFor(aspect, resolution) {
+      const size = this.capabilities.aspects.find((a) => a.id === aspect)?.resolutions.find((r) => r.id === resolution);
+      if (!size) throw Object.assign(new Error(`Combinaison ${aspect} ${resolution} non native.`), { status: 400, code: 'unsupported_option' });
+      return { width: size.width, height: size.height };
+    },
     async generate(args) {
       calls.generate.push(args);
       if (imageDelay) await new Promise((resolve) => setTimeout(resolve, imageDelay));
-      return Array.from({ length: args.count }, (_, i) => ({ buffer: makePng(64, 64, [69 + i * 40, 99, 255, 255]), mime: 'image/png' }));
+      const { width, height } = args.aspect ? this.sizeFor(args.aspect, args.resolution) : { width: 64, height: 64 };
+      return Array.from({ length: args.count }, (_, i) => ({ buffer: makePng(width, height, [69 + i * 40, 99, 255, 255]), mime: 'image/png' }));
     },
     async edit(args) {
       calls.edit.push(args);

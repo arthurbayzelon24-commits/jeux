@@ -16,7 +16,7 @@ const IDEAS = [
 
 function providerState(caps, kind) {
   if (!caps) return h('span', { class: 'tag tag--off' }, 'Serveur injoignable');
-  if (caps.static) return h('span', { class: 'tag tag--off' }, 'Nécessite le serveur SOLVEX');
+  if (caps.static && !caps.providers.some((p) => p.kind === kind && p.configured)) return h('span', { class: 'tag tag--off' }, 'Nécessite le serveur SOLVEX');
   const list = caps.providers.filter((p) => p.kind === kind);
   const ready = list.find((p) => p.configured);
   if (ready) return h('span', { class: 'tag tag--ok' }, `Prêt · ${ready.vendor}`);

@@ -20,7 +20,8 @@ import { photoEditorPage } from './studio/pages/photoEditor.js';
 import { settingsPage } from './pages/settings.js';
 import { applyPrefs, getPrefs } from './lib/prefs.js';
 import { initPwa } from './lib/pwa.js';
-import { isStatic } from './lib/env.js';
+import { isEmbedded, isStatic } from './lib/env.js';
+import { BROWSER_IMAGE_PROVIDER } from './lib/browserImages.js';
 import { setCapabilities } from './lib/state.js';
 
 const NAV = [
@@ -302,8 +303,11 @@ async function boot() {
   });
 
   if (isStatic()) {
-    setCapabilities(STATIC_CAPABILITIES);
-    renderHeaderStatus(STATIC_CAPABILITIES);
+    // The public website can generate images straight from the browser (Pollinations, no key);
+    // the claude.ai frame blocks every outside address, so nothing is offered there.
+    const staticCaps = { ...STATIC_CAPABILITIES, providers: isEmbedded() ? [] : [BROWSER_IMAGE_PROVIDER] };
+    setCapabilities(staticCaps);
+    renderHeaderStatus(staticCaps);
   } else if (!session.authRequired || session.authenticated) {
     try {
       renderHeaderStatus(await intro.track(loadCapabilities(), 'Lecture des capacités des modèles'));

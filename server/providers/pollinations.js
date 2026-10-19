@@ -1,17 +1,12 @@
 import { ProviderError, networkError, providerHttpError } from './base.js';
 import { sniffMime } from '../lib/files.js';
+import { ASPECTS, QUALITY_TIERS, RESOLUTIONS, buildAspects } from '../../public/js/shared/imageSizes.js';
 
 const VENDOR = 'Pollinations';
 
-const ASPECTS = [
-  { id: '1:1', label: 'Carré 1:1', sizes: { standard: [1024, 1024] } },
-  { id: '16:9', label: 'Paysage 16:9', sizes: { standard: [1344, 768] } },
-  { id: '9:16', label: 'Portrait 9:16', sizes: { standard: [768, 1344] } },
-  { id: '4:5', label: 'Portrait 4:5 (Instagram)', sizes: { standard: [1024, 1280] } },
-  { id: '4:3', label: '4:3', sizes: { standard: [1152, 864] } },
-  { id: '3:2', label: '3:2', sizes: { standard: [1216, 832] } },
-  { id: '2:3', label: 'Portrait 2:3', sizes: { standard: [832, 1216] } },
-];
+// Pollinations takes any width/height; it does not document a maximum, so large
+// sizes are requested as asked and the real size of the returned file is shown.
+const AVAILABLE = ASPECTS.map((a) => a.id);
 
 /**
  * Free text-to-image service that needs no account or key (anonymous use is
@@ -22,6 +17,7 @@ const ASPECTS = [
 export function createPollinationsProvider(config, { fetchImpl = fetch } = {}) {
   const { enabled, baseUrl, model } = config.pollinations;
 
+  const aspects = buildAspects(AVAILABLE, () => null, 8);
   const capabilities = {
     textToImage: true,
     imageToImage: false,
@@ -29,23 +25,31 @@ export function createPollinationsProvider(config, { fetchImpl = fetch } = {}) {
     edit: false,
     mask: false,
     negativePrompt: false,
-    aspects: ASPECTS.map(({ id, label, sizes }) => ({ id, label, resolutions: Object.keys(sizes) })),
-    resolutions: [{ id: 'standard', label: 'Standard (~1 Mpx)' }],
-    qualities: [{ id: 'auto', label: 'Automatique' }],
+    aspects,
+    resolutions: RESOLUTIONS.map(({ id, label }) => ({ id, label })),
+    qualities: QUALITY_TIERS.filter((q) => q.id === 'standard').map((q) => ({ ...q, detail: 'Seul niveau proposé par ce service' })),
+    qualitiesUnavailable: QUALITY_TIERS.filter((q) => q.id !== 'standard').map((q) => ({
+      id: q.id,
+      label: q.label,
+      reason: 'Pollinations n’a pas de réglage de qualité : choisissez un autre modèle (OpenAI) pour ce niveau.',
+    })),
+    upscaler: null,
+    sizeNotGuaranteed: true,
     maxImages: 1,
     maxReferenceImages: 0,
     acceptedTypes: [],
     thirdParty: true,
     notes: [
       'Service gratuit, sans clé : votre description est envoyée à Pollinations (service tiers).',
-      'Accès anonyme limité (environ une image toutes les 15 secondes) ; une image par génération.',
+      'Accès anonyme limité ; une image par génération. Pollinations ne garantit pas la taille demandée : la taille réelle du fichier est affichée.',
     ],
   };
 
-  function sizeFor(aspect, resolution = 'standard') {
-    const entry = ASPECTS.find((a) => a.id === aspect);
-    if (!entry?.sizes[resolution]) throw new ProviderError(`Format ${aspect} non pris en charge par Pollinations.`, { status: 400, code: 'unsupported_option' });
-    return entry.sizes[resolution];
+  function sizeFor(aspect, resolution) {
+    const entry = aspects.find((a) => a.id === aspect);
+    const size = entry?.resolutions.find((r) => r.id === resolution);
+    if (!size) throw new ProviderError(`Format ${aspect} / ${resolution} non pris en charge par Pollinations.`, { status: 400, code: 'unsupported_option' });
+    return { width: size.width, height: size.height };
   }
 
   return {
@@ -60,7 +64,7 @@ export function createPollinationsProvider(config, { fetchImpl = fetch } = {}) {
     sizeFor,
 
     async generate({ prompt, aspect, resolution, signal }) {
-      const [width, height] = sizeFor(aspect, resolution);
+      const { width, height } = sizeFor(aspect, resolution);
       const params = new URLSearchParams({ width: String(width), height: String(height), seed: String(Math.floor(Math.random() * 1e9)), nologo: 'true' });
       if (model) params.set('model', model);
       let response;

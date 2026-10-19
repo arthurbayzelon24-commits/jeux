@@ -117,7 +117,7 @@ export function snapshot(source, width, height, max = 320) {
 }
 
 /** Imports one File/Blob into the local library and returns its metadata. */
-export async function importFile(file, { name, origin = 'import' } = {}) {
+export async function importFile(file, { name, origin = 'import', extra = {} } = {}) {
   const kind = kindOf(file);
   if (!kind) throw new Error(`« ${file.name || name} » : type de fichier non pris en charge.`);
   if (file.size > MAX_IMPORT_BYTES) throw new Error(`« ${file.name} » dépasse 2 Go.`);
@@ -135,6 +135,7 @@ export async function importFile(file, { name, origin = 'import' } = {}) {
       favorite: false,
       origin,
       ...info,
+      ...extra,
     };
     await db.putMedia(meta, file);
     urlCache.set(id, url);

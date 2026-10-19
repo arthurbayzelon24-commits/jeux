@@ -1,5 +1,5 @@
 {
-  "version": "705d05ea6989",
+  "version": "01d2dca2f3fc",
   "assets": [
     "/",
     "/assets/app-icon.svg",
@@ -27,6 +27,7 @@
     "/js/components/particles.js",
     "/js/lib/ambient.js",
     "/js/lib/api.js",
+    "/js/lib/browserImages.js",
     "/js/lib/dom.js",
     "/js/lib/download.js",
     "/js/lib/env.js",
@@ -43,6 +44,8 @@
     "/js/pages/studioShared.js",
     "/js/pages/videos.js",
     "/js/router.js",
+    "/js/shared/imageSizes.js",
+    "/js/shared/styles.js",
     "/js/studio/assistant.js",
     "/js/studio/db.js",
     "/js/studio/editorStore.js",

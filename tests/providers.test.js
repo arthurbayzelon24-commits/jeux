@@ -33,12 +33,22 @@ const b64 = makePng(16, 16).toString('base64');
 test('OpenAI : texte vers image envoie modèle, taille, nombre et qualité', async () => {
   const { fetchImpl, calls } = mockFetch(() => ({ body: { data: [{ b64_json: b64 }, { b64_json: b64 }] } }));
   const provider = createOpenAIImageProvider(config(), { fetchImpl });
-  const images = await provider.generate({ prompt: 'un chat', aspect: '16:9', resolution: 'high', quality: 'high', count: 2 });
+  const images = await provider.generate({ prompt: 'un chat', aspect: '16:9', resolution: '2160p', quality: 'veryhigh', count: 2 });
   assert.equal(images.length, 2);
   assert.equal(images[0].mime, 'image/png');
   assert.equal(calls[0].url, 'https://api.openai.test/v1/images/generations');
   assert.equal(calls[0].init.headers.Authorization, 'Bearer sk-test');
-  assert.deepEqual(JSON.parse(calls[0].init.body), { model: 'gpt-image-2', prompt: 'un chat', n: 2, size: '2048x1152', quality: 'high' });
+  assert.deepEqual(JSON.parse(calls[0].init.body), { model: 'gpt-image-2', prompt: 'un chat', n: 2, size: '3840x2160', quality: 'high' });
+  // Quality tiers map to the API's real `quality` values.
+  for (const [tier, param] of [['standard', 'low'], ['high', 'medium'], ['veryhigh', 'high'], ['ultra', 'high']]) {
+    await provider.generate({ prompt: 'x', aspect: '1:1', resolution: '1080p', quality: tier, count: 1 });
+    assert.equal(JSON.parse(calls.at(-1).init.body).quality, param, tier);
+  }
+  // 4K: native in 16:9, 9:16, 21:9 ; the 3840 × 3840 square is above the 8.3 Mpx limit and is refused with the reason.
+  assert.deepEqual(provider.sizeFor('9:16', '2160p'), { width: 2160, height: 3840 });
+  assert.deepEqual(provider.sizeFor('21:9', '2160p'), { width: 3840, height: 1648 });
+  assert.throws(() => provider.sizeFor('1:1', '2160p'), /Dépasse la taille maximale/);
+  assert.throws(() => provider.sizeFor('1:1', '512'), /taille minimale/);
 });
 
 test('OpenAI : les références passent par /images/edits en multipart avec masque', async () => {
@@ -65,22 +75,22 @@ test('OpenAI : gpt-image-1 n’expose que ses trois tailles fixes', () => {
     provider.capabilities.aspects.map((a) => a.id),
     ['1:1', '3:2', '2:3'],
   );
-  assert.throws(() => provider.sizeFor('16:9'), /non pris en charge/);
-  assert.throws(() => provider.sizeFor('1:1', 'high'), /indisponible/);
+  assert.throws(() => provider.sizeFor('16:9', 'native'), /non pris en charge/);
+  assert.deepEqual(provider.sizeFor('3:2', 'native'), { width: 1536, height: 1024 });
 });
 
 test('OpenAI : les erreurs du fournisseur deviennent des messages exploitables', async () => {
   const quota = createOpenAIImageProvider(config(), {
     fetchImpl: mockFetch(() => ({ status: 429, body: { error: { message: 'Rate limit' } } })).fetchImpl,
   });
-  await assert.rejects(quota.generate({ prompt: 'x', aspect: '1:1', quality: 'auto', count: 1 }), (e) => e.status === 429 && e.retryable);
+  await assert.rejects(quota.generate({ prompt: 'x', aspect: '1:1', resolution: '1080p', quality: 'standard', count: 1 }), (e) => e.status === 429 && e.retryable);
   const auth = createOpenAIImageProvider(config(), { fetchImpl: mockFetch(() => ({ status: 401, body: {} })).fetchImpl });
-  await assert.rejects(auth.generate({ prompt: 'x', aspect: '1:1', quality: 'auto', count: 1 }), /Clé API refusée/);
+  await assert.rejects(auth.generate({ prompt: 'x', aspect: '1:1', resolution: '1080p', quality: 'standard', count: 1 }), /Clé API refusée/);
   const policy = createOpenAIImageProvider(config(), {
     fetchImpl: mockFetch(() => ({ status: 400, body: { error: { message: 'safety system' } } })).fetchImpl,
   });
   await assert.rejects(
-    policy.generate({ prompt: 'x', aspect: '1:1', quality: 'auto', count: 1 }),
+    policy.generate({ prompt: 'x', aspect: '1:1', resolution: '1080p', quality: 'standard', count: 1 }),
     (e) => e.status === 400 && /safety system/.test(e.message),
   );
 });
@@ -150,15 +160,16 @@ test('Pollinations : requête GET sans clé, taille du format, contrôle du type
   };
   const cfg = loadConfig({ pollinations: { enabled: true, baseUrl: 'https://image.pollinations.test', model: '' } });
   const provider = createPollinationsProvider(cfg, { fetchImpl });
-  const [image] = await provider.generate({ prompt: 'un chat / bleu', aspect: '9:16', resolution: 'standard' });
+  const [image] = await provider.generate({ prompt: 'un chat / bleu', aspect: '9:16', resolution: '1080p' });
   assert.equal(image.mime, 'image/png');
   const url = new URL(calls[0]);
   assert.equal(url.pathname, `/prompt/${encodeURIComponent('un chat / bleu')}`);
-  assert.equal(url.searchParams.get('width'), '768');
-  assert.equal(url.searchParams.get('height'), '1344');
+  assert.equal(url.searchParams.get('width'), '1080');
+  assert.equal(url.searchParams.get('height'), '1920');
+  assert.deepEqual(provider.capabilities.qualities.map((q) => q.id), ['standard'], 'pas de niveau de qualité inventé');
   assert.equal(url.searchParams.has('model'), false);
   const html = createPollinationsProvider(cfg, { fetchImpl: async () => new Response('<html>moved</html>', { status: 200 }) });
-  await assert.rejects(html.generate({ prompt: 'x', aspect: '1:1' }), /pas renvoyé d’image/);
+  await assert.rejects(html.generate({ prompt: 'x', aspect: '1:1', resolution: '1080p' }), /pas renvoyé d’image/);
   assert.equal(createPollinationsProvider(loadConfig({ pollinations: { enabled: false } })).isConfigured(), false);
 });
 

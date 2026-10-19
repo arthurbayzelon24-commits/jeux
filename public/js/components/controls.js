@@ -46,9 +46,9 @@ export function chipGroup({ legend, name, options, value, onChange, hint }) {
   };
 }
 
-function ratioIcon(ratio) {
+function ratioIcon(ratio, box = 14) {
   const [w, h_] = ratio.split(':').map(Number);
-  const scale = 14 / Math.max(w, h_);
+  const scale = box / Math.max(w, h_);
   return h('i', {
     class: 'ratio-icon',
     style: { width: `${Math.round(w * scale)}px`, height: `${Math.round(h_ * scale)}px` },
@@ -300,6 +300,55 @@ export function imageDropzone({
       max = next;
       input.multiple = max > 1;
       renderThumbs();
+    },
+  };
+}
+
+/**
+ * Visual option cards backed by native radios (mouse, keyboard and touch).
+ * options: [{ id, label, sub, ratio, disabled, reason }]. A disabled card
+ * shows why it is unavailable instead of pretending to work.
+ */
+export function optionCards({ legend, name, options, value, onChange, hint, columns = 'auto' }) {
+  const id = `cards-${++groupId}`;
+  const fieldset = h('fieldset', { class: `opt-cards opt-cards--${columns}`, 'aria-labelledby': `${id}-legend` });
+  const hintEl = h('p', { class: 'field__hint', id: `${id}-hint`, hidden: !hint }, hint || '');
+  const wrapper = h('div', { class: 'field' }, h('div', { class: 'field__label', id: `${id}-legend` }, legend), fieldset, hintEl);
+  let current = value;
+  function render(list, selected = current) {
+    current = selected;
+    clear(fieldset);
+    for (const option of list) {
+      const input = h('input', { type: 'radio', name: name || id, value: option.id, checked: option.id === selected, disabled: Boolean(option.disabled) });
+      input.addEventListener('change', () => {
+        current = option.id;
+        onChange?.(option.id);
+      });
+      fieldset.append(
+        h(
+          'label',
+          { class: `opt-card${option.disabled ? ' is-disabled' : ''}`, title: option.reason || option.label },
+          input,
+          h(
+            'span',
+            { class: 'opt-card__box' },
+            option.ratio ? ratioIcon(option.ratio, 22) : null,
+            h('strong', {}, option.label),
+            option.sub ? h('small', {}, option.sub) : null,
+            option.disabled && option.reason ? h('small', { class: 'opt-card__why' }, option.reason) : null,
+          ),
+        ),
+      );
+    }
+  }
+  render(options, value);
+  return {
+    el: wrapper,
+    update: render,
+    setHint(text, warn = false) {
+      hintEl.hidden = !text;
+      hintEl.textContent = text || '';
+      hintEl.classList.toggle('field__hint--warn', warn);
     },
   };
 }
