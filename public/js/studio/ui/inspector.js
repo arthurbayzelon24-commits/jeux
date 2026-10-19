@@ -3,20 +3,13 @@ import { icon } from '../../components/icons.js';
 import { getPath, setPath, setKeyframe, removeKeyframe, valueAt, EASING_LABELS, MOTION_PRESETS, ANIMATABLE } from '../engine/keyframes.js';
 import { EFFECTS, EFFECT_MAP, defaultParams, UNAVAILABLE_EFFECTS } from '../engine/effects.js';
 import { TRANSITIONS, TRANSITION_MAP, DIRECTIONS, defaultTransition } from '../engine/transitions.js';
-import { TEXT_ANIM_LABELS, TEXT_LOOPS } from '../engine/compositor.js';
+import { TEXT_LOOPS } from '../engine/compositor.js';
+import { textStyleControls } from '../textStyles.js';
 import { ASPECTS, clipEnd, changeAspect, createTrack, defaultColor, sourceLimit } from '../project.js';
 import { formatTime } from '../media.js';
 import { uid } from '../db.js';
 import { getPrefs } from '../../lib/prefs.js';
 
-const FONTS = [
-  ['Inter, "Segoe UI", system-ui, sans-serif', 'Sans moderne'],
-  ['Georgia, "Times New Roman", serif', 'Serif élégante'],
-  ['"Courier New", ui-monospace, monospace', 'Machine à écrire'],
-  ['Impact, "Arial Black", sans-serif', 'Impact'],
-  ['"Trebuchet MS", Verdana, sans-serif', 'Humaniste'],
-  ['"Comic Sans MS", "Comic Neue", cursive', 'Manuscrite'],
-];
 const BLENDS = [
   ['source-over', 'Normal'],
   ['screen', 'Superposition claire (écran)'],
@@ -72,7 +65,30 @@ export class Inspector {
     return Math.max(0, Math.min(clip.duration, this.store.time - clip.start));
   }
 
+  /**
+   * Redraws the panel. A focused field is blurred first, so its pending
+   * « change » is committed before the panel is emptied, and a redraw asked
+   * for during a redraw is run once afterwards instead of nesting.
+   */
   render() {
+    if (this.rendering) {
+      this.pending = true;
+      return;
+    }
+    this.rendering = true;
+    try {
+      if (this.el.contains(document.activeElement)) document.activeElement.blur();
+      this.renderNow();
+    } finally {
+      this.rendering = false;
+    }
+    if (this.pending) {
+      this.pending = false;
+      this.render();
+    }
+  }
+
+  renderNow() {
     clear(this.el);
     if (this.onClose)
       this.el.append(h('button', { class: 'btn btn--sm btn--ghost sheet-close', type: 'button', 'aria-label': 'Fermer les propriétés', onclick: () => this.onClose() }, icon('close')));
@@ -467,59 +483,18 @@ export class Inspector {
     content.value = t.content;
     content.addEventListener('input', () => this.edit('Texte', (c) => ((c.text.content = content.value), c), { commit: false }));
     content.addEventListener('change', () => this.edit('Texte', (c) => ((c.text.content = content.value), c)));
-    const set = (label, key) => (v) => this.edit(label, (c) => ((c.text[key] = v), c));
+    const edit = (label, mutate, opts) => this.edit(label, (c) => (mutate(c.text), c), opts);
     body.append(
       this.section('Contenu', content),
       this.section(
-        'Typographie',
-        this.select('Police', t.font, FONTS, set('Police', 'font')),
-        this.slider(clip, 'text.size', 'Taille', { min: 12, max: 400, step: 1 }),
-        this.select(
-          'Graisse',
-          String(t.weight),
-          [
-            ['300', 'Fine'],
-            ['400', 'Normale'],
-            ['600', 'Demi-gras'],
-            ['700', 'Gras'],
-            ['900', 'Extra-gras'],
-          ],
-          (v) => this.edit('Graisse', (c) => ((c.text.weight = Number(v)), c)),
-        ),
-        this.check('Italique', t.italic, set('Italique', 'italic')),
-        this.slider(clip, 'text.letterSpacing', 'Espacement', { min: -10, max: 60, step: 1 }),
-        this.slider(clip, 'text.lineHeight', 'Interlignage', { min: 0.8, max: 2.5, step: 0.05 }),
-        this.select(
-          'Alignement',
-          t.align,
-          [
-            ['left', 'Gauche'],
-            ['center', 'Centré'],
-            ['right', 'Droite'],
-          ],
-          set('Alignement', 'align'),
-        ),
+        'Position',
+        this.slider(clip, 'transform.opacity', 'Opacité', { min: 0, max: 1, step: 0.01, format: (v) => `${Math.round(v * 100)} %`, animatable: true, fallback: 1 }),
+        this.slider(clip, 'transform.rotation', 'Rotation', { min: -180, max: 180, step: 1, format: (v) => `${v}°`, animatable: true }),
+        this.slider(clip, 'transform.scale', 'Échelle', { min: 0.1, max: 4, step: 0.01, animatable: true, fallback: 1 }),
+        h('p', { class: 'field__hint' }, 'Faites glisser le texte dans l’aperçu pour le déplacer. Sa durée se règle dans la timeline ou l’onglet Général.'),
       ),
-      this.section(
-        'Style',
-        this.colorInput('Couleur', t.color, set('Couleur du texte', 'color')),
-        this.check('Dégradé bleu → violet', Boolean(t.gradient), (v) =>
-          this.edit('Dégradé', (c) => ((c.text.gradient = v ? ['#45E5F5', '#8B5CF6'] : null), c)),
-        ),
-        this.colorInput('Contour', t.stroke, set('Couleur du contour', 'stroke')),
-        this.slider(clip, 'text.strokeWidth', 'Épaisseur contour', { min: 0, max: 30, step: 1 }),
-        this.slider(clip, 'text.shadow', 'Ombre', { min: 0, max: 1, step: 0.05 }),
-        this.check('Fond', Boolean(t.background), (v) =>
-          this.edit('Fond du texte', (c) => ((c.text.background = v ? 'rgba(8,11,22,0.7)' : null), c)),
-        ),
-      ),
-      this.section(
-        'Animation du texte',
-        this.select('Entrée', t.animIn || 'none', Object.entries(TEXT_ANIM_LABELS), set('Animation d’entrée', 'animIn')),
-        this.select('Sortie', t.animOut || 'none', Object.entries(TEXT_ANIM_LABELS), set('Animation de sortie', 'animOut')),
-        this.select('En continu', t.loop || 'none', Object.entries(TEXT_LOOPS), set('Animation continue', 'loop')),
-        this.slider(clip, 'text.animDuration', 'Durée', { min: 0.1, max: 3, step: 0.05, format: (v) => `${v} s` }),
-      ),
+      ...textStyleControls(t, edit),
+      this.section('Animation continue', this.select('En continu', t.loop || 'none', Object.entries(TEXT_LOOPS), (v) => this.edit('Animation continue', (c) => ((c.text.loop = v), c)))),
     );
   }
 

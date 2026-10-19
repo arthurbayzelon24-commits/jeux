@@ -3,6 +3,7 @@ import { icon } from '../../components/icons.js';
 import { confirmDialog } from '../../components/feedback.js';
 import { db } from '../db.js';
 import { renderAudioPanel } from './audioPanel.js';
+import { STYLED_TEXTS, STYLED_CATEGORIES, stylePreview } from '../textStyles.js';
 import { ACCEPT_ATTR, importFiles, importFile, deleteMedia, formatTime } from '../media.js';
 import { queryStickers, STICKER_CATEGORIES, SHAPES, stickerCount } from '../stickers.js';
 import { api } from '../../lib/api.js';
@@ -172,7 +173,7 @@ export class Library {
       media: () => this.renderMedia(body),
       audio: () => this.renderAudio(body),
       text: () => this.renderText(body),
-      stickers: () => (this.renderStickers(body), body.append(h('h4', {}, 'Formes')), this.renderShapes(body)),
+      stickers: () => (this.renderStyledTexts(body), body.append(h('h4', {}, 'Stickers')), this.renderStickers(body), body.append(h('h4', {}, 'Formes')), this.renderShapes(body)),
       ai: () => (this.panels.ai?.render(body), this.renderAi(body)),
     };
     (own[this.tab] || (() => this.panels[this.tab]?.render(body)))();
@@ -373,6 +374,24 @@ export class Library {
       grid.append(this.drag(card, { type: 'text', preset: preset.id }));
     }
     body.append(h('p', { class: 'field__hint' }, 'Glissez un style sur une piste texte ou cliquez pour l’ajouter au curseur.'), grid);
+  }
+
+  renderStyledTexts(body) {
+    this.styledCategory ??= STYLED_CATEGORIES[0];
+    const cat = h('select', { class: 'select select--sm', 'aria-label': 'Catégorie de textes stylisés' }, STYLED_CATEGORIES.map((c) => h('option', { value: c, selected: c === this.styledCategory }, c)));
+    const grid = h('div', { class: 'styled-grid' });
+    const draw = () =>
+      grid.replaceChildren(
+        ...STYLED_TEXTS.filter((p) => p.category === this.styledCategory).map((p) => {
+          const card = h('button', { class: 'styled-card', type: 'button', title: `${p.label} — cliquer pour ajouter au curseur, ou glisser dans la timeline` }, stylePreview(p), h('span', {}, p.label));
+          card.addEventListener('click', () => this.onAdd({ type: 'text', styled: p.id }));
+          return this.drag(card, { type: 'text', styled: p.id });
+        }),
+      );
+    cat.addEventListener('change', () => ((this.styledCategory = cat.value), draw()));
+    draw();
+    const free = h('button', { class: 'btn btn--sm', type: 'button', onclick: () => this.onAdd({ type: 'text', preset: 'title' }) }, '+ Texte libre');
+    body.append(h('h4', {}, 'Textes stylisés'), h('div', { class: 'styled-head' }, cat, free), grid);
   }
 
   renderStickers(body) {

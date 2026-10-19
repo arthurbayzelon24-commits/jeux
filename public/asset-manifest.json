@@ -1,5 +1,5 @@
 {
-  "version": "12891ff429d8",
+  "version": "1f85afba3449",
   "assets": [
     "/",
     "/assets/app-icon.svg",
@@ -70,6 +70,7 @@
     "/js/studio/sounds.js",
     "/js/studio/stickers.js",
     "/js/studio/subtitles.js",
+    "/js/studio/textStyles.js",
     "/js/studio/ui/audioPanel.js",
     "/js/studio/ui/editPanels.js",
     "/js/studio/ui/exportDialog.js",

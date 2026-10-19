@@ -2672,3 +2672,159 @@ body.is-app .editor {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------- styled texts */
+.styled-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.styled-head .select {
+  flex: 1;
+  min-width: 0;
+}
+.styled-block {
+  display: grid;
+  gap: 6px;
+}
+.styled-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 6px;
+}
+.styled-card {
+  display: grid;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--night-2);
+  color: var(--white);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  text-align: center;
+}
+.styled-card:hover {
+  border-color: var(--blue);
+}
+.styled-preview {
+  width: 100%;
+  aspect-ratio: 150 / 84;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+}
+
+/* ==========================================================================
+   Compact interface (2.2): a little denser, same touch targets on phones.
+   ========================================================================== */
+:root {
+  --header-h: 58px;
+}
+.site-header {
+  gap: 18px;
+}
+.brand {
+  font-size: 14px;
+}
+.nav a,
+.nav-drop {
+  padding: 6px 11px;
+  font-size: 14px;
+}
+.status-dot {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.btn {
+  min-height: 38px;
+  padding: 0 15px;
+  font-size: 14px;
+  border-radius: 11px;
+}
+.btn--lg {
+  min-height: 46px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+.btn--sm {
+  min-height: 31px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+.btn--icon {
+  width: 36px;
+  padding: 0;
+}
+.btn--sm.btn--icon {
+  width: 31px;
+  padding: 0;
+}
+.container {
+  width: min(1320px, 100%);
+}
+.studio__head {
+  padding-top: 20px;
+}
+.studio {
+  padding: 18px 0 36px;
+  gap: 18px;
+}
+.stage {
+  padding: 16px;
+  gap: 12px;
+}
+.controls__scroll {
+  padding: 16px 16px 6px;
+}
+.controls__footer {
+  padding: 12px 16px 14px;
+}
+.home-hero {
+  padding-block: clamp(20px, 4vw, 48px) 16px;
+}
+.home-section {
+  margin-top: clamp(22px, 3vw, 36px);
+}
+.hub-card {
+  padding: 16px;
+}
+/* Editor: more room for the preview and the timeline. */
+.editor-bar {
+  padding-block: 4px;
+}
+.editor-cats button {
+  min-width: 54px;
+  padding: 4px 6px;
+}
+.editor-main {
+  grid-template-columns: minmax(230px, 280px) minmax(0, 1fr) minmax(260px, 310px);
+}
+.editor[data-panel='hidden'] .editor-main {
+  grid-template-columns: 0 minmax(0, 1fr) minmax(260px, 310px);
+}
+.lib-body,
+.insp-body {
+  padding: 10px;
+}
+.transport {
+  padding: 5px;
+}
+.tl-toolbar {
+  padding: 4px 8px;
+}
+/* Phones keep comfortable touch targets. */
+@media (max-width: 760px) {
+  .btn {
+    min-height: 42px;
+  }
+  .btn--sm {
+    min-height: 36px;
+  }
+}
+@media (max-width: 1100px) {
+  .editor-main {
+    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr) minmax(240px, 280px);
+  }
+}

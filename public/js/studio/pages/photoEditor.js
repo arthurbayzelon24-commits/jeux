@@ -13,6 +13,7 @@ import { api, watchCreation } from '../../lib/api.js';
 import { getCapabilities, providerFor } from '../../lib/state.js';
 import { isStatic } from '../../lib/env.js';
 import { logoMark } from '../../components/logo.js';
+import { STYLED_TEXTS, STYLED_CATEGORIES, stylePreview, textStyleControls } from '../textStyles.js';
 
 const say = (message, type = 'info') => toast(message, { type });
 const PREVIEW_EDGE = 1600;
@@ -162,6 +163,31 @@ export async function photoEditorPage({ params }) {
     }
     imgInput.value = '';
   });
+  let styledCategory = 'Textes décoratifs pour photos';
+  const styledGrid = () => {
+    const grid = h('div', { class: 'styled-grid' });
+    const cat = h('select', { class: 'select select--sm', 'aria-label': 'Catégorie de textes stylisés' }, STYLED_CATEGORIES.map((c) => h('option', { value: c, selected: c === styledCategory }, c)));
+    const draw = () => {
+      grid.replaceChildren(
+        ...STYLED_TEXTS.filter((p) => p.category === styledCategory).map((p) =>
+          h(
+            'button',
+            {
+              class: 'styled-card',
+              type: 'button',
+              title: `Ajouter « ${p.label} »`,
+              onclick: () => addLayer({ ...newLayer('text', { text: { ...p.text, animIn: 'none', animOut: 'none', loop: 'none' }, name: p.label }), ...(p.transform?.y ? { y: p.transform.y } : {}) }),
+            },
+            stylePreview(p),
+            h('span', {}, p.label),
+          ),
+        ),
+      );
+    };
+    cat.addEventListener('change', () => ((styledCategory = cat.value), draw()));
+    draw();
+    return h('div', { class: 'styled-block' }, cat, grid);
+  };
   const renderLayers = () => {
     clear(layersPanel);
     layersPanel.append(h('button', { class: 'btn btn--sm btn--ghost sheet-close', type: 'button', 'aria-label': 'Fermer les calques', onclick: () => setSheet('') }, icon('close')));
@@ -250,6 +276,8 @@ export async function photoEditorPage({ params }) {
           '+ Texte',
         ),
       ),
+      h('h3', { class: 'field__label' }, 'Textes stylisés'),
+      styledGrid(),
       h('h3', { class: 'field__label' }, 'Formes'),
       h(
         'div',
@@ -450,42 +478,9 @@ export async function photoEditorPage({ params }) {
         content.value = l.text.content;
         content.addEventListener('input', () => editLayer('Texte', (x) => ((x.text.content = content.value), x), { commit: false }));
         content.addEventListener('change', () => editLayer('Texte', (x) => ((x.text.content = content.value), x)));
-        const color = h('input', { type: 'color', value: l.text.color });
-        color.addEventListener('change', () => editLayer('Couleur', (x) => ((x.text.color = color.value), x)));
         body.append(
-          section(
-            'Texte',
-            content,
-            slider('Taille', l.text.size, 12, 400, 1, (v, c) => editLayer('Taille', (x) => ((x.text.size = v), x), { commit: c })),
-            slider('Espacement', l.text.letterSpacing || 0, -10, 60, 1, (v, c) =>
-              editLayer('Espacement', (x) => ((x.text.letterSpacing = v), x), { commit: c }),
-            ),
-            slider('Contour', l.text.strokeWidth || 0, 0, 30, 1, (v, c) =>
-              editLayer('Contour', (x) => ((x.text.strokeWidth = v), x), { commit: c }),
-            ),
-            slider('Ombre', l.text.shadow || 0, 0, 1, 0.05, (v, c) => editLayer('Ombre', (x) => ((x.text.shadow = v), x), { commit: c })),
-            h('div', { class: 'insp-row insp-row--color' }, h('label', {}, 'Couleur'), color),
-            h(
-              'label',
-              { class: 'insp-check' },
-              h('input', {
-                type: 'checkbox',
-                checked: Boolean(l.text.gradient),
-                onchange: (e) => editLayer('Dégradé', (x) => ((x.text.gradient = e.target.checked ? ['#45E5F5', '#8B5CF6'] : null), x)),
-              }),
-              'Dégradé',
-            ),
-            h(
-              'label',
-              { class: 'insp-check' },
-              h('input', {
-                type: 'checkbox',
-                checked: Boolean(l.text.background),
-                onchange: (e) => editLayer('Fond', (x) => ((x.text.background = e.target.checked ? 'rgba(8,11,22,0.7)' : null), x)),
-              }),
-              'Fond',
-            ),
-          ),
+          section('Texte', content, h('p', { class: 'field__hint' }, 'Faites glisser le texte sur l’image pour le déplacer ; position, taille, rotation et opacité dans l’onglet Calque.')),
+          ...textStyleControls(l.text, (label, mutate, opts) => editLayer(label, (x) => (mutate(x.text), x), opts), { animations: false }),
         );
       }
     } else if (tab === 'canvas') {

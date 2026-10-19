@@ -368,22 +368,16 @@ export function drawText(c, tx, local, duration, unit) {
   const maxW = Math.max(...widths, 1);
   const top = -((lines.length - 1) * lineH) / 2;
   const anchorX = tx.align === 'left' ? -maxW / 2 : tx.align === 'right' ? maxW / 2 : 0;
-  if (tx.background) {
-    c.fillStyle = tx.background;
-    roundRect(c, -maxW / 2 - size * 0.35, top - lineH / 2 - size * 0.1, maxW + size * 0.7, lineH * lines.length + size * 0.2, size * 0.2);
-    c.fill();
-  }
-  if (tx.gradient?.length === 2) {
-    const g = c.createLinearGradient(-maxW / 2, 0, maxW / 2, 0);
-    g.addColorStop(0, tx.gradient[0]);
-    g.addColorStop(1, tx.gradient[1]);
-    c.fillStyle = g;
-  } else c.fillStyle = tx.color;
-  if (tx.shadow) {
-    c.shadowColor = `rgba(0,0,0,${clamp(tx.shadow, 0, 1)})`;
-    c.shadowBlur = 24 * unit * tx.shadow;
-    c.shadowOffsetY = 6 * unit * tx.shadow;
-  }
+  if (tx.background) drawTextBox(c, tx, { x: -maxW / 2 - size * 0.35, y: top - lineH / 2 - size * 0.1, w: maxW + size * 0.7, h: lineH * lines.length + size * 0.2, size, maxW });
+  const fill = () => {
+    if (tx.gradient?.length === 2) {
+      const g = c.createLinearGradient(-maxW / 2, 0, maxW / 2, 0);
+      g.addColorStop(0, tx.gradient[0]);
+      g.addColorStop(1, tx.gradient[1]);
+      c.fillStyle = g;
+    } else c.fillStyle = tx.color;
+  };
+  const drawLines = () =>
   lines.forEach((line, i) => {
     const y = top + i * lineH;
     let x = anchorX;
@@ -414,6 +408,63 @@ export function drawText(c, tx, local, duration, unit) {
     }
     c.fillText(line, x, y);
   });
+  // Neon glow: a blurred pass in the glow colour under the sharp text.
+  if (tx.glow) {
+    c.save();
+    fill();
+    c.shadowColor = tx.glowColor || tx.color;
+    c.shadowBlur = size * 0.5 * clamp(tx.glow, 0, 1);
+    c.shadowOffsetX = 0;
+    c.shadowOffsetY = 0;
+    drawLines();
+    drawLines();
+    c.restore();
+  }
+  fill();
+  if (tx.shadow) {
+    c.shadowColor = hexAlpha(tx.shadowColor || '#000000', clamp(tx.shadow, 0, 1));
+    c.shadowBlur = 24 * unit * tx.shadow;
+    c.shadowOffsetY = 6 * unit * tx.shadow;
+  }
+  drawLines();
+  c.restore();
+}
+
+function hexAlpha(hex, alpha) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return `rgba(0,0,0,${alpha})`;
+  const n = parseInt(m[1], 16);
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
+/** Background shapes behind a text: box, pill, speech bubble, underline or frame. */
+function drawTextBox(c, tx, { x, y, w, h: hh, size, maxW }) {
+  c.save();
+  c.fillStyle = tx.background;
+  c.strokeStyle = tx.background;
+  const style = tx.boxStyle || 'box';
+  if (style === 'pill') {
+    roundRect(c, x - size * 0.25, y, w + size * 0.5, hh, hh / 2);
+    c.fill();
+  } else if (style === 'bubble') {
+    roundRect(c, x - size * 0.1, y - size * 0.1, w + size * 0.2, hh + size * 0.2, size * 0.5);
+    c.fill();
+    c.beginPath();
+    c.moveTo(x + w * 0.2, y + hh + size * 0.05);
+    c.lineTo(x + w * 0.12, y + hh + size * 0.6);
+    c.lineTo(x + w * 0.38, y + hh + size * 0.05);
+    c.closePath();
+    c.fill();
+  } else if (style === 'underline') {
+    c.fillRect(-maxW / 2, y + hh - size * 0.02, maxW, Math.max(2, size * 0.09));
+  } else if (style === 'outline') {
+    c.lineWidth = Math.max(2, size * 0.06);
+    roundRect(c, x, y, w, hh, size * 0.12);
+    c.stroke();
+  } else {
+    roundRect(c, x, y, w, hh, size * 0.2);
+    c.fill();
+  }
   c.restore();
 }
 

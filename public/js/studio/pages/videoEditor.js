@@ -12,6 +12,7 @@ import { openRecorder } from '../ui/recorder.js';
 import { db, uid } from '../db.js';
 import { createClip, addClip, clipEnd, trackKindFor, createTrack, pasteClips, projectDuration, rippleDelete, changeAspect, ASPECTS } from '../project.js';
 import { effectsPanel, transitionsPanel, filtersPanel } from '../ui/editPanels.js';
+import { STYLED_TEXTS } from '../textStyles.js';
 import { logoMark } from '../../components/logo.js';
 import { SHAPES } from '../stickers.js';
 import { formatTime, AUDIO_ACCEPT, ACCEPT_ATTR, importFile, importFiles } from '../media.js';
@@ -329,6 +330,15 @@ export async function videoEditorPage({ params }) {
         await player.prepare();
         return;
       }
+    } else if (payload.type === 'text' && payload.styled) {
+      const preset = STYLED_TEXTS.find((p) => p.id === payload.styled);
+      if (!preset) return;
+      clip = createClip('text', {
+        duration: 4,
+        text: structuredClone(preset.text),
+        transform: { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, ...(preset.transform || {}) },
+        name: preset.label,
+      });
     } else if (payload.type === 'text') {
       const preset = TEXT_PRESETS.find((p) => p.id === payload.preset) || TEXT_PRESETS[0];
       clip = createClip('text', {
