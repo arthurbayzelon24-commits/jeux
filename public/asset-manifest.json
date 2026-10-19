@@ -1,5 +1,5 @@
 {
-  "version": "1401b0c74a1f",
+  "version": "d90571f13f04",
   "assets": [
     "/",
     "/assets/app-icon.svg",
@@ -49,6 +49,7 @@
     "/js/shared/imageSizes.js",
     "/js/shared/styles.js",
     "/js/studio/assistant.js",
+    "/js/studio/assistantActions.js",
     "/js/studio/db.js",
     "/js/studio/editorStore.js",
     "/js/studio/engine/analysis.js",
