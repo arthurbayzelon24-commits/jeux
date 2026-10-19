@@ -288,3 +288,81 @@ test('redémarrage : les images interrompues échouent proprement, les vidéos r
   assert.equal(srv.app.store.get(vid.data.creation.id).status, 'succeeded', srv.app.store.get(vid.data.creation.id).error);
   assert.equal(fast.calls.start.length, 0, 'la tâche vidéo existante est reprise, pas relancée');
 });
+
+test('vidéo : style et mouvement de caméra écrits dans la description, options refusées clairement', async (t) => {
+  const fake = fakeProviders({ videoPolls: 1 });
+  const srv = await startTestServer({ providers: fake.providers });
+  t.after(() => srv.close());
+  const caps = await json(srv.base, '/api/capabilities');
+  assert.ok(caps.data.cameraMoves.some((m) => m.id === 'drone'));
+
+  const ok = await json(srv.base, '/api/videos/generate', {
+    method: 'POST',
+    body: { prompt: 'une forêt', aspect: '16:9', duration: 8, resolution: '720p', style: 'cinematique', camera: 'drone' },
+  });
+  assert.equal(ok.status, 202);
+  await finished(srv.base, ok.data.creation.id);
+  const sent = fake.calls.start[0].prompt;
+  assert.match(sent, /^une forêt/);
+  assert.match(sent, /Style: cinematic/);
+  assert.match(sent, /Camera: aerial drone shot/);
+  const stored = await json(srv.base, `/api/creations/${ok.data.creation.id}`);
+  assert.equal(stored.data.creation.prompt, 'une forêt', 'la description de l’utilisateur reste intacte');
+
+  const badCamera = await json(srv.base, '/api/videos/generate', {
+    method: 'POST',
+    body: { prompt: 'x', aspect: '16:9', duration: 8, resolution: '720p', camera: 'téléportation' },
+  });
+  assert.equal(badCamera.status, 400);
+
+  // The fake video model does not declare negative prompts: refused, never silently dropped.
+  const negative = await json(srv.base, '/api/videos/generate', {
+    method: 'POST',
+    body: { prompt: 'x', aspect: '16:9', duration: 8, resolution: '720p', negativePrompt: 'flou' },
+  });
+  assert.equal(negative.status, 400);
+  assert.equal(negative.data.error.code, 'unsupported_option');
+  const negImage = await json(srv.base, '/api/images/generate', { method: 'POST', body: { prompt: 'x', aspect: '1:1', negativePrompt: 'flou' } });
+  assert.equal(negImage.status, 400);
+});
+
+test('génération : description vide refusée avec un message clair', async (t) => {
+  const srv = await startTestServer({ providers: fakeProviders().providers });
+  t.after(() => srv.close());
+  const image = await json(srv.base, '/api/images/generate', { method: 'POST', body: { prompt: '   ', aspect: '1:1' } });
+  assert.equal(image.status, 400);
+  assert.ok(image.data.error.message.length > 10);
+  const video = await json(srv.base, '/api/videos/generate', { method: 'POST', body: { prompt: '', aspect: '16:9', duration: 8 } });
+  assert.equal(video.status, 400);
+  assert.match(video.data.error.message, /scène/);
+});
+
+test('PWA : manifeste installable, icônes PNG et service worker sans cache d’API', async (t) => {
+  const srv = await startTestServer({ providers: fakeProviders().providers });
+  t.after(() => srv.close());
+  const res = await fetch(`${srv.base}/manifest.webmanifest`);
+  assert.equal(res.headers.get('content-type').split(';')[0], 'application/manifest+json');
+  const manifest = await res.json();
+  for (const key of ['id', 'name', 'short_name', 'start_url', 'scope', 'display', 'background_color', 'theme_color']) assert.ok(manifest[key], key);
+  assert.equal(manifest.display, 'standalone');
+  for (const size of [192, 512]) {
+    for (const purpose of ['any', 'maskable']) {
+      const icon = manifest.icons.find((i) => i.sizes === `${size}x${size}` && i.purpose === purpose);
+      assert.ok(icon, `${size} ${purpose}`);
+      const png = Buffer.from(await (await fetch(srv.base + icon.src)).arrayBuffer());
+      assert.equal(png.readUInt32BE(16), size, 'largeur réelle');
+      assert.equal(png.readUInt32BE(20), size, 'hauteur réelle');
+    }
+  }
+  const sw = await (await fetch(`${srv.base}/sw.js`)).text();
+  assert.match(sw, /startsWith\('\/api\/'\)/);
+  assert.doesNotMatch(sw, /skipWaiting\(\);\s*\}\)\(\)/);
+  const html = await (await fetch(`${srv.base}/`)).text();
+  assert.match(html, /rel="manifest"/);
+  assert.match(html, /apple-touch-icon/);
+  // No API key or secret may ever reach the browser.
+  for (const file of ['/js/app.js', '/js/lib/api.js', '/js/lib/state.js', '/sw.js', '/manifest.webmanifest']) {
+    const text = await (await fetch(srv.base + file)).text();
+    assert.doesNotMatch(text, /sk-[A-Za-z0-9]{10,}|AIza[0-9A-Za-z_-]{20,}|OPENAI_API_KEY=|GEMINI_API_KEY=/);
+  }
+});

@@ -225,7 +225,9 @@ test('transcription : segments minutés (Whisper) ou texte seul', async () => {
 
 test('build : la version de l’application correspond au dossier des mises à jour', () => {
   const output = execFileSync(process.execPath, ['scripts/build.js'], { encoding: 'utf8' });
-  assert.match(output, /version 2\.0\.0/);
+  const appVersion = /APP_VERSION = '([^']+)'/.exec(readFileSync('public/js/lib/env.js', 'utf8'))[1];
+  assert.match(output, new RegExp(`version ${appVersion.replaceAll('.', '\\.')}`));
+  assert.equal(JSON.parse(readFileSync('package.json', 'utf8')).version, appVersion);
   const manifest = JSON.parse(readFileSync('public/asset-manifest.json', 'utf8'));
   assert.ok(manifest.assets.includes('/js/studio/pages/videoEditor.js'));
   assert.match(readFileSync('public/sw.js', 'utf8'), new RegExp(`VERSION = '${manifest.version}'`));

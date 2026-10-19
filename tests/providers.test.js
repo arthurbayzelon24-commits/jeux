@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createOpenAIImageProvider, isFixedSizeModel } from '../server/providers/openaiImages.js';
 import { createVeoProvider } from '../server/providers/googleVeo.js';
 import { createPollinationsProvider } from '../server/providers/pollinations.js';
+import { createRegistry } from '../server/providers/registry.js';
 import { loadConfig } from '../server/config.js';
 import { makePng } from './helpers.js';
 
@@ -172,4 +173,15 @@ test('Veo : instruction négative transmise uniquement si fournie', async () => 
   await provider.start({ prompt: 'forêt', aspect: '16:9', duration: 8, resolution: '720p' });
   assert.equal(bodies[0].parameters.negativePrompt, 'texte, filigrane');
   assert.equal('negativePrompt' in bodies[1].parameters, false);
+});
+
+test('registre : sans clé OpenAI, les images passent par Pollinations ; avec une clé, OpenAI reste prioritaire', () => {
+  const free = createRegistry(loadConfig({ openai: { apiKey: '' }, google: { apiKey: '' }, pollinations: { enabled: true } }));
+  assert.equal(free.resolve('image').id, 'pollinations-images');
+  assert.equal(free.resolve('video'), null);
+  const keyed = createRegistry(loadConfig({ openai: { apiKey: 'test-key' }, pollinations: { enabled: true } }));
+  assert.equal(keyed.resolve('image').id, 'openai-images');
+  assert.equal(keyed.resolve('image', 'pollinations-images').id, 'pollinations-images', 'choix explicite du modèle');
+  const off = createRegistry(loadConfig({ openai: { apiKey: '' }, pollinations: { enabled: false } }));
+  assert.equal(off.resolve('image'), null);
 });
