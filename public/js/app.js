@@ -9,6 +9,7 @@ import { icon } from './components/icons.js';
 import { setBusy, toast } from './components/feedback.js';
 import { homePage } from './pages/home.js';
 import { imagesPage } from './pages/images.js';
+import { assistantPage } from './pages/assistant.js';
 import { videosPage } from './pages/videos.js';
 import { enhancePage } from './pages/enhance.js';
 import { galleryPage } from './pages/gallery.js';
@@ -31,8 +32,9 @@ const NAV = [
   {
     label: 'Outils IA',
     icon: 'sparkles',
-    match: ['/images', '/videos', '/retouche'],
+    match: ['/assistant', '/images', '/videos', '/retouche'],
     children: [
+      { path: '/assistant', label: 'Discuter avec SOLVEX AI', icon: 'sparkles' },
       { path: '/images', label: 'Générer une image', icon: 'image' },
       { path: '/videos', label: 'Générer une vidéo', icon: 'video' },
       { path: '/retouche', label: 'Retouche et amélioration', icon: 'wand' },
@@ -282,6 +284,7 @@ async function boot() {
   defineRoutes(
     {
       '/': guard(homePage),
+      '/assistant': guard(assistantPage),
       '/images': guard(imagesPage),
       '/videos': guard(videosPage),
       '/retouche': guard(enhancePage),

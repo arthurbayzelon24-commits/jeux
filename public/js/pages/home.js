@@ -27,7 +27,7 @@ function hubCard({ art, title, text, state, action }) {
   return h(
     'article',
     { class: 'hub-card' },
-    h('div', { class: `hub-card__art hub-card__art--${art}`, 'aria-hidden': 'true' }, icon(art === 'edit' ? 'layers' : art === 'video' ? 'video' : 'image', { size: 30 })),
+    h('div', { class: `hub-card__art hub-card__art--${art}`, 'aria-hidden': 'true' }, icon({ edit: 'layers', video: 'video', chat: 'sparkles' }[art] || 'image', { size: 30 })),
     h('h3', {}, title),
     h('p', {}, text),
     state || null,
@@ -94,6 +94,13 @@ export async function homePage() {
       h(
         'div',
         { class: 'hub-grid' },
+        hubCard({
+          art: 'chat',
+          title: 'Discuter avec SOLVEX AI',
+          text: 'Demandez des idées, un prompt détaillé, une image, une vidéo ou une musique : l’assistant lance les créations pour vous.',
+          state: caps?.assistant?.configured ? h('span', { class: 'tag tag--ok' }, `Prêt · ${caps.assistant.model}`) : isEmbedded() ? h('span', { class: 'tag tag--ok' }, 'Claude via claude.ai') : h('span', { class: 'tag tag--off' }, 'Modèle à configurer'),
+          action: h('a', { class: 'btn btn--primary', href: '/assistant', 'data-link': '' }, 'Ouvrir la discussion', icon('arrow')),
+        }),
         hubCard({
           art: 'image',
           title: 'Générer une image',

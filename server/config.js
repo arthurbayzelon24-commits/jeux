@@ -41,6 +41,7 @@ export function loadConfig(overrides = {}) {
       generatePerMinute: int('SOLVEX_RATE_GENERATE_PER_MIN', 6),
       uploadPerMinute: int('SOLVEX_RATE_UPLOAD_PER_MIN', 30),
       enhancePerMinute: int('SOLVEX_RATE_ENHANCE_PER_MIN', 20),
+      chatPerMinute: int('SOLVEX_RATE_CHAT_PER_MIN', 20),
     },
     maxConcurrentJobs: int('SOLVEX_MAX_CONCURRENT_JOBS', 3),
     jobTimeoutMs: {
@@ -54,6 +55,8 @@ export function loadConfig(overrides = {}) {
       imageModel: str('OPENAI_IMAGE_MODEL', 'gpt-image-2'),
       // No default: prompt enhancement by LLM is only enabled when a model is named explicitly.
       textModel: str('OPENAI_TEXT_MODEL'),
+      // Model used by the SOLVEX AI conversation; falls back to OPENAI_TEXT_MODEL. No default: never guessed.
+      chatModel: str('OPENAI_CHAT_MODEL'),
       // No default either: transcription is enabled only with an explicitly named model.
       transcribeModel: str('OPENAI_TRANSCRIBE_MODEL'),
     },

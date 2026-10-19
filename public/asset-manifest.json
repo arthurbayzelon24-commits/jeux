@@ -1,5 +1,5 @@
 {
-  "version": "01d2dca2f3fc",
+  "version": "da768469fd87",
   "assets": [
     "/",
     "/assets/app-icon.svg",
@@ -35,6 +35,7 @@
     "/js/lib/prefs.js",
     "/js/lib/pwa.js",
     "/js/lib/state.js",
+    "/js/pages/assistant.js",
     "/js/pages/enhance.js",
     "/js/pages/gallery.js",
     "/js/pages/generationShared.js",
@@ -44,6 +45,7 @@
     "/js/pages/studioShared.js",
     "/js/pages/videos.js",
     "/js/router.js",
+    "/js/shared/audioCatalog.js",
     "/js/shared/imageSizes.js",
     "/js/shared/styles.js",
     "/js/studio/assistant.js",
@@ -58,6 +60,7 @@
     "/js/studio/engine/transitions.js",
     "/js/studio/history.js",
     "/js/studio/media.js",
+    "/js/studio/music.js",
     "/js/studio/pages/dashboard.js",
     "/js/studio/pages/photoEditor.js",
     "/js/studio/pages/videoEditor.js",

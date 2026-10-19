@@ -4,6 +4,7 @@ import { HttpError, readBody, readJson, sendJson } from '../lib/http.js';
 import { inspectImage, mimeFromExtension } from '../lib/files.js';
 import { isValidId } from '../lib/store.js';
 import { largestResolution } from '../../public/js/shared/imageSizes.js';
+import { assistantModel, chatTurn, isAssistantConfigured, searchCatalog } from '../lib/assistant.js';
 import { canEnhanceWithModel, enhanceLocally, enhanceWithModel, STYLES, CAMERA_MOVES } from '../lib/prompt.js';
 import { transcribe } from '../lib/transcribe.js';
 import * as v from '../lib/validate.js';
@@ -116,6 +117,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       providers: registry.describe(),
       styles: Object.entries(STYLES).map(([id, style]) => ({ id, label: style.label })),
       cameraMoves: Object.entries(CAMERA_MOVES).map(([id, move]) => ({ id, label: move.label })),
+      assistant: { configured: isAssistantConfigured(config), model: assistantModel(config) || null, missing: isAssistantConfigured(config) ? [] : ['OPENAI_API_KEY', 'OPENAI_CHAT_MODEL'].filter((k) => (k === 'OPENAI_API_KEY' ? !config.openai.apiKey : !assistantModel(config))) },
       promptEnhancement: canEnhanceWithModel(config) ? { method: 'model', model: config.openai.textModel } : { method: 'local' },
       limits: { maxUploadBytes: config.maxUploadBytes, maxPromptLength: v.MAX_PROMPT_LENGTH },
       editOperations: Object.entries(EDIT_OPERATIONS).map(([id, op]) => ({ id, label: op.label, needsPrompt: op.needsPrompt })),
@@ -161,8 +163,8 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
     sendJson(res, 200, { prompt: enhanceLocally(prompt, { kind, style }), method: 'local' });
   });
 
-  add('POST', /^\/api\/images\/generate$/, async (req, res) => {
-    const body = await readJson(req);
+  /** Validates and queues an image generation (used by the route and by the assistant). */
+  async function submitImage(body, clientIp) {
     const provider = requireProvider('image', body.provider);
     const caps = provider.capabilities;
     const referenceUploadIds = v.uploadIdList(body.referenceUploadIds, caps.maxReferenceImages);
@@ -207,7 +209,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       negativePrompt: negativeFor(caps, body.negativePrompt),
     };
     await ensureUploads(referenceUploadIds);
-    limiter.check(`generate:${ip(req)}`, config.rateLimit.generatePerMinute);
+    limiter.check(`generate:${clientIp}`, config.rateLimit.generatePerMinute);
     const item = await jobs.submit({
       type: 'image',
       operation: 'generate',
@@ -219,7 +221,11 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       model: provider.model,
       inputs: { uploadIds: referenceUploadIds },
     });
-    sendJson(res, 202, { creation: publicCreation(item) });
+    return item;
+  }
+
+  add('POST', /^\/api\/images\/generate$/, async (req, res) => {
+    sendJson(res, 202, { creation: publicCreation(await submitImage(await readJson(req), ip(req))) });
   });
 
   add('POST', /^\/api\/images\/edit$/, async (req, res) => {
@@ -255,8 +261,8 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
     sendJson(res, 202, { creation: publicCreation(item) });
   });
 
-  add('POST', /^\/api\/videos\/generate$/, async (req, res) => {
-    const body = await readJson(req);
+  /** Validates and queues a video generation (used by the route and by the assistant). */
+  async function submitVideo(body, clientIp) {
     const provider = requireProvider('video', body.provider);
     const prompt = v.requiredPrompt(body.prompt, 'Décrivez la scène à générer.');
     const startUploadId = v.optionalId(body.startUploadId, 'startUploadId');
@@ -273,7 +279,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       throw new HttpError(400, 'L’image de départ a expiré. Importez-la de nouveau.', { code: 'upload_expired' });
     const problem = provider.validate({ ...params, startImage });
     if (problem) throw new HttpError(400, problem, { code: 'unsupported_option' });
-    limiter.check(`generate:${ip(req)}`, config.rateLimit.generatePerMinute);
+    limiter.check(`generate:${clientIp}`, config.rateLimit.generatePerMinute);
     const item = await jobs.submit({
       type: 'video',
       operation: 'generate',
@@ -284,7 +290,68 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       model: provider.model,
       inputs: { uploadIds: startUploadId ? [startUploadId] : [] },
     });
-    sendJson(res, 202, { creation: publicCreation(item) });
+    return item;
+  }
+
+  add('POST', /^\/api\/videos\/generate$/, async (req, res) => {
+    sendJson(res, 202, { creation: publicCreation(await submitVideo(await readJson(req), ip(req))) });
+  });
+
+  add('POST', /^\/api\/chat$/, async (req, res) => {
+    if (!isAssistantConfigured(config)) {
+      throw new HttpError(503, 'L’assistant SOLVEX AI n’est pas configuré : ajoutez OPENAI_API_KEY et OPENAI_CHAT_MODEL (ou OPENAI_TEXT_MODEL) dans le fichier .env du serveur.', {
+        code: 'not_configured',
+      });
+    }
+    const body = await readJson(req);
+    const messages = Array.isArray(body.messages) ? body.messages.slice(-30) : [];
+    if (!messages.length || messages.at(-1)?.role !== 'user') throw new HttpError(400, 'Écrivez un message.', { code: 'invalid_request' });
+    const clean = messages.map((m) => {
+      if (!['user', 'assistant'].includes(m?.role) || typeof m.content !== 'string') throw new HttpError(400, 'Conversation invalide.', { code: 'invalid_request' });
+      return { role: m.role, content: m.content.slice(0, 8000) };
+    });
+    if (!clean.at(-1).content.trim()) throw new HttpError(400, 'Écrivez un message.', { code: 'invalid_request' });
+    const clientIp = ip(req);
+    limiter.check(`chat:${clientIp}`, config.rateLimit.chatPerMinute);
+    const image = registry.resolve('image');
+    const video = registry.resolve('video');
+    const run = async (name, args) => {
+      if (name === 'generate_image') {
+        if (!image) throw new Error('Aucun service de génération d’images n’est configuré.');
+        const aspect = image.capabilities.aspects.find((a) => a.id === args.aspect) ? args.aspect : '1:1';
+        const sizes = image.capabilities.aspects.find((a) => a.id === aspect).resolutions;
+        const resolution = sizes.some((r) => r.id === args.resolution) ? args.resolution : sizes.find((r) => r.id === '1080p')?.id || sizes[0]?.id;
+        const quality = image.capabilities.qualities.some((q) => q.id === args.quality) ? args.quality : undefined;
+        const item = await submitImage({ prompt: args.prompt, aspect, resolution, quality, style: STYLES[args.style] ? args.style : 'personnalise', provider: image.id }, clientIp);
+        return {
+          result: { status: 'started', id: item.id, prompt: item.prompt, aspect, resolution, quality: item.params.quality, size: `${item.params.requestedWidth}x${item.params.requestedHeight}`, model: item.model },
+          action: { type: 'creation', creation: publicCreation(item) },
+        };
+      }
+      if (name === 'generate_video') {
+        if (!video) throw new Error('Aucun service de génération de vidéos n’est configuré (GEMINI_API_KEY manquante).');
+        const vc = video.capabilities;
+        const aspect = vc.aspects.some((a) => a.id === args.aspect) ? args.aspect : vc.aspects[0].id;
+        const duration = vc.durations.includes(args.duration) ? args.duration : vc.durations.at(-1);
+        const resolution = vc.resolutions.find((r) => !r.requiresDuration || r.requiresDuration === duration)?.id;
+        const item = await submitVideo({ prompt: args.prompt, aspect, duration, resolution, style: STYLES[args.style] ? args.style : 'personnalise', camera: args.camera, provider: video.id }, clientIp);
+        return { result: { status: 'started', id: item.id, prompt: item.prompt, aspect, duration, resolution, model: item.model }, action: { type: 'creation', creation: publicCreation(item) } };
+      }
+      if (name === 'search_music') {
+        const items = searchCatalog({ query: args.query, category: args.category }, 6);
+        return {
+          result: items.length ? items.map(({ id, title, category, tags, duration }) => ({ id, title, category, tags, duration })) : { found: 0 },
+          action: items.length ? { type: 'music', items: items.map(({ id, title, category, duration }) => ({ id, title, category, duration })) } : null,
+        };
+      }
+      throw new Error(`Outil inconnu : ${name}`);
+    };
+    const out = await chatTurn(
+      config,
+      { messages: clean, services: { image: image ? `${image.vendor} · ${image.model}` : null, video: video ? `${video.vendor} · ${video.model}` : null }, run },
+      { signal: AbortSignal.timeout(120_000) },
+    );
+    sendJson(res, 200, out);
   });
 
   add('GET', /^\/api\/creations$/, (req, res, match, url) => {

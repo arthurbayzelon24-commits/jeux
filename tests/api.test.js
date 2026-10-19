@@ -366,3 +366,97 @@ test('PWA : manifeste installable, icônes PNG et service worker sans cache d’
     assert.doesNotMatch(text, /sk-[A-Za-z0-9]{10,}|AIza[0-9A-Za-z_-]{20,}|OPENAI_API_KEY=|GEMINI_API_KEY=/);
   }
 });
+
+/** Local stand-in for the OpenAI Chat Completions API (same request and response format). */
+async function mockChatApi(respond) {
+  const { createServer } = await import('node:http');
+  const requests = [];
+  const server = createServer(async (req, res) => {
+    let raw = '';
+    for await (const chunk of req) raw += chunk;
+    const body = JSON.parse(raw);
+    requests.push({ auth: req.headers.authorization, path: req.url, body });
+    const message = respond(body);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ model: body.model, choices: [{ index: 0, message, finish_reason: message.tool_calls ? 'tool_calls' : 'stop' }] }));
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  return { url: `http://127.0.0.1:${server.address().port}/v1`, requests, close: () => server.close() };
+}
+
+test('assistant SOLVEX AI : non configuré, il le dit et indique quoi ajouter', async (t) => {
+  const srv = await startTestServer({ providers: fakeProviders().providers, overrides: { openai: { apiKey: '', textModel: '', chatModel: '' } } });
+  t.after(() => srv.close());
+  const caps = await json(srv.base, '/api/capabilities');
+  assert.equal(caps.data.assistant.configured, false);
+  assert.deepEqual(caps.data.assistant.missing, ['OPENAI_API_KEY', 'OPENAI_CHAT_MODEL']);
+  const res = await json(srv.base, '/api/chat', { method: 'POST', body: { messages: [{ role: 'user', content: 'Bonjour' }] } });
+  assert.equal(res.status, 503);
+  assert.match(res.data.error.message, /OPENAI_API_KEY/);
+});
+
+test('assistant SOLVEX AI : vrai modèle, outils réels, contexte de conversation', async (t) => {
+  const mock = await mockChatApi((body) => {
+    const last = body.messages.at(-1);
+    const lastUser = [...body.messages].reverse().find((m) => m.role === 'user').content;
+    if (last.role === 'tool') return { role: 'assistant', content: 'Génération lancée : image 16:9 en 1080p, style cinématique.' };
+    if (/idées/.test(lastUser)) return { role: 'assistant', content: '1. Un timelapse… 2. Un avant/après… 3. Un tutoriel express.' };
+    if (/musique/.test(lastUser))
+      return { role: 'assistant', content: null, tool_calls: [{ id: 'c2', type: 'function', function: { name: 'search_music', arguments: '{"query":"calme piano"}' } }] };
+    const previous = body.messages.find((m) => m.role === 'assistant' && /Ville futuriste/.test(m.content || ''));
+    const prompt = /froides/.test(lastUser) && previous ? 'Ville futuriste sous la pluie, teintes bleues froides' : 'Ville futuriste sous la pluie, néons';
+    return {
+      role: 'assistant',
+      content: null,
+      tool_calls: [{ id: 'c1', type: 'function', function: { name: 'generate_image', arguments: JSON.stringify({ prompt, aspect: '16:9', style: 'cinematique' }) } }],
+    };
+  });
+  t.after(() => mock.close());
+  const fake = fakeProviders();
+  const srv = await startTestServer({ providers: fake.providers, overrides: { openai: { apiKey: 'sk-test', baseUrl: mock.url, chatModel: 'modele-test' } } });
+  t.after(() => srv.close());
+
+  // 1. A question for ideas: answered by the model, no generation started.
+  const ideas = await json(srv.base, '/api/chat', { method: 'POST', body: { messages: [{ role: 'user', content: 'Donne-moi trois idées de vidéo' }] } });
+  assert.equal(ideas.status, 200);
+  assert.match(ideas.data.reply, /timelapse/);
+  assert.equal(ideas.data.actions.length, 0);
+  assert.equal(fake.calls.generate.length, 0, 'aucune génération pour une simple question');
+  assert.equal(mock.requests[0].auth, 'Bearer sk-test');
+  assert.equal(mock.requests[0].body.model, 'modele-test');
+  assert.equal(mock.requests[0].body.messages[0].role, 'system');
+  assert.deepEqual(
+    mock.requests[0].body.tools.map((x) => x.function.name),
+    ['generate_image', 'generate_video', 'search_music'],
+  );
+
+  // 2. An explicit request: the model calls the tool, a real job starts, the result goes back to the model.
+  const history = [{ role: 'user', content: 'Crée une image d’une ville futuriste sous la pluie' }];
+  const gen = await json(srv.base, '/api/chat', { method: 'POST', body: { messages: history } });
+  assert.equal(gen.status, 200);
+  assert.equal(gen.data.actions[0].type, 'creation');
+  const created = await finished(srv.base, gen.data.actions[0].creation.id);
+  assert.equal(created.status, 'succeeded');
+  assert.equal(created.outputs[0].width, 1920, 'format 16:9 en 1080p');
+  assert.equal(fake.calls.generate.at(-1).prompt.startsWith('Ville futuriste sous la pluie, néons'), true);
+  const toolMsg = mock.requests.at(-1).body.messages.at(-1);
+  assert.equal(toolMsg.role, 'tool');
+  assert.match(toolMsg.content, /"status":"started"/);
+
+  // 3. A follow-up that depends on context.
+  history.push({ role: 'assistant', content: `${gen.data.reply}\n[Image lancée — description : Ville futuriste sous la pluie, néons]` });
+  history.push({ role: 'user', content: 'Rends les couleurs plus froides' });
+  const again = await json(srv.base, '/api/chat', { method: 'POST', body: { messages: history } });
+  assert.equal(again.status, 200);
+  await finished(srv.base, again.data.actions[0].creation.id);
+  assert.match(fake.calls.generate.at(-1).prompt, /bleues froides/);
+
+  // 4. Music search returns real catalogue entries.
+  const music = await json(srv.base, '/api/chat', { method: 'POST', body: { messages: [{ role: 'user', content: 'Propose une musique calme' }] } });
+  assert.equal(music.data.actions[0].type, 'music');
+  assert.ok(music.data.actions[0].items.length > 0);
+
+  // 5. Validation.
+  assert.equal((await json(srv.base, '/api/chat', { method: 'POST', body: { messages: [] } })).status, 400);
+  assert.equal((await json(srv.base, '/api/chat', { method: 'POST', body: { messages: [{ role: 'system', content: 'x' }] } })).status, 400);
+});
