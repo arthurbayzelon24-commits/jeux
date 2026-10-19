@@ -1,5 +1,6 @@
 import { h } from '../lib/dom.js';
 import { icon } from '../components/icons.js';
+import { livingMark } from '../components/livingMark.js';
 import { getCapabilities } from '../lib/state.js';
 import { isStatic } from '../lib/env.js';
 import { db } from '../studio/db.js';
@@ -73,6 +74,7 @@ export async function homePage() {
       h(
         'div',
         { class: 'home-hero__text' },
+        livingMark({ size: 'lg', title: 'SOLVEX AI' }),
         h('span', { class: 'eyebrow' }, icon('sparkles', { size: 14 }), 'Studio de création SOLVEX'),
         h('h1', { class: 'home-hero__title' }, 'Que voulez-vous ', h('span', { class: 'gradient-text' }, 'créer aujourd’hui ?')),
         h('p', { class: 'hero__lead' }, 'Montez une vidéo, retouchez une photo ou générez une image avec l’IA. Vos projets restent enregistrés dans ce navigateur.'),

@@ -2448,3 +2448,17 @@ body.is-app .editor {
     font-size: 12px;
   }
 }
+.nav a,
+.nav-drop {
+  white-space: nowrap;
+}
+@media (max-width: 1340px) and (min-width: 761px) {
+  .nav a svg,
+  .nav-drop svg {
+    display: none;
+  }
+  .nav a,
+  .nav-drop {
+    padding: 8px 10px;
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "version": "da4380f1e2ea",
+  "version": "61af9bf4b61a",
   "assets": [
     "/",
     "/assets/app-icon.svg",
@@ -22,6 +22,7 @@
     "/js/components/icons.js",
     "/js/components/installBar.js",
     "/js/components/intro.js",
+    "/js/components/livingMark.js",
     "/js/components/logo.js",
     "/js/components/particles.js",
     "/js/lib/ambient.js",

@@ -4,6 +4,7 @@ import { getCapabilities as getCapabilitiesSafe, loadCapabilities } from './lib/
 import { defineRoutes, render, navigate } from './router.js';
 import { playIntro } from './components/intro.js';
 import { logoMark } from './components/logo.js';
+import { livingMark } from './components/livingMark.js';
 import { icon } from './components/icons.js';
 import { setBusy, toast } from './components/feedback.js';
 import { homePage } from './pages/home.js';
@@ -190,7 +191,7 @@ function buildHeader() {
     h(
       'a',
       { class: 'brand', href: '/', 'data-link': '', 'aria-label': 'SOLVEX AI, accueil' },
-      logoMark({ title: '' }),
+      livingMark({ size: 'sm' }),
       h('span', { class: 'brand__word' }, 'SOLVEX ', h('span', { class: 'brand__ai' }, 'AI')),
     ),
     nav,
