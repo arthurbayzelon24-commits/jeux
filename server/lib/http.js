@@ -1,3 +1,4 @@
+import { ProviderError } from '../providers/base.js';
 export class HttpError extends Error {
   constructor(status, message, { code = 'error', details } = {}) {
     super(message);
@@ -22,6 +23,11 @@ export function sendError(res, error) {
   if (error instanceof HttpError) {
     const headers = error.retryAfter ? { 'Retry-After': String(error.retryAfter) } : {};
     sendJson(res, error.status, { error: { code: error.code, message: error.message, details: error.details } }, headers);
+    return;
+  }
+  // Errors from AI providers carry a readable French message and a meaningful status.
+  if (error instanceof ProviderError) {
+    sendJson(res, error.status, { error: { code: error.code, message: error.message, retryable: error.retryable } });
     return;
   }
   console.error('[solvex] erreur interne :', error);

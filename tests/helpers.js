@@ -155,3 +155,87 @@ export async function waitFor(fn, { timeout = 8000, interval = 10 } = {}) {
     await new Promise((resolve) => setTimeout(resolve, interval));
   }
 }
+
+/**
+ * Local stand-in for a Chat Completions server (OpenAI format, with
+ * streaming): `brain(body)` returns the assistant message the « model »
+ * answers. Streamed answers are cut in small chunks and tool calls are split
+ * across chunks, like real servers do.
+ */
+export async function startMockLlm(brain, { failWith } = {}) {
+  const { createServer } = await import('node:http');
+  const requests = [];
+  let closedEarly = 0;
+  const server = createServer(async (req, res) => {
+    let raw = '';
+    for await (const chunk of req) raw += chunk;
+    const body = JSON.parse(raw);
+    requests.push({ auth: req.headers.authorization, body });
+    if (failWith) {
+      res.writeHead(failWith.status, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: { message: failWith.message, type: 'error' } }));
+    }
+    const message = await brain(body);
+    if (!body.stream) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ model: body.model, choices: [{ index: 0, message, finish_reason: message.tool_calls ? 'tool_calls' : 'stop' }] }));
+    }
+    res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+    res.on('close', () => !res.writableFinished && (closedEarly += 1));
+    const send = (delta) => res.write(`data: ${JSON.stringify({ model: body.model, choices: [{ index: 0, delta }] })}\n\n`);
+    const text = message.content || '';
+    for (let i = 0; i < text.length; i += 12) {
+      send({ content: text.slice(i, i + 12) });
+      if (message.slow) await new Promise((r) => setTimeout(r, message.slow));
+      if (res.destroyed) return;
+    }
+    (message.tool_calls || []).forEach((call, index) => {
+      const args = call.function.arguments;
+      send({ tool_calls: [{ index, id: call.id, type: 'function', function: { name: call.function.name, arguments: args.slice(0, 10) } }] });
+      send({ tool_calls: [{ index, function: { arguments: args.slice(10) } }] });
+    });
+    res.write('data: [DONE]\n\n');
+    res.end();
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  return { url: `http://127.0.0.1:${server.address().port}/v1`, requests, closedEarly: () => closedEarly, close: () => server.close() };
+}
+
+const call = (name, args) => ({ role: 'assistant', content: null, tool_calls: [{ id: `call_${name}`, type: 'function', function: { name, arguments: JSON.stringify(args) } }] });
+
+/**
+ * A scripted « model » that follows the SOLVEX instructions on known phrases.
+ * It does not replace a real model: it lets tests check every part of the
+ * pipeline (tools, validation, context, streaming, errors) deterministically.
+ */
+export function scriptedBrain(body) {
+  const last = body.messages.at(-1);
+  const user = [...body.messages].reverse().find((m) => m.role === 'user')?.content || '';
+  const system = body.messages[0].content;
+  const data = JSON.parse(system.slice(system.lastIndexOf('\n') + 1));
+  if (last.role === 'tool') {
+    const result = JSON.parse(last.content);
+    if (result.error) return { role: 'assistant', content: `Je n’ai pas pu le faire : ${result.error}` };
+    if (result.status === 'started') return { role: 'assistant', content: `C’est lancé (création ${result.creation_id}). Le résultat s’affichera dès qu’il sera prêt.` };
+    if (result.status === 'awaiting_user_confirmation') return { role: 'assistant', content: 'Voici ma proposition : confirmez-la pour l’appliquer.' };
+    if (Array.isArray(result) && result[0]?.title) return { role: 'assistant', content: `Je vous propose : ${result.map((r) => r.title).join(', ')}.` };
+    if (result.id && result.clips) return call('propose_project_edit', { summary: 'Ajouter un titre élégant et des fondus.', operations: [{ op: 'add_title', text: result.name, start: 0, duration: 3, style_id: 'elegant-classique' }, { op: 'set_transitions', transition: 'fade' }] });
+    return { role: 'assistant', content: 'D’accord.' };
+  }
+  if (/qu.est-ce qu|explique/i.test(user)) return { role: 'assistant', content: 'Un effet cinématographique combine un format large (21:9), un étalonnage contrasté et des mouvements de caméra lents.', slow: /lent/.test(user) ? 30 : 0 };
+  if (/idées/i.test(user)) return { role: 'assistant', content: '1. Un timelapse urbain. 2. Un avant/après. 3. Un tutoriel en 30 s. 4. Une journée en 1 minute. 5. Un défi créatif. Voulez-vous que je génère une image pour l’une d’elles ?' };
+  if (/quelque chose de beau/i.test(user)) return { role: 'assistant', content: 'Avec plaisir ! Préférez-vous une image ou une vidéo, et sur quel thème ?' };
+  if (/plus lumineuse/i.test(user)) {
+    const image = data.creations_recentes.find((c) => c.type === 'image' && c.status === 'succeeded');
+    return call('edit_image', { creation_id: image?.id || 'introuvable', mode: 'relight', instruction: 'Rends l’image plus lumineuse.' });
+  }
+  if (/vidéo/i.test(user) && /crée|génère/i.test(user)) return call('generate_video', { prompt: 'Vaisseau traversant une nébuleuse, travelling lent', aspect: '16:9', duration: 8, camera: 'travelling-avant' });
+  if (/format impossible/i.test(user)) return call('generate_image', { prompt: 'x', aspect: '7:3' });
+  if (/efface|supprime tout/i.test(user)) return call('delete_all_creations', {});
+  if (/fichier secret/i.test(user)) return call('get_creation', { creation_id: '../../.env' });
+  if (/image/i.test(user) && /crée|génère/i.test(user)) return call('generate_image', { prompt: 'Ville futuriste sous la pluie, néons, reflets sur le bitume', aspect: '16:9', resolution: '1080p', style: 'cinematique' });
+  if (/musique/i.test(user)) return call('search_music', { query: 'calme piano' });
+  if (/mon projet/i.test(user)) return call('get_project', {});
+  if (/retiens/i.test(user)) return call('remember_preference', { text: 'Préfère le format vertical 9:16.' });
+  return { role: 'assistant', content: `Réponse à : ${user.slice(0, 60)}` };
+}

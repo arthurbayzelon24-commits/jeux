@@ -60,6 +60,16 @@ export function loadConfig(overrides = {}) {
       // No default either: transcription is enabled only with an explicitly named model.
       transcribeModel: str('OPENAI_TRANSCRIBE_MODEL'),
     },
+    // Language model of the SOLVEX AI assistant. « openai » (default) uses OPENAI_API_KEY;
+    // « openai-compatible » targets any Chat Completions server (Ollama, vLLM, LM Studio…).
+    ai: {
+      provider: str('AI_PROVIDER', 'openai') === 'openai-compatible' ? 'openai-compatible' : 'openai',
+      baseUrl: str('AI_BASE_URL'),
+      apiKey: str('AI_API_KEY'),
+      model: str('AI_MODEL'),
+      maxRounds: int('AI_MAX_TOOL_ROUNDS', 5),
+      timeoutS: int('AI_TIMEOUT_S', 120),
+    },
     // Optional online audio catalogues (free keys): music from Jamendo, sounds from Freesound.
     audio: {
       jamendoClientId: str('JAMENDO_CLIENT_ID'),

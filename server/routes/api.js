@@ -5,7 +5,10 @@ import { inspectImage, mimeFromExtension } from '../lib/files.js';
 import { isValidId } from '../lib/store.js';
 import { largestResolution } from '../../public/js/shared/imageSizes.js';
 import { createAudioLibraries } from '../providers/audioLibraries.js';
-import { assistantModel, chatTurn, isAssistantConfigured, searchCatalog } from '../lib/assistant.js';
+import { createLanguageModel } from '../ai/llm.js';
+import { createToolbox } from '../ai/tools.js';
+import { runAgent } from '../ai/agent.js';
+import { sanitizeMemory, sanitizeProject, systemPrompt, trimHistory } from '../ai/context.js';
 import { canEnhanceWithModel, enhanceLocally, enhanceWithModel, STYLES, CAMERA_MOVES } from '../lib/prompt.js';
 import { transcribe } from '../lib/transcribe.js';
 import * as v from '../lib/validate.js';
@@ -119,7 +122,11 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       styles: Object.entries(STYLES).map(([id, style]) => ({ id, label: style.label })),
       cameraMoves: Object.entries(CAMERA_MOVES).map(([id, move]) => ({ id, label: move.label })),
       audioLibraries: createAudioLibraries(config).describe(),
-      assistant: { configured: isAssistantConfigured(config), model: assistantModel(config) || null, missing: isAssistantConfigured(config) ? [] : ['OPENAI_API_KEY', 'OPENAI_CHAT_MODEL'].filter((k) => (k === 'OPENAI_API_KEY' ? !config.openai.apiKey : !assistantModel(config))) },
+      assistant: (() => {
+        const llmInfo = createLanguageModel(config);
+        const toolbox = createToolbox({ registry, store, project: null });
+        return { configured: llmInfo.configured, provider: llmInfo.id, label: llmInfo.label, model: llmInfo.model || null, streaming: llmInfo.streaming, missing: llmInfo.missing, tools: toolbox.availability() };
+      })(),
       promptEnhancement: canEnhanceWithModel(config) ? { method: 'model', model: config.openai.textModel } : { method: 'local' },
       limits: { maxUploadBytes: config.maxUploadBytes, maxPromptLength: v.MAX_PROMPT_LENGTH },
       editOperations: Object.entries(EDIT_OPERATIONS).map(([id, op]) => ({ id, label: op.label, needsPrompt: op.needsPrompt })),
@@ -230,8 +237,8 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
     sendJson(res, 202, { creation: publicCreation(await submitImage(await readJson(req), ip(req))) });
   });
 
-  add('POST', /^\/api\/images\/edit$/, async (req, res) => {
-    const body = await readJson(req);
+  /** Validates and queues an image edit (route and assistant). */
+  async function submitEdit(body, clientIp) {
     const provider = requireProvider('image', body.provider);
     const op = EDIT_OPERATIONS[body.operation];
     if (!op) throw new HttpError(400, 'Opération de retouche inconnue.', { code: 'invalid_request' });
@@ -247,7 +254,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       const mask = await store.readUpload(maskUploadId);
       if (mask.mime !== 'image/png') throw new HttpError(400, 'Le masque doit être une image PNG.', { code: 'invalid_file' });
     }
-    limiter.check(`generate:${ip(req)}`, config.rateLimit.generatePerMinute);
+    limiter.check(`generate:${clientIp}`, config.rateLimit.generatePerMinute);
     const item = await jobs.submit({
       type: 'image',
       operation: body.operation,
@@ -260,7 +267,11 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       inputs: { uploadIds, source, maskUploadId },
       parentId: source?.creationId || null,
     });
-    sendJson(res, 202, { creation: publicCreation(item) });
+    return item;
+  }
+
+  add('POST', /^\/api\/images\/edit$/, async (req, res) => {
+    sendJson(res, 202, { creation: publicCreation(await submitEdit(await readJson(req), ip(req))) });
   });
 
   /** Validates and queues a video generation (used by the route and by the assistant). */
@@ -299,61 +310,69 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
     sendJson(res, 202, { creation: publicCreation(await submitVideo(await readJson(req), ip(req))) });
   });
 
-  add('POST', /^\/api\/chat$/, async (req, res) => {
-    if (!isAssistantConfigured(config)) {
-      throw new HttpError(503, 'L’assistant SOLVEX AI n’est pas configuré : ajoutez OPENAI_API_KEY et OPENAI_CHAT_MODEL (ou OPENAI_TEXT_MODEL) dans le fichier .env du serveur.', {
+  // ---------------------------------------------------------------- SOLVEX AI (assistant)
+  const llm = createLanguageModel(config);
+
+  async function prepareChat(req) {
+    if (!llm.configured) {
+      throw new HttpError(503, `L’assistant SOLVEX AI n’est pas configuré : ajoutez ${llm.missing.join(' et ')} dans le fichier .env du serveur (voir docs/ARCHITECTURE-IA.md).`, {
         code: 'not_configured',
       });
     }
     const body = await readJson(req);
-    const messages = Array.isArray(body.messages) ? body.messages.slice(-30) : [];
-    if (!messages.length || messages.at(-1)?.role !== 'user') throw new HttpError(400, 'Écrivez un message.', { code: 'invalid_request' });
-    const clean = messages.map((m) => {
-      if (!['user', 'assistant'].includes(m?.role) || typeof m.content !== 'string') throw new HttpError(400, 'Conversation invalide.', { code: 'invalid_request' });
-      return { role: m.role, content: m.content.slice(0, 8000) };
-    });
-    if (!clean.at(-1).content.trim()) throw new HttpError(400, 'Écrivez un message.', { code: 'invalid_request' });
+    if (!Array.isArray(body.messages) || body.messages.some((m) => !['user', 'assistant'].includes(m?.role) || typeof m.content !== 'string'))
+      throw new HttpError(400, 'Conversation invalide.', { code: 'invalid_request' });
+    const messages = trimHistory(body.messages);
+    if (!messages.length || messages.at(-1).role !== 'user' || !messages.at(-1).content.trim()) throw new HttpError(400, 'Écrivez un message.', { code: 'invalid_request' });
     const clientIp = ip(req);
     limiter.check(`chat:${clientIp}`, config.rateLimit.chatPerMinute);
+    const project = sanitizeProject(body.project);
+    const toolbox = createToolbox({ registry, store, submitImage, submitVideo, submitEdit, publicCreation, clientIp, project });
     const image = registry.resolve('image');
     const video = registry.resolve('video');
-    const run = async (name, args) => {
-      if (name === 'generate_image') {
-        if (!image) throw new Error('Aucun service de génération d’images n’est configuré.');
-        const aspect = image.capabilities.aspects.find((a) => a.id === args.aspect) ? args.aspect : '1:1';
-        const sizes = image.capabilities.aspects.find((a) => a.id === aspect).resolutions;
-        const resolution = sizes.some((r) => r.id === args.resolution) ? args.resolution : sizes.find((r) => r.id === '1080p')?.id || sizes[0]?.id;
-        const quality = image.capabilities.qualities.some((q) => q.id === args.quality) ? args.quality : undefined;
-        const item = await submitImage({ prompt: args.prompt, aspect, resolution, quality, style: STYLES[args.style] ? args.style : 'personnalise', provider: image.id }, clientIp);
-        return {
-          result: { status: 'started', id: item.id, prompt: item.prompt, aspect, resolution, quality: item.params.quality, size: `${item.params.requestedWidth}x${item.params.requestedHeight}`, model: item.model },
-          action: { type: 'creation', creation: publicCreation(item) },
-        };
-      }
-      if (name === 'generate_video') {
-        if (!video) throw new Error('Aucun service de génération de vidéos n’est configuré (GEMINI_API_KEY manquante).');
-        const vc = video.capabilities;
-        const aspect = vc.aspects.some((a) => a.id === args.aspect) ? args.aspect : vc.aspects[0].id;
-        const duration = vc.durations.includes(args.duration) ? args.duration : vc.durations.at(-1);
-        const resolution = vc.resolutions.find((r) => !r.requiresDuration || r.requiresDuration === duration)?.id;
-        const item = await submitVideo({ prompt: args.prompt, aspect, duration, resolution, style: STYLES[args.style] ? args.style : 'personnalise', camera: args.camera, provider: video.id }, clientIp);
-        return { result: { status: 'started', id: item.id, prompt: item.prompt, aspect, duration, resolution, model: item.model }, action: { type: 'creation', creation: publicCreation(item) } };
-      }
-      if (name === 'search_music') {
-        const items = searchCatalog({ query: args.query, category: args.category }, 6);
-        return {
-          result: items.length ? items.map(({ id, title, category, tags, duration }) => ({ id, title, category, tags, duration })) : { found: 0 },
-          action: items.length ? { type: 'music', items: items.map(({ id, title, category, duration }) => ({ id, title, category, duration })) } : null,
-        };
-      }
-      throw new Error(`Outil inconnu : ${name}`);
-    };
-    const out = await chatTurn(
-      config,
-      { messages: clean, services: { image: image ? `${image.vendor} · ${image.model}` : null, video: video ? `${video.vendor} · ${video.model}` : null }, run },
-      { signal: AbortSignal.timeout(120_000) },
-    );
+    const recent = store
+      .list({})
+      .slice(0, 6)
+      .map((c) => ({ id: c.id, type: c.type, status: c.status, prompt: c.autoPrompt ? null : c.prompt?.slice(0, 160), aspect: c.params?.aspect, createdAt: c.createdAt }));
+    const system = systemPrompt({
+      services: { images: image ? `${image.vendor} · ${image.model}` : null, videos: video ? `${video.vendor} · ${video.model}` : null },
+      tools: toolbox.availability(),
+      memory: sanitizeMemory(body.memory),
+      project,
+      recent,
+    });
+    return { toolbox, system, messages };
+  }
+
+  add('POST', /^\/api\/chat$/, async (req, res) => {
+    const { toolbox, system, messages } = await prepareChat(req);
+    const out = await runAgent({ llm, toolbox, system, messages, signal: AbortSignal.timeout(config.ai.timeoutS * 1000), maxRounds: config.ai.maxRounds });
     sendJson(res, 200, out);
+  });
+
+  // Same turn, streamed as server-sent events; closing the connection cancels the model call.
+  add('POST', /^\/api\/chat\/stream$/, async (req, res) => {
+    const { toolbox, system, messages } = await prepareChat(req);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(new Error('timeout')), config.ai.timeoutS * 1000);
+    res.on('close', () => !res.writableFinished && controller.abort(new Error('client_closed')));
+    res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+    const send = (event) => !res.writableEnded && res.write(`data: ${JSON.stringify(event)}\n\n`);
+    try {
+      const out = await runAgent({ llm, toolbox, system, messages, emit: send, signal: controller.signal, stream: true, maxRounds: config.ai.maxRounds });
+      send({ type: 'done', ...out });
+    } catch (error) {
+      const timedOut = controller.signal.reason?.message === 'timeout';
+      send({
+        type: 'error',
+        code: timedOut ? 'timeout' : error.code || 'error',
+        message: timedOut ? `Le modèle n’a pas répondu en ${config.ai.timeoutS} s. Réessayez.` : error.message || 'Erreur inconnue.',
+        retryable: timedOut || Boolean(error.retryable) || error.status >= 500,
+      });
+    } finally {
+      clearTimeout(timer);
+      res.end();
+    }
   });
 
   const audioLibraries = createAudioLibraries(config);
