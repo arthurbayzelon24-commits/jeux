@@ -61,14 +61,25 @@ export function loadConfig(overrides = {}) {
       transcribeModel: str('OPENAI_TRANSCRIBE_MODEL'),
     },
     // Language model of the SOLVEX AI assistant. « openai » (default) uses OPENAI_API_KEY;
-    // « openai-compatible » targets any Chat Completions server (Ollama, vLLM, LM Studio…).
+    // « openai-compatible » targets any Chat Completions server (Ollama, vLLM, LM Studio…);
+    // « anthropic » uses Claude models with ANTHROPIC_API_KEY and AI_MODEL.
     ai: {
-      provider: str('AI_PROVIDER', 'openai') === 'openai-compatible' ? 'openai-compatible' : 'openai',
+      provider: ['openai-compatible', 'anthropic'].includes(str('AI_PROVIDER')) ? str('AI_PROVIDER') : 'openai',
       baseUrl: str('AI_BASE_URL'),
       apiKey: str('AI_API_KEY'),
       model: str('AI_MODEL'),
       maxRounds: int('AI_MAX_TOOL_ROUNDS', 5),
       timeoutS: int('AI_TIMEOUT_S', 120),
+      // Longest answer the model may write (required by the Anthropic protocol).
+      maxTokens: int('AI_MAX_TOKENS', 4096),
+      // Images attached to messages: on by default for OpenAI and Anthropic, off for
+      // other servers unless AI_VISION=true (many local models cannot read images).
+      vision: str('AI_VISION') ? str('AI_VISION') === 'true' : null,
+    },
+    // Claude models (AI_PROVIDER=anthropic).
+    anthropic: {
+      apiKey: str('ANTHROPIC_API_KEY'),
+      baseUrl: str('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1'),
     },
     // Optional online audio catalogues (free keys): music from Jamendo, sounds from Freesound.
     audio: {

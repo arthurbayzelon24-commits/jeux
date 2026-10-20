@@ -1138,6 +1138,8 @@ export async function videoEditorPage({ params }) {
     timeline.el,
     mobileNav,
   );
+  // Menu shortcuts (« Audio et musique », « Stickers et textes ») open the matching panel.
+  if (params.get('panneau')) library.setTab(params.get('panneau'));
   drawCats();
   // Phones: the category bar moves to the bottom, panels open as sheets.
   const placeCats = () => {

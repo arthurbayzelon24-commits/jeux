@@ -1,0 +1,13 @@
+{
+  "version": "2.4.0",
+  "name": "Conversations et navigation",
+  "date": "2026-10-20",
+  "notes": [
+    "Plusieurs conversations avec SOLVEX AI : créez-en, renommez-les, supprimez-les et retrouvez-les après un rechargement (elles restent dans ce navigateur).",
+    "Réponses mises en forme : titres, listes, citations, liens et blocs de code avec un bouton Copier.",
+    "Joignez jusqu’à quatre images à un message (bouton, glisser-déposer ou coller) quand le modèle configuré sait les lire.",
+    "Nouveau fournisseur pour l’assistant : les modèles Claude d’Anthropic (AI_PROVIDER=anthropic), en plus d’OpenAI et des modèles locaux.",
+    "Navigation réorganisée : Assistant IA, Créer avec l’IA, Éditer (éditeur vidéo, éditeur d’images, audio et musique, stickers et textes, enregistrement) et Projets.",
+    "Correction : sur téléphone, les suggestions de l’assistant ne débordent plus de l’écran."
+  ]
+}

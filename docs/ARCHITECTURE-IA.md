@@ -2,7 +2,7 @@
 
 Ce document décrit ce qu’est réellement SOLVEX AI, comment il fonctionne, ce qu’il faut configurer et ce qui a été testé.
 
-**En une phrase :** SOLVEX AI est un **modèle de langage existant** (OpenAI, ou un modèle ouvert servi en local par Ollama, vLLM, LM Studio…) appelé par le serveur SOLVEX, auquel SOLVEX donne des **outils contrôlés** : générer une image ou une vidéo, retoucher, chercher une musique, lire et modifier un projet après confirmation, mémoriser une préférence. **SOLVEX n’a pas entraîné de modèle.** Il en connecte un et l’encadre.
+**En une phrase :** SOLVEX AI est un **modèle de langage existant** (OpenAI, Claude d’Anthropic, ou un modèle ouvert servi en local par Ollama, vLLM, LM Studio…) appelé par le serveur SOLVEX, auquel SOLVEX donne des **outils contrôlés** : générer une image ou une vidéo, retoucher, chercher une musique, lire et modifier un projet après confirmation, mémoriser une préférence. **SOLVEX n’a pas entraîné de modèle.** Il en connecte un et l’encadre.
 
 ## 1. Les catégories d’IA et celles qu’utilise SOLVEX
 
@@ -36,7 +36,9 @@ flowchart LR
 
 Les briques :
 
-- **A. Le cerveau** (`server/ai/llm.js`). Il est appelé avec le protocole *Chat Completions*, en flux SSE. L’adaptateur `openai` utilise `OPENAI_API_KEY`. L’adaptateur `openai-compatible` vise n’importe quel serveur qui parle ce protocole, par exemple un modèle ouvert sur votre machine. La clé reste sur le serveur.
+- **A. Le cerveau** (`server/ai/llm.js`). Il est appelé avec le protocole *Chat Completions*, en flux SSE. L’adaptateur `openai` utilise `OPENAI_API_KEY`. L’adaptateur `openai-compatible` vise n’importe quel serveur qui parle ce protocole, par exemple un modèle ouvert sur votre machine. L’adaptateur `anthropic` parle le protocole *Messages* d’Anthropic (modèles Claude) : il traduit la conversation, les outils et les images dans ce format, et relit le flux d’événements (`text_delta`, `input_json_delta`). Les trois adaptateurs ont la même interface `complete()`, donc l’agent, les outils et la page ne changent pas d’un fournisseur à l’autre. La clé reste sur le serveur.
+- **Images jointes** : la page réduit l’image (1568 px au plus), l’envoie à `POST /api/uploads` (type vérifié par les octets, taille limitée), puis cite son identifiant dans le dernier message. Le serveur relit le fichier et le transmet au modèle en *data URL* (jamais une adresse distante). 4 images par message, 5 Mo chacune. Refusé avec un message clair si `AI_VISION` est désactivé. Seules les miniatures restent dans l’historique du navigateur : un message plus ancien n’envoie plus l’image, seulement la mention « image jointe ».
+- **Conversations** : plusieurs conversations, renommables et supprimables, gardées dans le `localStorage` du navigateur (`public/js/lib/conversations.js`). Si le stockage est plein, les plus anciennes sont retirées et l’utilisateur est averti si la conversation en cours ne peut pas être conservée.
 - **B. Les outils** (`server/ai/tools.js`). Chaque outil a un schéma JSON. Le serveur :
   - valide chaque argument, retire les propriétés inconnues et contrôle les identifiants (`^[A-Za-z0-9_-]{1,64}$`) ;
   - n’envoie au modèle que les outils réellement disponibles et lui explique pourquoi les autres manquent.
@@ -95,7 +97,7 @@ Le texte distingue toujours ce qui est **proposé** (idées, scripts), ce qui es
 
 | Option | Principe | Coût de mise en place | Qualité | Retenue ? |
 | --- | --- | --- | --- | --- |
-| 1. Modèle existant par API | Appeler un modèle hébergé (OpenAI…) | Faible : une clé | Très élevée | **Oui**, par défaut |
+| 1. Modèle existant par API | Appeler un modèle hébergé (OpenAI, Anthropic…) | Faible : une clé | Très élevée | **Oui**, par défaut |
 | 2. Modèle ouvert auto-hébergé | Llama, Mistral, Qwen… servi par Ollama, vLLM ou LM Studio | Moyen : une machine avec GPU pour les grands modèles | Variable selon la taille ; il faut un modèle qui gère les outils | **Oui**, via `AI_PROVIDER=openai-compatible` |
 | 3. Ajustement (fine-tuning) | Spécialiser un modèle existant sur des exemples SOLVEX | Moyen à élevé : des milliers d’exemples de qualité, puis une évaluation | Gain surtout sur le ton et le format | Non pour l’instant : le banc d’évaluation (§ 6) dira s’il devient utile |
 | 4. Entraînement depuis zéro | Créer un nouveau modèle | Très élevé (voir ci-dessous) | Inférieure aux options 1 et 2 sans moyens massifs | **Non** |
@@ -160,6 +162,16 @@ GEMINI_API_KEY=...          # facultatif, pour les vidéos
 npm start                   # puis ouvrez http://127.0.0.1:3000/assistant
 ```
 
+Avec un modèle Claude :
+
+```bash
+# dans .env :
+AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+AI_MODEL=<identifiant exact d’un modèle Claude de votre compte>
+npm start
+```
+
 Avec un modèle ouvert sur votre machine (exemple Ollama) :
 
 ```bash
@@ -181,8 +193,11 @@ npm run eval:assistant -- --only=4,6         # quelques scénarios
 
 | Variable | Rôle | Défaut |
 | --- | --- | --- |
-| `AI_PROVIDER` | `openai` ou `openai-compatible` | `openai` |
-| `AI_MODEL` | Nom exact du modèle | vide, donc `OPENAI_CHAT_MODEL`, puis `OPENAI_TEXT_MODEL` |
+| `AI_PROVIDER` | `openai`, `anthropic` ou `openai-compatible` | `openai` |
+| `AI_MODEL` | Nom exact du modèle (obligatoire avec `anthropic`) | vide, donc `OPENAI_CHAT_MODEL`, puis `OPENAI_TEXT_MODEL` |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` | Clé et adresse de l’API Anthropic | —, `https://api.anthropic.com/v1` |
+| `AI_MAX_TOKENS` | Longueur maximale d’une réponse (exigée par Anthropic) | `4096` |
+| `AI_VISION` | Images jointes aux messages | activé pour `openai` et `anthropic`, désactivé pour `openai-compatible` |
 | `AI_BASE_URL` | Adresse d’un serveur compatible | — |
 | `AI_API_KEY` | Clé d’un serveur compatible, si exigée | — |
 | `AI_MAX_TOOL_ROUNDS` | Allers-retours outil ↔ modèle par message | `5` |
@@ -218,6 +233,9 @@ Les tests automatisés sont lancés par `npm test`. Le cerveau y est remplacé p
 | Flux et annulation | Texte progressif, étapes réelles, carte d’action, fin ; « Arrêter » coupe aussi la requête au modèle |
 | Projet et mémoire | Proposition à confirmer ; mémoire transmise seulement si activée ; outils de projet absents sans projet joint |
 | Modèle local | Même protocole sans clé (`openai-compatible`) |
+| Anthropic (Claude) | Traduction de la conversation et des outils, flux d’événements Messages, outil exécuté, clé dans l’en-tête `x-api-key` seulement (`tests/llm.test.js`, serveur Messages simulé) |
+| Images jointes | Transmises en *data URL* ; image expirée, plus de 4 images ou modèle sans vision refusés |
+| Conversations et mise en forme | Création, titre automatique, renommage, suppression, reprise de l’ancien format, stockage plein ; Markdown sans HTML (`javascript:` et balises restent du texte) — `tests/chat-ui.test.js` |
 | Banc d’évaluation | 9/9 avec un modèle qui suit les consignes ; 0/4 avec un modèle qui lance tout et ment ; échec explicite sans configuration |
 
 Interface, testée dans Chromium :

@@ -1,5 +1,5 @@
 {
-  "version": "927798ab116a",
+  "version": "fda43d989544",
   "assets": [
     "/",
     "/assets/app-icon.svg",
@@ -28,10 +28,12 @@
     "/js/lib/ambient.js",
     "/js/lib/api.js",
     "/js/lib/browserImages.js",
+    "/js/lib/conversations.js",
     "/js/lib/dom.js",
     "/js/lib/download.js",
     "/js/lib/env.js",
     "/js/lib/imageOps.js",
+    "/js/lib/markdown.js",
     "/js/lib/prefs.js",
     "/js/lib/pwa.js",
     "/js/lib/state.js",

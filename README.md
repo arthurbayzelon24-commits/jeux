@@ -21,7 +21,7 @@ L’identité visuelle est propre à SOLVEX : un losange prismatique bleu, viole
   - textes animés, stickers, formes, sous-titres SRT et VTT ;
   - outils audio, assistant de montage, export vidéo réel.
 - **Éditeur photo** : calques, 14 réglages, filtres, courbe, LUT `.cube`, recadrage, formats réseaux sociaux, collage, outils IA.
-- **SOLVEX AI** (`/assistant`) : assistant conversationnel branché sur un vrai modèle de langage existant (OpenAI, ou un modèle ouvert servi en local par Ollama, vLLM, LM Studio…), appelé par le serveur. Réponses en flux, étapes réelles (analyse, lancement, rédaction), outils contrôlés par le serveur : générer une image ou une vidéo, retoucher la dernière création (« rends-la plus lumineuse »), chercher une musique, lire un projet joint et proposer des modifications appliquées seulement après confirmation, mémoire des préférences contrôlée par l’utilisateur. SOLVEX n’entraîne aucun modèle : architecture, options étudiées, fournisseurs, coûts et tests dans [docs/ARCHITECTURE-IA.md](docs/ARCHITECTURE-IA.md). Dans la version claude.ai, c’est Claude qui répond (sans génération).
+- **SOLVEX AI** (`/assistant`) : assistant conversationnel branché sur un vrai modèle de langage existant (OpenAI, Claude d’Anthropic, ou un modèle ouvert servi en local par Ollama, vLLM, LM Studio…), appelé par le serveur. Plusieurs conversations (renommer, supprimer, conservées dans le navigateur), réponses mises en forme (listes, code avec « Copier »), images jointes quand le modèle sait les lire. Réponses en flux, étapes réelles (analyse, lancement, rédaction), outils contrôlés par le serveur : générer une image ou une vidéo, retoucher la dernière création (« rends-la plus lumineuse »), chercher une musique, lire un projet joint et proposer des modifications appliquées seulement après confirmation, mémoire des préférences contrôlée par l’utilisateur. SOLVEX n’entraîne aucun modèle : architecture, options étudiées, fournisseurs, coûts et tests dans [docs/ARCHITECTURE-IA.md](docs/ARCHITECTURE-IA.md). Dans la version claude.ai, c’est Claude qui répond (sans génération).
 - **Outils IA** (`/images`, `/videos`, `/retouche`) : génération par OpenAI ou Pollinations (images) et Google Veo (vidéo), avec choix du modèle, brouillon conservé et « Envoyer vers l’éditeur ».
 - **Mes créations** (`/galerie`) : images et vidéos générées, conservées sur le serveur.
 - **Paramètres** (`/parametres`) : Apparence, Préférences de création, Stockage et projets, Installation (barre « Installer SOLVEX AI sur mon appareil »), Confidentialité et sécurité, Informations. Il n’y a pas de comptes utilisateurs, donc pas de section Compte.
@@ -117,7 +117,9 @@ Toutes les variables sont listées et commentées dans [`.env.example`](.env.exa
 | `OPENAI_TRANSCRIBE_MODEL` | Transcription automatique des sous-titres (facultatif) | vide, donc désactivée |
 | `POLLINATIONS_ENABLED` | Génération d’images gratuite sans clé (service tiers) | `true` |
 | `POLLINATIONS_MODEL` | Modèle Pollinations à demander (facultatif) | vide, donc modèle par défaut du service |
-| `AI_PROVIDER` | Cerveau de SOLVEX AI : `openai` ou `openai-compatible` (Ollama, vLLM…) | `openai` |
+| `AI_PROVIDER` | Cerveau de SOLVEX AI : `openai`, `anthropic` (Claude) ou `openai-compatible` (Ollama, vLLM…) | `openai` |
+| `ANTHROPIC_API_KEY` | Clé Anthropic, avec `AI_PROVIDER=anthropic` et `AI_MODEL` | — |
+| `AI_VISION` | Images jointes aux messages de l’assistant | activé sauf pour `openai-compatible` |
 | `AI_MODEL` | Nom exact du modèle de l’assistant (accepte les outils) | vide, donc `OPENAI_CHAT_MODEL`, puis `OPENAI_TEXT_MODEL`, sinon assistant désactivé |
 | `AI_BASE_URL`, `AI_API_KEY` | Adresse (et clé éventuelle) d’un serveur compatible | — |
 | `AI_MAX_TOOL_ROUNDS`, `AI_TIMEOUT_S` | Garde-fous de l’assistant | `5`, `120` s |

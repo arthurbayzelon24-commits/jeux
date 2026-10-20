@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Évaluation de SOLVEX AI avec le VRAI modèle configuré dans .env
- * (OPENAI_API_KEY + OPENAI_CHAT_MODEL, ou AI_PROVIDER=openai-compatible).
+ * (OPENAI_API_KEY + OPENAI_CHAT_MODEL, AI_PROVIDER=anthropic, ou AI_PROVIDER=openai-compatible).
  *
  *   npm run eval:assistant                    générations simulées (aucun coût d’image/vidéo)
  *   npm run eval:assistant -- --real-generation   générations réelles (payantes)
@@ -166,7 +166,7 @@ export async function runEvaluation({ overrides = {}, realGeneration = false, on
     let failure = null;
     try {
       if (!(await json(`${srv.base}/api/capabilities`)).data?.assistant?.configured) {
-        throw new Error('Assistant non configuré : renseignez OPENAI_API_KEY et OPENAI_CHAT_MODEL (ou AI_PROVIDER=openai-compatible, AI_BASE_URL, AI_MODEL).');
+        throw new Error('Assistant non configuré : renseignez OPENAI_API_KEY et OPENAI_CHAT_MODEL (ou AI_PROVIDER=anthropic avec ANTHROPIC_API_KEY et AI_MODEL, ou AI_PROVIDER=openai-compatible avec AI_BASE_URL et AI_MODEL).');
       }
       if (scenario.seedImage) {
         await json(`${srv.base}/api/images/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'Un chat roux sur un rebord de fenêtre', aspect: '1:1' }) });
@@ -213,7 +213,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const onlyArg = process.argv.find((a) => a.startsWith('--only='));
   const only = onlyArg ? onlyArg.slice(7).split(',').map(Number) : undefined;
   const probe = loadConfig();
-  console.log(`Évaluation SOLVEX AI — modèle : ${probe.ai.provider === 'openai-compatible' ? `${probe.ai.model} via ${probe.ai.baseUrl}` : `OpenAI · ${probe.ai.model || probe.openai.chatModel || '(non défini)'}`}`);
+  console.log(`Évaluation SOLVEX AI — modèle : ${probe.ai.provider === 'openai-compatible' ? `${probe.ai.model} via ${probe.ai.baseUrl}` : probe.ai.provider === 'anthropic' ? `Anthropic · ${probe.ai.model || '(non défini)'}` : `OpenAI · ${probe.ai.model || probe.openai.chatModel || '(non défini)'}`}`);
   console.log(`Générations : ${realGeneration ? 'RÉELLES (facturées par les fournisseurs)' : 'simulées (aucun coût)'}`);
   const { score, total } = await runEvaluation({ realGeneration, only, log: printResult });
   console.log(`\nScore : ${score}/${total} scénarios réussis.`);

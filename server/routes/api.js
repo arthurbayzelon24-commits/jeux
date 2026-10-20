@@ -125,7 +125,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
       assistant: (() => {
         const llmInfo = createLanguageModel(config);
         const toolbox = createToolbox({ registry, store, project: null });
-        return { configured: llmInfo.configured, provider: llmInfo.id, label: llmInfo.label, model: llmInfo.model || null, streaming: llmInfo.streaming, missing: llmInfo.missing, tools: toolbox.availability() };
+        return { configured: llmInfo.configured, provider: llmInfo.id, label: llmInfo.label, model: llmInfo.model || null, streaming: llmInfo.streaming, vision: llmInfo.vision, missing: llmInfo.missing, tools: toolbox.availability() };
       })(),
       promptEnhancement: canEnhanceWithModel(config) ? { method: 'model', model: config.openai.textModel } : { method: 'local' },
       limits: { maxUploadBytes: config.maxUploadBytes, maxPromptLength: v.MAX_PROMPT_LENGTH },
@@ -313,6 +313,25 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
   // ---------------------------------------------------------------- SOLVEX AI (assistant)
   const llm = createLanguageModel(config);
 
+  const CHAT_IMAGE_MAX = 4;
+  const CHAT_IMAGE_BYTES = 5 * 1024 * 1024;
+
+  /** Images joined to the latest message: uploads checked by the server, sent to the model as data URLs. */
+  async function attachImages(message, ids) {
+    if (ids === undefined || ids === null || (Array.isArray(ids) && !ids.length)) return;
+    if (!llm.vision) {
+      throw new HttpError(400, 'Le modèle configuré ne lit pas les images. Activez AI_VISION=true si votre modèle les accepte.', { code: 'unsupported_option' });
+    }
+    const uploads = [];
+    for (const id of v.uploadIdList(ids, CHAT_IMAGE_MAX, 'images')) {
+      const upload = await store.readUpload(id);
+      if (!upload) throw new HttpError(400, 'Une image jointe a expiré. Joignez-la de nouveau.', { code: 'upload_expired' });
+      if (upload.buffer.length > CHAT_IMAGE_BYTES) throw new HttpError(413, 'Image jointe trop lourde (5 Mo maximum).', { code: 'too_large' });
+      uploads.push(upload);
+    }
+    message.content = [{ type: 'text', text: message.content }, ...uploads.map((u) => ({ type: 'image_url', image_url: { url: `data:${u.mime};base64,${u.buffer.toString('base64')}` } }))];
+  }
+
   async function prepareChat(req) {
     if (!llm.configured) {
       throw new HttpError(503, `L’assistant SOLVEX AI n’est pas configuré : ajoutez ${llm.missing.join(' et ')} dans le fichier .env du serveur (voir docs/ARCHITECTURE-IA.md).`, {
@@ -326,6 +345,7 @@ export function createApiRoutes({ config, store, registry, jobs, limiter, auth, 
     if (!messages.length || messages.at(-1).role !== 'user' || !messages.at(-1).content.trim()) throw new HttpError(400, 'Écrivez un message.', { code: 'invalid_request' });
     const clientIp = ip(req);
     limiter.check(`chat:${clientIp}`, config.rateLimit.chatPerMinute);
+    await attachImages(messages.at(-1), body.messages.at(-1)?.images);
     const project = sanitizeProject(body.project);
     const toolbox = createToolbox({ registry, store, submitImage, submitVideo, submitEdit, publicCreation, clientIp, project });
     const image = registry.resolve('image');

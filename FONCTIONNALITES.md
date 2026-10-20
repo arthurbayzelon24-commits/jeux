@@ -1,6 +1,6 @@
 # SOLVEX AI — liste de contrôle des fonctionnalités
 
-Version 2.2.0. Signification des statuts :
+Version 2.4.0. Signification des statuts :
 
 | Statut | Sens |
 | --- | --- |
@@ -18,7 +18,8 @@ Version 2.2.0. Signification des statuts :
 | Fonction | Statut |
 | --- | --- |
 | Accueil « Que voulez-vous créer aujourd’hui ? » : illustration originale, hub Créer (image, vidéo, éditer un média), projets récents avec recherche, « Voir tous les projets », état vide | ✅ |
-| Navigation : Accueil, Projets, Bibliothèque, Outils IA, Mes créations, Paramètres (pas de compte : SOLVEX n’a pas de comptes utilisateurs) | ✅ |
+| Navigation : Accueil, Assistant IA, Créer avec l’IA (image, vidéo, retouche), Éditer (éditeur vidéo, éditeur d’images, audio et musique, stickers et textes, enregistrement), Projets (projets, bibliothèque, créations, modèles), Paramètres. Pas de compte : SOLVEX n’a pas de comptes utilisateurs | ✅ (Chromium, bureau et 390 × 844) |
+| Menu « Éditer » : ouvre un projet vierge dans le bon éditeur et le bon panneau ; le retour arrière ne crée pas de second projet | ✅ (Chromium) |
 | Nouveau projet (3 cartes illustrées : vidéo, photo, SOLVEX AI), ouvrir, récents, recherche, favoris | ✅ |
 | « Éditer une vidéo » / « Éditer une photo » : le sélecteur de fichiers s’ouvre, puis l’éditeur s’ouvre avec le média dans la bibliothèque du projet | ✅ |
 | Raccourcis : enregistrer l’écran, enregistrer la webcam, projet vierge, reprendre un projet | 🟢 |
@@ -118,6 +119,11 @@ Version 2.2.0. Signification des statuts :
 | --- | --- |
 | SOLVEX AI conversationnel : vrai modèle de langage existant (OpenAI ou modèle ouvert compatible : Ollama, vLLM, LM Studio), appelé par le serveur ; aucun modèle entraîné par SOLVEX | ✅ (testé avec un serveur au format Chat Completions ; à confirmer avec une vraie clé ou un modèle local) |
 | Réponses en flux, étapes réelles (analyse, outil, rédaction), bouton Arrêter, Réessayer, délai maximal | ✅ |
+| Plusieurs conversations : nouvelle, renommer, supprimer (avec confirmation), titre automatique, conservées après rechargement (navigateur uniquement) | ✅ (tests + Chromium) |
+| Réponses mises en forme (titres, listes, citations, liens http(s), code avec « Copier »), sans insertion de HTML | ✅ |
+| Images jointes (bouton, glisser-déposer, coller ; 4 max.) si le modèle les lit (`AI_VISION`) | ✅ (modèle simulé ; à confirmer avec votre modèle) |
+| Fournisseur Anthropic (Claude) pour l’assistant, en plus d’OpenAI et des modèles compatibles | ✅ (serveur Messages simulé ; à confirmer avec une vraie clé) |
+| Fichiers non image (PDF, documents) joints à la conversation | ⛔ |
 | Outils validés par le serveur : image, vidéo, retouche de la dernière création, état des créations, musique, projet joint ; outils absents ou non configurés refusés | ✅ |
 | Modifications de projet (titre stylisé, musique, transitions, renommage) proposées puis appliquées seulement après « Appliquer » | ✅ |
 | Mémoire des préférences contrôlée : proposée, acceptée, désactivable, effaçable, stockée dans le navigateur | ✅ |
@@ -127,6 +133,7 @@ Version 2.2.0. Signification des statuts :
 | Formats 1:1, 2:3, 3:4, 4:5, 9:16, 3:2, 4:3, 16:9, 21:9 ; résolutions 512 px à 4K selon le modèle, raison affichée si indisponible | ✅ |
 | Qualité Standard / Élevée / Très élevée / Ultra reliée au paramètre réel du modèle | ✅ (OpenAI) · 🟡 Pollinations : un seul niveau |
 | 4K native (gpt-image-2 en 16:9, 9:16, 21:9) ; agrandissement par IA | ✅ native · ⛔ agrandissement IA non branché |
+| Thème clair | ⛔ (le thème sombre utilise encore des couleurs fixes dans les feuilles de style ; un thème clair propre demande de les convertir en variables d’abord) |
 | Dimensions prévues avant et dimensions réelles après la génération | ✅ |
 | Site public : génération d’images depuis le navigateur (Pollinations) et « Mes créations » locales | ✅ (service simulé dans les tests ; service réel non joignable depuis l’environnement de développement) |
 | Génération texte → image et image → image (OpenAI) | ✅ (test avec un fournisseur factice ; à confirmer avec une vraie clé) |

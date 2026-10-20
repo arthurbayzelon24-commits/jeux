@@ -15,7 +15,9 @@ import { enhancePage } from './pages/enhance.js';
 import { galleryPage } from './pages/gallery.js';
 import { emptyStage } from './pages/studioShared.js';
 import { dashboardPage } from './studio/pages/dashboard.js';
-import { openNewProject } from './studio/projectActions.js';
+import { openNewProject, recordInto } from './studio/projectActions.js';
+import { createProject } from './studio/project.js';
+import { db } from './studio/db.js';
 import { videoEditorPage } from './studio/pages/videoEditor.js';
 import { photoEditorPage } from './studio/pages/photoEditor.js';
 import { settingsPage } from './pages/settings.js';
@@ -27,22 +29,60 @@ import { setCapabilities } from './lib/state.js';
 
 const NAV = [
   { path: '/', label: 'Accueil', icon: 'home' },
-  { path: '/projets', label: 'Projets', icon: 'folder', match: ['/projets', '/studio'] },
-  { path: '/bibliotheque', label: 'Bibliothèque', icon: 'gallery', match: ['/bibliotheque', '/modeles'] },
+  { path: '/assistant', label: 'Assistant IA', icon: 'chat' },
   {
-    label: 'Outils IA',
+    id: 'nav-create',
+    label: 'Créer avec l’IA',
     icon: 'sparkles',
-    match: ['/assistant', '/images', '/videos', '/retouche'],
+    match: ['/images', '/videos', '/retouche'],
     children: [
-      { path: '/assistant', label: 'Discuter avec SOLVEX AI', icon: 'sparkles' },
       { path: '/images', label: 'Générer une image', icon: 'image' },
       { path: '/videos', label: 'Générer une vidéo', icon: 'video' },
       { path: '/retouche', label: 'Retouche et amélioration', icon: 'wand' },
     ],
   },
-  { path: '/galerie', label: 'Mes créations', icon: 'gallery' },
+  {
+    id: 'nav-edit',
+    label: 'Éditer',
+    icon: 'scissors',
+    match: ['/studio/video', '/studio/photo', '/creer/video', '/creer/photo'],
+    children: [
+      { path: '/creer/video', label: 'Éditeur vidéo', icon: 'video' },
+      { path: '/creer/photo', label: 'Éditeur d’images', icon: 'image' },
+      { path: '/creer/video?panneau=audio', label: 'Audio et musique', icon: 'music' },
+      { path: '/creer/video?panneau=stickers', label: 'Stickers et textes', icon: 'smile' },
+      { action: () => recordInto('screen'), label: 'Enregistrer l’écran ou la webcam', icon: 'record' },
+    ],
+  },
+  {
+    id: 'nav-projects',
+    label: 'Projets',
+    icon: 'folder',
+    match: ['/projets', '/studio', '/bibliotheque', '/modeles', '/galerie'],
+    children: [
+      { path: '/projets', label: 'Mes projets', icon: 'folder' },
+      { path: '/bibliotheque', label: 'Bibliothèque de médias', icon: 'gallery' },
+      { path: '/galerie', label: 'Mes créations IA', icon: 'sparkles' },
+      { path: '/modeles', label: 'Modèles', icon: 'layers' },
+    ],
+  },
   { path: '/parametres', label: 'Paramètres', icon: 'settings' },
 ];
+
+/**
+ * « Éditeur vidéo », « Audio », « Stickers » and « Éditeur d’images » in the
+ * menu open a new blank project in the right editor (and panel). The history
+ * entry is replaced, so going back never creates a second project.
+ */
+function newProjectPage(type) {
+  return async ({ params }) => {
+    const project = createProject({ name: type === 'photo' ? 'Nouvelle image' : 'Nouveau montage', type });
+    await db.putProject({ ...project, saved: true });
+    const panel = params.get('panneau');
+    navigate(`/studio/${type}?id=${encodeURIComponent(project.id)}${panel ? `&panneau=${encodeURIComponent(panel)}` : ''}`, { replace: true });
+    return { title: 'Nouveau projet', el: h('div', { class: 'page container' }, h('p', { class: 'field__hint' }, 'Ouverture de l’éditeur…')) };
+  };
+}
 
 // Capabilities shown by the public static build (no Node server behind it).
 const STATIC_CAPABILITIES = {
@@ -144,24 +184,38 @@ function renderHeaderStatus(capabilities) {
     .join('\n');
 }
 
+const menus = [];
+const closeMenus = () => menus.forEach((setOpen) => setOpen(false));
+document.addEventListener('click', closeMenus);
+document.addEventListener('keydown', (event) => event.key === 'Escape' && closeMenus());
+
 function buildHeader() {
   const nav = h(
     'nav',
     { class: 'nav', id: 'main-nav', 'aria-label': 'Navigation principale' },
     NAV.map((item) => {
       if (!item.children) return h('a', { href: item.path, 'data-link': '', 'data-match': (item.match || [item.path]).join(' ') }, icon(item.icon, { size: 16 }), item.label);
-      const menu = h('div', { class: 'nav-menu', id: 'nav-ai', hidden: true }, item.children.map((c) => h('a', { href: c.path, 'data-link': '' }, icon(c.icon, { size: 16 }), c.label)));
-      const button = h('button', { class: 'nav-drop', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'nav-ai', 'data-match': item.match.join(' ') }, icon(item.icon, { size: 16 }), item.label, h('span', { class: 'nav-drop__caret', 'aria-hidden': 'true' }, '▾'));
+      const menu = h(
+        'div',
+        { class: 'nav-menu', id: item.id, hidden: true },
+        item.children.map((c) =>
+          c.action
+            ? h('button', { class: 'nav-menu__action', type: 'button', onclick: () => (closeMenus(), c.action()) }, icon(c.icon, { size: 16 }), c.label)
+            : h('a', { href: c.path, 'data-link': '' }, icon(c.icon, { size: 16 }), c.label),
+        ),
+      );
+      const button = h('button', { class: 'nav-drop', type: 'button', 'aria-expanded': 'false', 'aria-controls': item.id, 'data-match': item.match.join(' ') }, icon(item.icon, { size: 16 }), item.label, h('span', { class: 'nav-drop__caret', 'aria-hidden': 'true' }, '▾'));
       const setOpen = (open) => {
         menu.hidden = !open;
         button.setAttribute('aria-expanded', String(open));
       };
+      menus.push(setOpen);
       button.addEventListener('click', (event) => {
         event.stopPropagation();
-        setOpen(menu.hidden);
+        const open = menu.hidden;
+        closeMenus();
+        setOpen(open);
       });
-      document.addEventListener('click', () => setOpen(false));
-      document.addEventListener('keydown', (event) => event.key === 'Escape' && setOpen(false));
       return h('div', { class: 'nav-group' }, button, menu);
     }),
   );
@@ -181,7 +235,7 @@ function buildHeader() {
     toggle.setAttribute('aria-expanded', String(open));
   });
   nav.addEventListener('click', (event) => {
-    if (event.target.closest('a')) {
+    if (event.target.closest('a, .nav-menu__action')) {
       nav.classList.remove('is-open');
       toggle.setAttribute('aria-expanded', 'false');
     }
@@ -293,6 +347,8 @@ async function boot() {
       '/projets': guard(dashboardPage('projects')),
       '/bibliotheque': guard(dashboardPage('media')),
       '/modeles': guard(dashboardPage('templates')),
+      '/creer/video': guard(newProjectPage('video')),
+      '/creer/photo': guard(newProjectPage('photo')),
       '/studio/video': guard(videoEditorPage),
       '/studio/photo': guard(photoEditorPage),
       '/parametres': guard(settingsPage),
