@@ -6,8 +6,9 @@ Site web gratuit qui utilise la caméra du téléphone ou du PC pour se filmer a
 
 1. L’accueil montre uniquement les **25 pouvoirs**, en deux colonnes de cartes dorées illustrées (rendues avec les vrais effets, voir `tools/`).
 2. On touche un pouvoir : la caméra s’ouvre, en plein écran, avec ce pouvoir. La rangée d’icônes en bas permet d’en changer.
-3. **Plus on maintient le pouvoir, plus il devient puissant** : un anneau de charge se remplit autour de la main, l’effet grossit, l’écran s’illumine et vibre, puis au bout d’environ 6 secondes un **déclenchement final** se produit (flash, ondes de choc, rayons et éclairs).
-4. Bouton rouge : **3, 2, 1**, puis enregistrement.
+3. **Pouvoirs à charge** (Kamehameha, Rayon de feu, Sabre laser, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Magie des ombres, Glace) : tant qu’on garde leur geste, une grande jauge circulaire se remplit autour de la main, l’effet grossit, l’écran s’illumine et vibre, puis au bout d’environ 6 secondes un **déclenchement final** se produit (flash, ondes de choc, rayons et éclairs).
+4. L’écran de chargement n’apparaît qu’à la toute première ouverture (téléchargement des modèles).
+5. Bouton rouge : **3, 2, 1**, puis enregistrement.
 
 Aucun message pendant le tournage. Au premier lancement, une seule question : « Voulez-vous les points ? », modifiable dans les Paramètres.
 
@@ -22,7 +23,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 ## Fonctions
 
 - **Fluidité** : l’image et les pouvoirs sont dessinés à la fréquence de l’écran (60, 90, 120 ou 144 Hz : jusqu’à environ 140 images/s sur un écran 144 Hz). La détection des mains et du corps tourne dans un **worker** (un fil séparé), donc l’affichage n’attend jamais l’IA ; entre deux images de la caméra, la position des mains est prédite. Si l’appareil ne suit pas, la résolution baisse un peu toute seule, puis remonte (jamais pendant un enregistrement). Compteur d’images par seconde activable dans les Paramètres.
-- **Qualité** : « Fluidité maximale » (par défaut : image à la définition de l’écran, caméra jusqu’à 120 i/s), 720p, 1080p, 4K ou 8K (la 4K et la 8K sont plus nettes mais limitées à 30 i/s par les caméras).
+- **Qualité** : par défaut **32K** et **250 i/s** demandés à la caméra (elle fournit le maximum dont elle est capable, en général 4K et 30 à 240 i/s selon l’appareil) ; 16K, 8K, 4K, 1080p, 720p ou « Définition de l’écran » au choix. L’image est dessinée à cette résolution dans la limite de ce que le navigateur accepte. Effets en qualité **Ultra** (plus de particules, étalonnage cinéma) avec **halo lumineux (bloom)** autour de tout ce qui brille.
 - Enregistrement vidéo avec compte à rebours (3, 2, 1 par défaut), micro et sons des pouvoirs synthétisés ; MP4 quand le navigateur le permet, sinon WebM. Photo.
 - Télécharger, Partager (TikTok, Instagram, WhatsApp… depuis le téléphone), Mes vidéos (stockées dans le navigateur).
 - Caméra avant / arrière, miroir, vignette cinéma, mode économie.

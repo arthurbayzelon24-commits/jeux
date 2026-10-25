@@ -36,9 +36,12 @@ paintIcons();
 const $ = (id) => document.getElementById(id);
 
 // ---------- Settings ----------
-const SETTINGS_KEY = 'magic-cam-settings-v3';
+const SETTINGS_KEY = 'magic-cam-settings-v4';
 const DEFAULTS = {
-  quality: 'smooth',
+  quality: '32k',
+  fpsTarget: '250',
+  fxQuality: 'ultra',
+  bloom: true,
   fps: false,
   maxDuration: '60',
   countdown: '3',
@@ -56,8 +59,10 @@ const settings = (() => {
     const saved = localStorage.getItem(SETTINGS_KEY);
     if (saved) return { ...DEFAULTS, ...JSON.parse(saved) };
     // Keep the earlier answers, but switch to the new smooth default.
-    const old = JSON.parse(localStorage.getItem('magic-cam-settings-v2') || '{}');
+    const old = JSON.parse(localStorage.getItem('magic-cam-settings-v3') || localStorage.getItem('magic-cam-settings-v2') || '{}');
     delete old.quality;
+    if (old.eco) old.fxQuality = 'eco';
+    delete old.eco;
     return { ...DEFAULTS, ...old };
   } catch {
     return { ...DEFAULTS };
@@ -72,8 +77,13 @@ const saveSettings = () => {
 };
 // "smooth": image as sharp as the screen shows it, camera at up to 120 i/s.
 const screenSide = () => Math.round(Math.max(screen.width, screen.height) * Math.min(2, window.devicePixelRatio || 1));
-const maxSideFor = (q) => ({ 720: 1280, 1080: 1920, 2160: 3840, 4320: 7680 })[q] || Math.min(1920, Math.max(1280, screenSide()));
-const cameraFps = (q) => (q === 'smooth' || q === '720' ? 120 : q === '1080' ? 60 : 30);
+// Longest side requested from the camera for each quality. The camera gives
+// the best it has up to that; the image is then drawn at that resolution
+// (within the browser's canvas limits and the adaptive resolution).
+const SIDES = { 720: 1280, 1080: 1920, 2160: 3840, 4320: 7680, '16k': 15360, '32k': 30720 };
+const maxSideFor = (q) => SIDES[q] || Math.min(1920, Math.max(1280, screenSide()));
+const cameraFps = () => Number(settings.fpsTarget) || 250;
+const PARTICLES = { ultra: 1.6, high: 1, eco: 0.5 };
 
 // ---------- Core objects ----------
 const video = $('cam');
@@ -249,7 +259,7 @@ async function startCamera() {
     facingMode: facing,
     width: { ideal: portrait ? short : long },
     height: { ideal: portrait ? long : short },
-    frameRate: { ideal: cameraFps(settings.quality) },
+    frameRate: { ideal: cameraFps() },
   };
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -298,7 +308,8 @@ async function openStudio(id) {
   $('view-studio').hidden = false;
   document.body.classList.add('in-studio');
   $('error').hidden = true;
-  $('loading').hidden = false;
+  // The loading screen only shows the first time, while the models download.
+  $('loading').hidden = tracker.ready;
   audio.init();
   updateToggles();
   selectEffect(id || currentEffect);
@@ -692,12 +703,12 @@ form.addEventListener('change', (e) => {
   if (el.name === 'points') settings.pointsAsked = true;
   saveSettings();
   audio.setEnabled(settings.sound);
-  quality.particles = settings.eco ? 0.5 : 1;
+  quality.particles = PARTICLES[settings.fxQuality] || 1;
   engine.maxSide = maxSideFor(settings.quality);
   updateToggles();
 });
 syncForm();
-quality.particles = settings.eco ? 0.5 : 1;
+quality.particles = PARTICLES[settings.fxQuality] || 1;
 
 // ---------- Boot ----------
 buildPowers();
