@@ -33,6 +33,25 @@ export function makeCanvas(w, h) {
   return c;
 }
 
+// Cached colour ramps (alpha along the strip), stretched with drawImage
+// instead of building a new gradient every frame. stops: [[position, alpha], ...].
+const STRIPS = new Map();
+export function strip(rgb, stops, vertical = false) {
+  const key = `${rgb}|${stops}|${vertical}`;
+  let c = STRIPS.get(key);
+  if (!c) {
+    c = vertical ? makeCanvas(4, 128) : makeCanvas(128, 4);
+    const g = c.getContext('2d');
+    const grad = vertical ? g.createLinearGradient(0, 0, 0, 128) : g.createLinearGradient(0, 0, 128, 0);
+    for (const [pos, a] of stops) grad.addColorStop(pos, `rgba(${rgb.join(',')},${a})`);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, c.width, c.height);
+    if (STRIPS.size > 64) STRIPS.clear();
+    STRIPS.set(key, c);
+  }
+  return c;
+}
+
 export function hexToRgb(hex) {
   const n = parseInt(hex.replace('#', ''), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];

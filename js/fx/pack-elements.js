@@ -1,6 +1,6 @@
 // Elemental powers: fire dragon, tornado, meteor shower, lava orb, mini sun,
 // sonic clap.
-import { Particles, drawGlow, rand, TAU, noise1, clamp, dist, fireSprite, MESHES, rockMesh, drawMesh, rotMatrix } from './util.js';
+import { Particles, drawGlow, rand, TAU, noise1, clamp, dist, fireSprite, MESHES, rockMesh, drawMesh, rotMatrix, strip } from './util.js';
 
 const mainHand = (hands) => hands.filter((h) => h.presence > 0.4).sort((a, b) => b.size - a.size)[0];
 
@@ -473,18 +473,18 @@ export function sunEffect() {
       ctx.globalCompositeOperation = 'lighter';
       drawGlow(ctx, rgb, x, y, R * 5, 0.4, 0.05);
       // Rotating rays.
+      const ray = strip(rgb, [
+        [0, 0.5],
+        [1, 0],
+      ]);
       for (let k = 0; k < 16; k++) {
         const a = (k / 16) * TAU + e.t * 0.3;
         const L = R * (2.2 + 0.6 * noise1(e.t * 2 + k));
-        const grad = ctx.createLinearGradient(x, y, x + Math.cos(a) * L, y + Math.sin(a) * L);
-        grad.addColorStop(0, `rgba(${rgb.join(',')},0.5)`);
-        grad.addColorStop(1, `rgba(${rgb.join(',')},0)`);
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = R * 0.18;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + Math.cos(a) * L, y + Math.sin(a) * L);
-        ctx.stroke();
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(a);
+        ctx.drawImage(ray, 0, -R * 0.09, L, R * 0.18);
+        ctx.restore();
       }
       // Solar flares: arcs looping off the surface.
       ctx.lineWidth = 3 * e.unit;
