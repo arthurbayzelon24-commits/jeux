@@ -148,6 +148,7 @@ export function crystalBallEffect() {
       sparks.update(dt);
       const h = mainHand(hands);
       g = clamp(g + (h && (h.open || h.gesture === 'relaxed') ? dt * 1.3 : -dt * 2));
+      e.audio.loop('hum', 0.5 * g);
       if (h) this.c = { x: h.palm.x, y: h.palm.y - h.size * 0.95, R: h.size * 0.65 * g };
       if (this.c && g > 0.2) {
         if (Math.random() < 0.4) {
