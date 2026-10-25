@@ -23,12 +23,14 @@ import { butterfliesEffect } from './fx/butterflies.js';
 import { blackholeEffect } from './fx/blackhole.js';
 import { wingsEffect } from './fx/wings.js';
 import { thunderEffect } from './fx/thunder.js';
+import { hudEffect } from './fx/hud.js';
 
 // Order shown on the powers screen. `charge`: the gesture that charges the
 // power up to its final blast (powers without it have no charge). `tint` colours the icon and the card,
 // `gesture` is the short "how to cast it" line under the name.
 export const EFFECTS = [
   { id: 'kamehameha', make: kamehamehaEffect, tint: '#4aa3ff', gesture: 'Mains jointes, puis poussez', charge: 'open' },
+  { id: 'hud', make: hudEffect, tint: '#50dcff', gesture: 'Tapez sur le clavier holographique' },
   { id: 'firebeam', make: fireBeamEffect, tint: '#ff7a1a', gesture: 'Pointez l’index', charge: 'point' },
   { id: 'saber', make: saberEffect, tint: '#ff3b3b', gesture: 'Fermez le poing', charge: 'fist' },
   { id: 'portal', make: portalEffect, tint: '#ff9a2e', gesture: 'Tracez un cercle avec l’index' },

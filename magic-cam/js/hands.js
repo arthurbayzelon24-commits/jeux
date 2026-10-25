@@ -74,9 +74,10 @@ export class HandTracker {
   // fading out after a few frames so a wrong guess never shows.
   advance(dt) {
     for (const t of this.tracks) {
-      if (!t.visible || !t.palm || !t.lmVel) continue;
+      if (!t.palm || !t.lmVel) continue;
       t.ahead = (t.ahead || 0) + dt;
-      const k = t.ahead < 0.05 ? 1 : t.ahead < 0.09 ? 0.5 : 0;
+      // Visible: a couple of frames ahead. Lost: coast a bit longer, slowing.
+      const k = t.visible ? (t.ahead < 0.05 ? 1 : t.ahead < 0.09 ? 0.5 : 0) : t.ahead < 0.2 ? Math.exp(-t.ahead * 8) : 0;
       if (!k) continue;
       t.lm.forEach((p, i) => {
         p.x += t.lmVel[i].x * dt * k;
@@ -84,6 +85,7 @@ export class HandTracker {
       });
       t.palm.x += t.vel.x * dt * k;
       t.palm.y += t.vel.y * dt * k;
+      if (!t.visible) t.speed = Math.hypot(t.vel.x, t.vel.y) * k;
       t.pinchPoint.x = (t.lm[4].x + t.lm[8].x) / 2;
       t.pinchPoint.y = (t.lm[4].y + t.lm[8].y) / 2;
     }
@@ -114,7 +116,8 @@ export class HandTracker {
           best = t;
         }
       }
-      if (best && bestD < Math.max(W, H) * 0.35) {
+      // Generous radius: a hand moving fast can travel far between frames.
+      if (best && bestD < Math.max(W, H) * 0.5) {
         free.delete(best);
         this.#apply(best, input, dt, now);
       } else {
@@ -123,13 +126,12 @@ export class HandTracker {
         this.tracks.push(t);
       }
     }
-    // Lost tracks fade out instead of popping.
+    // Lost tracks (often a fast, blurred hand) keep gliding along their
+    // motion for a moment and fade slowly, so effects never drop out.
     for (const t of free) {
       t.visible = false;
-      t.presence -= dt * 5;
-      t.vel.x *= 0.8;
-      t.vel.y *= 0.8;
-      t.speed = Math.hypot(t.vel.x, t.vel.y);
+      t.lost = (t.lost || 0) + dt;
+      t.presence -= dt * 2.5;
       t.events = {};
     }
     this.tracks = this.tracks.filter((t) => t.presence > 0);
@@ -163,6 +165,13 @@ export class HandTracker {
   #apply(t, input, dt, now) {
     t.visible = true;
     t.ahead = 0;
+    // Back after a loss: jump straight to the new position (no smoothing lag).
+    if (t.lost > 0.06) {
+      for (const f of t.filters) for (const k of f) k.x = null;
+      t.rawLm = null;
+      t.rawPalm = null;
+    }
+    t.lost = 0;
     t.label = input.label;
     t.presence = Math.min(1, t.presence + dt * 6);
     t.lm = input.lm.map((p, i) => ({

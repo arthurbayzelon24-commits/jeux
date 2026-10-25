@@ -250,6 +250,7 @@ function scene(id, W, H) {
       frames: 60,
     },
     firebeam: { hands: one('point', 0.3, 0.92, { roll: 0.55 }), frames: 50 },
+    hud: { hands: (t) => [hand('point', W * (0.5 + Math.sin(t * 2) * 0.15), H * 0.86, L * 0.85, W, H, { roll: -0.2 })], frames: 70 },
     saber: { hands: one('fist', 0.45, 0.85, { roll: 0.5 }), frames: 40 },
     portal: {
       hands: (t) => [hand('point', W * (0.6 + Math.cos(t * 4.5) * 0.2), H * (0.82 + Math.sin(t * 4.5) * 0.2), L * 0.8, W, H)],

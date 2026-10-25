@@ -72,9 +72,9 @@ export class Detector {
       baseOptions: { modelAssetBuffer: handBuf },
       runningMode: 'VIDEO',
       numHands: 2,
-      minHandDetectionConfidence: 0.55,
-      minHandPresenceConfidence: 0.5,
-      minTrackingConfidence: 0.5,
+      minHandDetectionConfidence: 0.45,
+      minHandPresenceConfidence: 0.4,
+      minTrackingConfidence: 0.35,
     });
     // Body points are optional: without them the hands still work.
     if (poseBuf) {
@@ -124,9 +124,9 @@ export class Detector {
       }
     }
     this.frameNo++;
-    // Body points every third frame: they move slower than fingers.
+    // Body points every other frame (the body moves slower than fingers).
     let pose;
-    if (wantPose && this.pose && this.frameNo % 3 === 0) {
+    if (wantPose && this.pose && this.frameNo % 2 === 0) {
       const r = this.pose.detectForVideo(frame, ts);
       pose = r.landmarks?.[0] || null;
     }

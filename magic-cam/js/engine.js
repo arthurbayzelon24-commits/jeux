@@ -34,7 +34,23 @@ export class Engine {
     this.maskInverted = 0;
   }
 
+  // Runs an effect step; a bug in one power never freezes the app.
+  #safe(name, ...args) {
+    const fn = this.effect?.[name];
+    if (!fn) return undefined;
+    try {
+      return fn.apply(this.effect, args);
+    } catch (err) {
+      if (!this.reported?.has(name)) {
+        (this.reported ||= new Set()).add(name);
+        console.error(`Effet « ${this.effect.id} » (${name}) :`, err);
+      }
+      return undefined;
+    }
+  }
+
   setEffect(effect) {
+    this.reported = null;
     this.effect?.stop?.(this);
     this.effect = effect;
     this.plate = null;
@@ -77,6 +93,50 @@ export class Engine {
     this.unit = Math.min(W, H) / 720;
   }
 
+  // Draws the real hands (camera pixels inside the hand outlines) over
+  // whatever was drawn, so fingers pass in front of holograms.
+  occludeHands(ctx) {
+    const hands = this.hands.filter((h) => h.presence > 0.3);
+    if (!hands.length || !this.src) return;
+    const { W, H } = this;
+    if (!this.occl || this.occl.width !== W || this.occl.height !== H) this.occl = makeCanvas(W, H);
+    const g = this.occl.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#fff';
+    g.strokeStyle = '#fff';
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    for (const h of hands) {
+      const P = h.lm;
+      g.beginPath();
+      [0, 1, 2, 5, 9, 13, 17].forEach((i, k) => (k ? g.lineTo(P[i].x, P[i].y) : g.moveTo(P[i].x, P[i].y)));
+      g.closePath();
+      g.lineWidth = h.size * 0.3;
+      g.fill();
+      g.stroke();
+      for (const [ids, w] of [
+        [[1, 2, 3, 4], 0.24],
+        [[5, 6, 7, 8], 0.2],
+        [[9, 10, 11, 12], 0.21],
+        [[13, 14, 15, 16], 0.19],
+        [[17, 18, 19, 20], 0.16],
+      ]) {
+        g.lineWidth = h.size * w;
+        g.beginPath();
+        ids.forEach((i, k) => (k ? g.lineTo(P[i].x, P[i].y) : g.moveTo(P[i].x, P[i].y)));
+        g.stroke();
+      }
+    }
+    g.globalCompositeOperation = 'source-in';
+    if (this.src.mirror) g.setTransform(-1, 0, 0, 1, W, 0);
+    g.drawImage(this.src.source, 0, 0, W, H);
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = 'source-over';
+    ctx.drawImage(this.occl, 0, 0);
+  }
+
   #fxLayer() {
     const { W, H } = this;
     if (this.fx?.canvas.width === W && this.fx.canvas.height === H) return this.fx;
@@ -85,7 +145,7 @@ export class Engine {
       return { canvas, ctx: canvas.getContext('2d') };
     };
     const base = layer(W, H);
-    this.fx = { ...base, levels: [4, 8, 16].map((d) => layer(W / d, H / d)) };
+    this.fx = { ...base, trail: layer(W, H), levels: [4, 8, 16].map((d) => layer(W / d, H / d)) };
     return this.fx;
   }
 
@@ -272,6 +332,7 @@ export class Engine {
     this.#resize(input.sw, input.sh);
     const { ctx, W, H } = this;
     const effect = this.effect;
+    this.src = { source: input.source, mirror: input.mirror };
     if (input.raw) this.hands = this.tracker.update(input.raw, { width: W, height: H, mirror: input.mirror, dt, now });
     // Gesture events only last for the frame of the detection that produced them.
     else {
@@ -281,6 +342,7 @@ export class Engine {
       this.tracker.advance(dt);
     }
     if (input.pose !== undefined) this.body.update(input.pose, { width: W, height: H, mirror: input.mirror, dt });
+    else this.body.advance(dt);
 
     this.segActive = !!(effect?.needs?.seg && input.mask);
     if (this.segActive) {
@@ -306,7 +368,7 @@ export class Engine {
     this.charge.update(dt, this, effect, realHands);
     const k = this.charge.scale;
     this.hands = k > 1.01 ? realHands.map((h) => Object.create(h, { size: { value: h.size * k } })) : realHands;
-    effect?.update?.(dt, this.hands, this);
+    this.#safe('update', dt, this.hands, this);
 
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
@@ -318,7 +380,7 @@ export class Engine {
     this.shakeAmp *= Math.exp(-dt * 8);
     this.zoom = 1 + (this.zoom - 1) * Math.exp(-dt * 5);
 
-    const handled = effect?.drawBackground?.(ctx, this);
+    const handled = this.#safe('drawBackground', ctx, this);
     if (!handled && this.segActive) ctx.drawImage(this.layers.frame, 0, 0);
     else if (!handled) {
       // No body effect: draw the camera straight in, without a copy.
@@ -334,9 +396,9 @@ export class Engine {
       ctx.restore();
     }
     if (effect?.drawBehind && this.segActive) {
-      effect.drawBehind(ctx, this);
+      this.#safe('drawBehind', ctx, this);
       if (!handled) ctx.drawImage(this.layers.person, 0, 0);
-    } else effect?.drawBehind?.(ctx, this);
+    } else this.#safe('drawBehind', ctx, this);
 
     // Effect light spilling onto the scene.
     if (this.lights.length) {
@@ -352,15 +414,27 @@ export class Engine {
       fx.ctx.setTransform(1, 0, 0, 1, 0, 0);
       fx.ctx.clearRect(0, 0, W, H);
       fx.ctx.setTransform(...m);
-      effect?.draw?.(fx.ctx, this);
+      this.#safe('draw', fx.ctx, this);
       this.charge.draw(fx.ctx, this);
       fx.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      // Motion blur: the previous frames fade out behind the new one, so fast
+      // effects leave a short streak like a real camera.
+      let out = fx.canvas;
+      if (this.settings.motionBlur !== false && !effect?.noBlur) {
+        const tr = fx.trail.ctx;
+        tr.globalCompositeOperation = 'destination-out';
+        tr.fillStyle = 'rgba(0,0,0,0.62)';
+        tr.fillRect(0, 0, W, H);
+        tr.globalCompositeOperation = 'source-over';
+        tr.drawImage(fx.canvas, 0, 0);
+        out = fx.trail.canvas;
+      }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
-      ctx.drawImage(fx.canvas, 0, 0);
+      ctx.drawImage(out, 0, 0);
       // Downsample chain: each smaller copy, scaled back up, is a wider blur.
-      let prev = fx.canvas;
+      let prev = out;
       for (const level of fx.levels) {
         level.ctx.clearRect(0, 0, level.canvas.width, level.canvas.height);
         level.ctx.drawImage(prev, 0, 0, level.canvas.width, level.canvas.height);
@@ -375,10 +449,13 @@ export class Engine {
       ctx.globalCompositeOperation = 'source-over';
       ctx.setTransform(...m);
     } else {
-      effect?.draw?.(ctx, this);
+      this.#safe('draw', ctx, this);
       this.charge.draw(ctx, this);
     }
     this.hands = realHands;
+    // Holograms sit behind the real fingers: redraw the hands on top.
+    if (effect?.occlude) this.occludeHands(ctx);
+    this.#safe('drawOver', ctx, this);
 
     // Tracking points: body first, hands (more detailed) on top.
     if (this.settings.points) {

@@ -100,7 +100,8 @@ export function portalEffect() {
     update(dt, hands, e) {
       sparks.update(dt);
       const now = e.t;
-      const h = hands.find((x) => x.presence > 0.5 && x.visible && x.fingers.index);
+      // A hand that blurs for a moment keeps drawing (it coasts on its motion).
+      const h = hands.find((x) => x.presence > 0.3 && (x.fingers.index || x.point));
       if (h) {
         const tip = h.lm[8];
         const prev = trail[trail.length - 1];
@@ -121,27 +122,12 @@ export function portalEffect() {
             rgb: scheme.rgb,
             core: 0.6,
           });
-        // Loop closed? The tip comes back near where it was a moment ago.
-        if (trail.length > 20) {
-          let length = 0;
-          for (let i = 1; i < trail.length; i++) length += Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y);
-          for (let i = 0; i < trail.length - 12; i++) {
-            const p = trail[i];
-            if (now - p.t < 0.4) break;
-            if (Math.hypot(p.x - tip.x, p.y - tip.y) < h.size * 0.6 && length > h.size * 5) {
-              const loop = trail.slice(i);
-              const cx = loop.reduce((s, q) => s + q.x, 0) / loop.length;
-              const cy = loop.reduce((s, q) => s + q.y, 0) / loop.length;
-              const r = loop.reduce((s, q) => s + Math.hypot(q.x - cx, q.y - cy), 0) / loop.length;
-              if (r > h.size * 0.8) {
-                portal = { x: cx, y: cy, r: Math.max(r, h.size * 1.4), open: 0, spin: 0 };
-                e.audio.play('teleport', 0.9);
-                e.flash(scheme.rgb, 0.25, 3);
-                trail = [];
-              }
-              break;
-            }
-          }
+        const loop = closedLoop(trail, h.size, now);
+        if (loop) {
+          portal = { x: loop.x, y: loop.y, r: Math.max(loop.r, h.size * 1.4), open: 0, spin: 0 };
+          e.audio.play('teleport', 0.9);
+          e.flash(scheme.rgb, 0.25, 3);
+          trail = [];
         }
       }
       trail = trail.filter((p) => now - p.t < 2.6);
@@ -231,3 +217,50 @@ export function portalEffect() {
 }
 
 const easeOut = (t) => 1 - (1 - t) ** 3;
+
+// A circle is recognised either when the fingertip comes back close to its
+// path (even between two sparse points of a fast move), or when the path has
+// turned almost all the way around its centre. Rough circles are fine.
+function closedLoop(trail, size, now) {
+  if (trail.length < 8) return null;
+  const tip = trail[trail.length - 1];
+  const fit = (pts) => {
+    const x = pts.reduce((s, q) => s + q.x, 0) / pts.length;
+    const y = pts.reduce((s, q) => s + q.y, 0) / pts.length;
+    const r = pts.reduce((s, q) => s + Math.hypot(q.x - x, q.y - y), 0) / pts.length;
+    return { x, y, r };
+  };
+  // 1) The tip crosses back over an older part of the path.
+  let length = 0;
+  for (let i = 1; i < trail.length; i++) length += Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y);
+  if (length > size * 3.5) {
+    for (let i = 1; i < trail.length - 4; i++) {
+      const a = trail[i - 1];
+      const b = trail[i];
+      if (now - b.t < 0.25) break;
+      if (segDist(tip, a, b) < size * 0.9) {
+        const c = fit(trail.slice(i));
+        if (c.r > size * 0.6) return c;
+        break;
+      }
+    }
+  }
+  // 2) The path winds ~300° around its centre.
+  const c = fit(trail);
+  if (c.r < size * 0.6) return null;
+  let turn = 0;
+  for (let i = 1; i < trail.length; i++) {
+    let d = Math.atan2(trail[i].y - c.y, trail[i].x - c.x) - Math.atan2(trail[i - 1].y - c.y, trail[i - 1].x - c.x);
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    turn += d;
+  }
+  return Math.abs(turn) > 5.2 ? c : null;
+}
+
+function segDist(p, a, b) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const l2 = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2));
+  return Math.hypot(p.x - a.x - dx * t, p.y - a.y - dy * t);
+}
