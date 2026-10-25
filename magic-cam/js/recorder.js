@@ -33,7 +33,9 @@ export class CanvasRecorder {
     audioTracks.forEach((t) => stream.addTrack(t));
     const mimeType = pickMimeType();
     const pixels = this.canvas.width * this.canvas.height;
-    const opts = { videoBitsPerSecond: pixels > 1e6 ? 8e6 : 5e6, audioBitsPerSecond: 128000 };
+    // Enough bits for sharp 4K/8K; browsers cap it to what their encoder supports.
+    const videoBitsPerSecond = pixels > 2e7 ? 80e6 : pixels > 8e6 ? 40e6 : pixels > 2e6 ? 16e6 : pixels > 9e5 ? 8e6 : 5e6;
+    const opts = { videoBitsPerSecond, audioBitsPerSecond: 160000 };
     if (mimeType) opts.mimeType = mimeType;
     this.chunks = [];
     this.recorder = new MediaRecorder(stream, opts);

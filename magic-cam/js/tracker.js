@@ -108,13 +108,30 @@ export class Tracker {
   // Runs detection on the current video frame.
   // Returns { raw, mask, maskFresh, pose } (pose: undefined when not run this frame).
   detect(video, wantSeg, wantPose) {
+    // The models work on small images anyway: hand them a 640 px copy so a
+    // 4K/8K camera does not cost three full-size uploads per frame.
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const k = Math.min(1, 640 / Math.max(vw, vh));
+    if (!this.small) {
+      this.small = document.createElement('canvas');
+      this.sctx = this.small.getContext('2d', { alpha: false });
+    }
+    const sw = Math.round(vw * k);
+    const sh = Math.round(vh * k);
+    if (this.small.width !== sw || this.small.height !== sh) {
+      this.small.width = sw;
+      this.small.height = sh;
+    }
+    this.sctx.drawImage(video, 0, 0, sw, sh);
+    const frame = this.small;
     let ts = performance.now();
     if (ts <= this.lastTs) ts = this.lastTs + 1;
     this.lastTs = ts;
     const t0 = performance.now();
     const raw = [];
     if (this.hands) {
-      const r = this.hands.detectForVideo(video, ts);
+      const r = this.hands.detectForVideo(frame, ts);
       for (let i = 0; i < (r.landmarks?.length || 0); i++) {
         raw.push({
           landmarks: r.landmarks[i],
@@ -125,14 +142,14 @@ export class Tracker {
     }
     let maskFresh = false;
     this.frameNo++;
-    // Body points every other frame: they move slower than fingers.
+    // Body points every third frame: they move slower than fingers.
     let pose;
-    if (wantPose && this.pose && this.frameNo % 2 === 0) {
-      const r = this.pose.detectForVideo(video, ts);
+    if (wantPose && this.pose && this.frameNo % 3 === 0) {
+      const r = this.pose.detectForVideo(frame, ts);
       pose = r.landmarks?.[0] || null;
     }
     if (wantSeg && this.segmenter && this.frameNo % this.segEvery === 0) {
-      this.segmenter.segmentForVideo(video, ts, (res) => {
+      this.segmenter.segmentForVideo(frame, ts, (res) => {
         const masks = res.confidenceMasks;
         if (!masks?.length) return;
         // Multi-class models put the person in the last mask.

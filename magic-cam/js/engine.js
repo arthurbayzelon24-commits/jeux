@@ -62,25 +62,11 @@ export class Engine {
   }
 
   #ensureLayers() {
+    // Full-size copies are only needed for body effects (segmentation).
     if (this.layers) return this.layers;
     const { W, H } = this;
-    this.layers = {
-      frame: makeCanvas(W, H),
-      person: makeCanvas(W, H),
-      vignette: this.#makeVignette(W, H),
-    };
+    this.layers = { frame: makeCanvas(W, H), person: makeCanvas(W, H) };
     return this.layers;
-  }
-
-  #makeVignette(W, H) {
-    const c = makeCanvas(W, H);
-    const g = c.getContext('2d');
-    const grad = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.6);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.45)');
-    g.fillStyle = grad;
-    g.fillRect(0, 0, W, H);
-    return c;
   }
 
   // Builds the mirrored person mask and its statistics from a confidence mask.
@@ -258,21 +244,24 @@ export class Engine {
     this.#resize(input.sw, input.sh);
     const { ctx, W, H } = this;
     const effect = this.effect;
-    const L = this.#ensureLayers();
-
     if (input.raw) this.hands = this.tracker.update(input.raw, { width: W, height: H, mirror: input.mirror, dt, now });
     // Gesture events only last for the frame of the detection that produced them.
-    else for (const h of this.hands) h.events = {};
+    else {
+      for (const h of this.hands) h.events = {};
+      // Between camera frames, glide the hands along their motion so the
+      // effects move at the screen's refresh rate, not the camera's.
+      this.tracker.advance(dt);
+    }
     if (input.pose !== undefined) this.body.update(input.pose, { width: W, height: H, mirror: input.mirror, dt });
-
-    // Mirrored camera frame.
-    const f = L.frame.getContext('2d');
-    f.setTransform(input.mirror ? -1 : 1, 0, 0, 1, input.mirror ? W : 0, 0);
-    f.drawImage(input.source, 0, 0, W, H);
-    f.setTransform(1, 0, 0, 1, 0, 0);
 
     this.segActive = !!(effect?.needs?.seg && input.mask);
     if (this.segActive) {
+      const L = this.#ensureLayers();
+      // Mirrored camera frame.
+      const f = L.frame.getContext('2d');
+      f.setTransform(input.mirror ? -1 : 1, 0, 0, 1, input.mirror ? W : 0, 0);
+      f.drawImage(input.source, 0, 0, W, H);
+      f.setTransform(1, 0, 0, 1, 0, 0);
       if (input.maskFresh !== false || !this.seg) this.#processMask(input.mask, input.mirror, !!effect.needs.plate);
       const p = L.person.getContext('2d');
       p.globalCompositeOperation = 'copy';
@@ -296,10 +285,20 @@ export class Engine {
     this.shakeAmp *= Math.exp(-dt * 8);
 
     const handled = effect?.drawBackground?.(ctx, this);
-    if (!handled) ctx.drawImage(L.frame, 0, 0);
+    if (!handled && this.segActive) ctx.drawImage(this.layers.frame, 0, 0);
+    else if (!handled) {
+      // No body effect: draw the camera straight in, without a copy.
+      ctx.save();
+      if (input.mirror) {
+        ctx.translate(W, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(input.source, 0, 0, W, H);
+      ctx.restore();
+    }
     if (effect?.drawBehind && this.segActive) {
       effect.drawBehind(ctx, this);
-      if (!handled) ctx.drawImage(L.person, 0, 0);
+      if (!handled) ctx.drawImage(this.layers.person, 0, 0);
     } else effect?.drawBehind?.(ctx, this);
 
     // Effect light spilling onto the scene.
@@ -326,6 +325,5 @@ export class Engine {
     }
     this.flashes = this.flashes.filter((fl) => fl.alpha > 0.01);
     ctx.globalCompositeOperation = 'source-over';
-    if (this.settings.cinema) ctx.drawImage(L.vignette, 0, 0);
   }
 }
