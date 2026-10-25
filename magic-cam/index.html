@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Magic Cam</title>
+    <meta
+      name="description"
+      content="Magic Cam : filmez-vous avec des effets de magie en temps réel (éclairs, boules de feu, aura, télékinésie, téléportation, objets flottants) directement dans votre navigateur. Gratuit."
+    />
+    <meta name="theme-color" content="#0b0a0f" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Home -->
+    <main class="view active" id="view-home">
+      <header class="hero">
+        <canvas class="hero-sky" id="hero-sky" aria-hidden="true"></canvas>
+        <div class="hero-inner">
+          <p class="eyebrow">Effets de magie en réalité augmentée</p>
+          <h1 class="title">Magic Cam</h1>
+          <p class="lead">
+            Filmez-vous avec des éclairs dans les mains, des boules de feu, une aura, la télékinésie ou la téléportation. Les effets suivent
+            vos mains et votre corps en temps réel.
+          </p>
+          <button class="btn btn-gold btn-xl" data-start>
+            <span data-icon="camera"></span>
+            Démarrer la caméra
+          </button>
+          <ul class="badges">
+            <li>100 % gratuit</li>
+            <li>Sans installation</li>
+            <li>Rien n’est envoyé : tout se passe sur votre appareil</li>
+          </ul>
+        </div>
+      </header>
+
+      <section class="section">
+        <h2 class="section-title">Choisissez votre pouvoir</h2>
+        <div class="grid" id="effects-grid"></div>
+      </section>
+
+      <section class="section how">
+        <h2 class="section-title">Comment ça marche</h2>
+        <ol class="steps">
+          <li>
+            <strong>Autorisez la caméra.</strong> L’image reste sur votre appareil : l’intelligence artificielle de suivi tourne dans votre
+            navigateur.
+          </li>
+          <li><strong>Montrez vos mains.</strong> Main ouverte, poing, pincement, geste rapide : chaque effet réagit à vos gestes.</li>
+          <li>
+            <strong>Enregistrez et partagez.</strong> Téléchargez la vidéo ou partagez-la directement sur TikTok, Instagram, WhatsApp…
+          </li>
+        </ol>
+      </section>
+      <footer class="foot">Magic Cam · gratuit · fonctionne sur téléphone et ordinateur (Chrome, Edge, Safari, Firefox récents)</footer>
+    </main>
+
+    <!-- Gallery -->
+    <main class="view" id="view-gallery">
+      <header class="page-head">
+        <h1 class="page-title">Mes vidéos</h1>
+        <p class="muted">Vos vidéos et photos restent dans ce navigateur, sur cet appareil.</p>
+      </header>
+      <div class="grid media-grid" id="gallery-grid"></div>
+      <div class="empty" id="gallery-empty" hidden>
+        <span data-icon="video"></span>
+        <p>Aucune vidéo pour l’instant.</p>
+        <button class="btn btn-gold" data-start>Créer ma première vidéo</button>
+      </div>
+    </main>
+
+    <!-- Settings -->
+    <main class="view" id="view-settings">
+      <header class="page-head">
+        <h1 class="page-title">Paramètres</h1>
+      </header>
+      <form class="settings" id="settings-form">
+        <fieldset>
+          <legend>Vidéo</legend>
+          <label class="row">
+            <span>Qualité<small>Plus élevée = plus net, mais plus exigeant</small></span>
+            <select name="quality">
+              <option value="480">Économie (480p)</option>
+              <option value="720">Standard (720p)</option>
+              <option value="1080">Haute (1080p)</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Durée maximale</span>
+            <select name="maxDuration">
+              <option value="15">15 secondes</option>
+              <option value="30">30 secondes</option>
+              <option value="60">60 secondes</option>
+              <option value="180">3 minutes</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Compte à rebours</span>
+            <select name="countdown">
+              <option value="0">Aucun</option>
+              <option value="3">3 secondes</option>
+              <option value="5">5 secondes</option>
+              <option value="10">10 secondes</option>
+            </select>
+          </label>
+          <label class="row toggle"><span>Effet miroir (caméra avant)</span><input type="checkbox" name="mirror" /></label>
+          <label class="row toggle"><span>Vignette cinéma</span><input type="checkbox" name="cinema" /></label>
+          <label class="row toggle"
+            ><span>Enregistrer automatiquement dans Mes vidéos</span><input type="checkbox" name="autosave"
+          /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Son</legend>
+          <label class="row toggle"><span>Micro dans les vidéos</span><input type="checkbox" name="mic" /></label>
+          <label class="row toggle"><span>Sons des effets</span><input type="checkbox" name="sound" /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Effets</legend>
+          <label class="row toggle"
+            ><span>Afficher le squelette de la main<small>Utile pour vérifier la détection</small></span
+            ><input type="checkbox" name="skeleton"
+          /></label>
+          <label class="row toggle"
+            ><span>Mode économie<small>Moins de particules, pour les téléphones plus anciens</small></span
+            ><input type="checkbox" name="eco"
+          /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Données</legend>
+          <button type="button" class="btn btn-ghost danger" id="clear-gallery">Supprimer toutes mes vidéos</button>
+          <p class="muted small">
+            Magic Cam n’a pas de compte ni de serveur : la caméra, la détection des mains et du corps et l’enregistrement fonctionnent
+            entièrement dans votre navigateur. Les modèles de détection (MediaPipe, Google) sont téléchargés une fois au démarrage.
+          </p>
+        </fieldset>
+      </form>
+    </main>
+
+    <!-- Camera studio -->
+    <section class="studio" id="view-studio" hidden>
+      <video id="cam" playsinline muted autoplay></video>
+      <canvas id="stage"></canvas>
+      <div class="flash" id="shutter-flash"></div>
+
+      <div class="studio-top">
+        <button class="icon-btn" id="btn-back" aria-label="Retour"><span data-icon="back"></span></button>
+        <div class="top-center">
+          <div class="rec-chip" id="rec-chip" hidden><i></i><span id="rec-time">00:00</span></div>
+          <div class="status-chip" id="status-chip"></div>
+        </div>
+        <button class="icon-btn" id="btn-help" aria-label="Aide sur l’effet"><span data-icon="help"></span></button>
+      </div>
+
+      <div class="studio-side">
+        <button class="icon-btn" id="btn-flip" aria-label="Changer de caméra"><span data-icon="flip"></span></button>
+        <button class="icon-btn" id="btn-color" aria-label="Changer la couleur"><span class="swatch" id="swatch"></span></button>
+        <button class="icon-btn" id="btn-sound" aria-label="Sons des effets"><span data-icon="sound"></span></button>
+        <button class="icon-btn" id="btn-skeleton" aria-label="Afficher la main"><span data-icon="hand"></span></button>
+        <button class="icon-btn" id="btn-timer" aria-label="Compte à rebours">
+          <span data-icon="timer"></span><b id="timer-label"></b>
+        </button>
+      </div>
+
+      <button class="action-btn" id="btn-action" hidden></button>
+      <div class="hint" id="hint" hidden></div>
+      <div class="countdown" id="countdown" hidden></div>
+
+      <div class="studio-bottom">
+        <div class="carousel" id="carousel" role="listbox" aria-label="Effets"></div>
+        <div class="controls">
+          <button class="mini-thumb" id="btn-gallery" aria-label="Mes vidéos"><span data-icon="video"></span></button>
+          <button class="rec-btn" id="btn-record" aria-label="Enregistrer">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="rec-ring" cx="50" cy="50" r="46" />
+              <circle class="rec-progress" id="rec-progress" cx="50" cy="50" r="46" />
+            </svg>
+            <span class="rec-core"></span>
+          </button>
+          <button class="icon-btn big" id="btn-photo" aria-label="Prendre une photo"><span data-icon="camera"></span></button>
+        </div>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="loading-card">
+          <div class="orb"></div>
+          <p id="loading-text">Préparation de la magie…</p>
+          <div class="bar"><i id="loading-bar"></i></div>
+          <p class="muted small" id="loading-sub">Téléchargement des modèles de détection (une seule fois)</p>
+        </div>
+      </div>
+
+      <div class="error" id="error" hidden>
+        <div class="error-card">
+          <span data-icon="camera"></span>
+          <h2 id="error-title">Caméra indisponible</h2>
+          <p id="error-text"></p>
+          <div class="error-actions">
+            <button class="btn btn-gold" id="error-retry">Réessayer</button>
+            <button class="btn btn-ghost" id="error-back">Retour</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Result -->
+    <div class="modal" id="result" hidden>
+      <div class="modal-card result-card">
+        <button class="icon-btn close" data-close aria-label="Fermer"><span data-icon="close"></span></button>
+        <div class="result-media" id="result-media"></div>
+        <p class="muted small" id="result-info"></p>
+        <div class="result-actions">
+          <button class="btn btn-gold" id="res-share"><span data-icon="share"></span>Partager</button>
+          <button class="btn btn-ghost" id="res-download"><span data-icon="download"></span>Télécharger</button>
+          <button class="btn btn-ghost" id="res-save"><span data-icon="video"></span>Garder</button>
+          <button class="btn btn-ghost danger" id="res-delete"><span data-icon="trash"></span>Supprimer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Effect help -->
+    <div class="modal" id="help" hidden>
+      <div class="modal-card">
+        <button class="icon-btn close" data-close aria-label="Fermer"><span data-icon="close"></span></button>
+        <h2 id="help-title"></h2>
+        <p id="help-text"></p>
+        <h3>Astuces pour un rendu réaliste</h3>
+        <ul class="tips">
+          <li>Placez-vous face à une lumière (fenêtre, lampe) : la détection est plus précise.</li>
+          <li>Gardez les mains entières dans l’image, à 50 cm – 2 m de la caméra.</li>
+          <li>Pour l’aura et la téléportation, reculez pour que le haut du corps soit visible.</li>
+          <li>Un fond simple et un téléphone posé (pas tenu) donnent le meilleur résultat.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <nav class="tabbar" id="tabbar">
+      <button class="tab active" data-view="home"><span data-icon="sparkle"></span>Effets</button>
+      <button class="tab" data-view="gallery"><span data-icon="video"></span>Mes vidéos</button>
+      <button class="tab" data-view="settings"><span data-icon="gear"></span>Paramètres</button>
+    </nav>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

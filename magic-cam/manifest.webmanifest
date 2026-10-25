@@ -1,0 +1,12 @@
+{
+  "name": "Magic Cam",
+  "short_name": "Magic Cam",
+  "description": "Filmez-vous avec des effets de magie en temps réel.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0a0f",
+  "theme_color": "#0b0a0f",
+  "icons": [{ "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

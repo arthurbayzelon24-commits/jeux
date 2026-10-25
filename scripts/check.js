@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dirs = ['server', 'public/js', 'tests', 'scripts'];
+const dirs = ['server', 'public/js', 'tests', 'scripts', 'magic-cam'];
 const files = [];
 const walk = (dir) => {
   for (const name of readdirSync(dir)) {
