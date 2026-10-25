@@ -40,7 +40,7 @@ export function shieldEffect() {
       hit = Math.max(0, hit - dt * 2);
       if (h && h.speed > Math.min(e.W, e.H) * 1.5 && g > 0.5 && hit < 0.3) {
         hit = 1;
-        e.audio.play('zap', 0.4);
+        e.audio.play('ring', 0.6);
       }
       if (h && g > 0.1) e.light(h.palm.x, h.palm.y, h.size * 5, rgb, 0.15 * g);
       e.audio.loop('hum', g * 0.3);
@@ -107,6 +107,7 @@ export function neonEffect() {
     },
     update(dt, hands, e) {
       sparks.update(dt);
+      let buzzing = false;
       for (const h of hands) {
         const drawing = h.presence > 0.4 && (h.pinch || h.pinchAmount > 0.8);
         let s = current.get(h.id);
@@ -117,6 +118,7 @@ export function neonEffect() {
             strokes.push(s);
             e.audio.play('tick', 0.3);
           }
+          buzzing = true;
           const p = h.pinchPoint;
           const last = s.pts[s.pts.length - 1];
           if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 3) s.pts.push({ x: p.x, y: p.y });
@@ -143,6 +145,7 @@ export function neonEffect() {
           e.audio.play('whoosh', 0.7);
         }
       }
+      e.audio.loop('buzz', buzzing ? 1 : 0);
       if (strokes.length > 40) strokes.shift();
     },
     draw(ctx, e) {
@@ -282,7 +285,7 @@ export function webEffect() {
           const L = rayToEdge(tip.x, tip.y, dx, dy, e.W, e.H);
           webs.push({ ax: from.x, ay: from.y, bx: tip.x + dx * L, by: tip.y + dy * L, t: 0, life: 6, hand: h.id });
           cool.set(h.id, 0.45);
-          e.audio.play('whoosh', 0.6);
+          e.audio.play('thwip', 0.8);
         }
       }
       for (const w of webs) {
@@ -369,6 +372,7 @@ export function laserEyesEffect() {
       sparks.update(dt);
       const b = e.body.points;
       this.eyes = null;
+      e.audio.loop('laser', 0);
       if (!b || e.body.presence < 0.3 || b[2].v < 0.5 || b[5].v < 0.5) return;
       const eyes = [b[2], b[5]];
       // Beams aim at your index finger when it is up, otherwise where you look.
@@ -406,7 +410,7 @@ export function laserEyesEffect() {
             rgb: [255, 220, 160],
             core: 0.5,
           });
-      e.audio.loop('hum', 0.5);
+      e.audio.loop('laser', 1);
       e.light(this.eyes[0].x, this.eyes[0].y, 120 * e.unit, rgb, 0.3);
     },
     draw(ctx, e) {

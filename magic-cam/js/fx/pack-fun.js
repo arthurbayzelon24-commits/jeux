@@ -61,7 +61,7 @@ export function bubblesEffect() {
                   core: 0.6,
                 });
               }
-              e.audio.play('drop', 0.5);
+              e.audio.play('pop', 0.6);
             }
         if (b.y < -b.r * 2 || b.age > 12) b.dead = true;
       }
@@ -200,7 +200,7 @@ export function coinsEffect() {
             r: rand(10, 15) * e.unit,
             rest: false,
           });
-          if (Math.random() < 0.3) e.audio.play('chime', 0.25);
+          e.audio.play('coin', 0.5);
         }
       }
       const floor = e.H * 0.96;
@@ -289,6 +289,7 @@ export function snowEffect() {
           spin: rand(-1, 1),
           stick: 0,
         });
+      e.audio.loop('wind', 0.25 + Math.min(0.5, hands.reduce((m, h) => Math.max(m, h.speed), 0) / (e.W * 3)));
       for (const f of flakes) {
         for (const h of hands) {
           if (h.presence < 0.4) continue;
@@ -361,6 +362,7 @@ export function firefliesEffect() {
         f.x += f.vx * dt;
         f.y += f.vy * dt;
       }
+      if (Math.random() < dt * 1.5) e.audio.play('twinkle', 0.5);
       for (const h of open) e.light(h.palm.x, h.palm.y, h.size * 4, rgb, 0.1);
     },
     draw(ctx, e) {

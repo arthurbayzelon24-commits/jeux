@@ -67,7 +67,10 @@ export function dragonEffect() {
       }
       // Breath of fire when the head moves fast.
       const sp = Math.hypot(head.x - body[2].x, head.y - body[2].y) / gap;
-      if (sp > 1.5 || (h && h.open)) {
+      const breath = sp > 1.5 || (h && h.open);
+      if (breath && !this.breathing) e.audio.play('roar', 0.7);
+      this.breathing = breath;
+      if (breath) {
         const dx = head.x - body[1].x;
         const dy = head.y - body[1].y;
         const l = Math.hypot(dx, dy) || 1;
@@ -157,7 +160,7 @@ export function tornadoEffect() {
         if (b.h > 1) b.h = 0;
       }
       for (const r of rocks) r.a += dt * spin * 0.5;
-      e.audio.loop('hum', g * 0.4);
+      e.audio.loop('wind', g);
       if (h && g > 0.2) e.light(h.palm.x, h.palm.y - h.size * 2, h.size * 5, rgb, 0.1 * g);
     },
     draw(ctx, e) {
@@ -350,6 +353,7 @@ export function lavaEffect() {
       drips.update(dt, (p) => {
         if (p.y > e.H * 0.97 && !p.splash) {
           p.splash = true;
+          if (Math.random() < 0.3) e.audio.play('sizzle', 0.4);
           p.vy = -Math.abs(p.vy) * 0.2;
           p.vx *= 0.3;
         }

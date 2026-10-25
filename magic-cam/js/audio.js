@@ -158,6 +158,35 @@ export class SoundFx {
       case 'go':
         tone('sine', 1320, 1320, 0.002, 0.08, 0.3, 0.3);
         break;
+      case 'roar':
+        noise('lowpass', 500, 2, 0.06, 0.25, 0.5, 0.8, 160);
+        tone('sawtooth', 95, 55, 0.05, 0.2, 0.45, 0.25);
+        break;
+      case 'pop':
+        tone('sine', 500 + Math.random() * 500, 1600, 0.001, 0.005, 0.05, 0.35);
+        noise('highpass', 2000, 1, 0.001, 0.003, 0.03, 0.15);
+        break;
+      case 'coin': {
+        const f = 1320 + Math.random() * 120;
+        tone('square', f, f, 0.001, 0.05, 0.08, 0.06);
+        tone('square', f * 1.335, f * 1.335, 0.07, 0.08, 0.3, 0.06);
+        break;
+      }
+      case 'thwip':
+        noise('bandpass', 1200, 3, 0.005, 0.03, 0.12, 0.7, 5000);
+        tone('triangle', 1400, 500, 0.002, 0.02, 0.1, 0.1);
+        break;
+      case 'ring':
+        tone('sine', 1250, 1240, 0.002, 0.02, 0.9, 0.12);
+        tone('sine', 1875, 1860, 0.002, 0.02, 0.6, 0.06);
+        noise('bandpass', 4000, 3, 0.001, 0.01, 0.08, 0.25);
+        break;
+      case 'sizzle':
+        noise('highpass', 4000, 0.8, 0.01, 0.15, 0.4, 0.25);
+        break;
+      case 'twinkle':
+        tone('sine', 1800 + Math.random() * 1200, 2600, 0.005, 0.03, 0.5, 0.06);
+        break;
       case 'shutter':
         noise('highpass', 3000, 0.7, 0.001, 0.01, 0.05, 0.5);
         break;
@@ -207,6 +236,40 @@ export class SoundFx {
         o1.start();
         o2.start();
         l = { g, nodes: [o1, o2], peak: 0.25 };
+      } else if (name === 'wind') {
+        // Howling wind: noise through a band-pass swept slowly by an LFO.
+        const src = this.#noiseSource();
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 500;
+        f.Q.value = 3;
+        const lfo = ctx.createOscillator();
+        lfo.frequency.value = 0.35;
+        const depth = ctx.createGain();
+        depth.gain.value = 300;
+        lfo.connect(depth).connect(f.frequency);
+        src.connect(f).connect(g);
+        src.start();
+        lfo.start();
+        l = { g, nodes: [src, lfo], peak: 0.6 };
+      } else if (name === 'laser' || name === 'buzz') {
+        // Laser: bright detuned squares; neon buzz: 100 Hz mains hum.
+        const laser = name === 'laser';
+        const o1 = ctx.createOscillator();
+        const o2 = ctx.createOscillator();
+        o1.type = laser ? 'square' : 'sawtooth';
+        o2.type = laser ? 'square' : 'sine';
+        o1.frequency.value = laser ? 880 : 100;
+        o2.frequency.value = laser ? 886 : 200;
+        const f = ctx.createBiquadFilter();
+        f.type = laser ? 'bandpass' : 'lowpass';
+        f.frequency.value = laser ? 1800 : 900;
+        o1.connect(f);
+        o2.connect(f);
+        f.connect(g);
+        o1.start();
+        o2.start();
+        l = { g, nodes: [o1, o2], peak: laser ? 0.07 : 0.05 };
       } else {
         const o1 = ctx.createOscillator();
         const o2 = ctx.createOscillator();

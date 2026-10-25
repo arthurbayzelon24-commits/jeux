@@ -295,6 +295,7 @@ function selectEffect(id, fromUser = false) {
   }
   const def = EFFECTS.find((d) => d.id === id) || EFFECTS[0];
   const fx = getEffect(id);
+  audio.stopLoops(); // the previous power's continuous sounds
   engine.setEffect(fx);
   if (fx.colors && colorIndex[id] !== undefined) fx.setColor(colorIndex[id]);
   updateSwatch();
