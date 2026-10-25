@@ -10,7 +10,10 @@ const NOOP_AUDIO = { play() {}, loop() {} };
 export class Engine {
   constructor(canvas, options = {}) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d', { alpha: false });
+    // desynchronized: lower latency between drawing and the screen.
+    this.ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+    // Adaptive resolution factor (lowered when the device cannot keep up).
+    this.renderScale = 1;
     this.tracker = new HandTracker();
     this.body = new BodyTracker();
     this.effect = null;
@@ -55,7 +58,7 @@ export class Engine {
   }
 
   #resize(sw, sh) {
-    const k = Math.min(1, this.maxSide / Math.max(sw, sh));
+    const k = Math.min(1, this.maxSide / Math.max(sw, sh)) * this.renderScale;
     const W = Math.round(sw * k);
     const H = Math.round(sh * k);
     if (W !== this.canvas.width || H !== this.canvas.height) {
