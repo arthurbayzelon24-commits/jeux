@@ -42,6 +42,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - Enregistrement vidéo avec compte à rebours (3, 2, 1 par défaut), micro et sons des pouvoirs synthétisés ; MP4 quand le navigateur le permet, sinon WebM. Photo.
 - Télécharger, Partager (TikTok, Instagram, WhatsApp… depuis le téléphone), Mes vidéos (stockées dans le navigateur).
 - Caméra avant / arrière, miroir, vignette cinéma, mode économie.
+- **Filtres d’image** (bouton pellicule dans le studio) : Normal, Cinéma (bandes noires 2,39:1, teinte bleu-orangé), Néon, Vintage (sépia et grain) et Noir et blanc (grain). Le filtre s’applique à la scène filmée ; les pouvoirs gardent leurs couleurs, et il est enregistré dans les vidéos.
 
 ## Technique
 
