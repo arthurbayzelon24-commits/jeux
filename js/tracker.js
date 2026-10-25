@@ -57,6 +57,8 @@ export class Tracker {
           this.hasPose = data.pose;
           this.hasSeg = data.seg;
           w.onmessage = ({ data: r }) => r.type === 'result' && this.#receive(r);
+          // If the worker ever crashes, carry on with detection on the page.
+          w.onerror = () => this.#fallback();
           resolve();
         } else if (data.type === 'error') {
           clearTimeout(timer);
@@ -65,6 +67,21 @@ export class Tracker {
       };
       w.postMessage({ type: 'load', delegate: this.delegate || 'GPU' });
     });
+  }
+
+  async #fallback() {
+    if (this.local || this.fallingBack) return;
+    this.fallingBack = true;
+    this.worker?.terminate();
+    this.worker = null;
+    this.busy = false;
+    try {
+      const local = new Detector();
+      await local.load();
+      this.local = local;
+    } catch (err) {
+      console.error('Détection indisponible', err);
+    }
   }
 
   #receive(r) {
@@ -79,7 +96,10 @@ export class Tracker {
       this.mask = r.mask;
       this.maskFresh = true;
     }
-    if (r.pose !== undefined) this.pose = r.pose;
+    if (r.pose !== undefined) {
+      this.pose = r.pose;
+      this.poseFresh = true;
+    }
     const now = performance.now();
     if (this.lastResult) {
       const fps = 1000 / Math.max(1, now - this.lastResult);
@@ -106,7 +126,10 @@ export class Tracker {
 
   // Sends the current camera frame for detection (skipped while busy).
   request(video, wantSeg, wantPose) {
-    if (!this.ready || this.busy) return;
+    // Watchdog: a frame lost on the way never blocks detection for good.
+    if (this.busy && performance.now() - this.sentAt > 1500) this.busy = false;
+    if (!this.ready || this.busy || (!this.worker && !this.local)) return;
+    this.sentAt = performance.now();
     const ts = performance.now();
     if (this.worker) {
       this.busy = true;
@@ -127,10 +150,12 @@ export class Tracker {
       raw: this.fresh ? this.latest : null,
       mask: wantSeg ? this.mask : null,
       maskFresh: this.maskFresh,
-      pose: this.fresh ? this.pose : undefined,
+      // Body points only when newly computed (so their motion can be predicted).
+      pose: this.poseFresh ? this.pose : undefined,
     };
     this.fresh = false;
     this.maskFresh = false;
+    this.poseFresh = false;
     return out;
   }
 

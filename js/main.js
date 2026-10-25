@@ -361,17 +361,22 @@ function loop(now) {
   }
   const det = tracker.take(wantSeg);
   adaptResolution(now);
-  engine.frame({
-    source: video,
-    sw: video.videoWidth,
-    sh: video.videoHeight,
-    mirror: settings.mirror && facing === 'user',
-    raw: det.raw,
-    mask: det.mask,
-    maskFresh: det.maskFresh,
-    pose: det.pose,
-    now,
-  });
+  // Never let one bad frame stop the loop.
+  try {
+    engine.frame({
+      source: video,
+      sw: video.videoWidth,
+      sh: video.videoHeight,
+      mirror: settings.mirror && facing === 'user',
+      raw: det.raw,
+      mask: det.mask,
+      maskFresh: det.maskFresh,
+      pose: det.pose,
+      now,
+    });
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 // ---------- Smoothness: frame rate and adaptive resolution ----------

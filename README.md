@@ -6,7 +6,7 @@ Site web gratuit qui utilise la caméra du téléphone ou du PC pour se filmer a
 
 1. L’accueil montre uniquement les **25 pouvoirs**, en deux colonnes de cartes dorées illustrées (rendues avec les vrais effets, voir `tools/`).
 2. On touche un pouvoir : la caméra s’ouvre, en plein écran, avec ce pouvoir. La rangée d’icônes en bas permet d’en changer.
-3. **Pouvoirs à charge** (Kamehameha, Rayon de feu, Sabre laser, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Magie des ombres, Glace) : tant qu’on garde leur geste, une grande jauge circulaire se remplit autour de la main, l’effet grossit, l’écran s’illumine et vibre, puis au bout d’environ 6 secondes un **déclenchement final** se produit (flash, ondes de choc, rayons et éclairs).
+3. **Pouvoirs à charge** (**Interface holographique**, Kamehameha, Rayon de feu, Sabre laser, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Magie des ombres, Glace) : tant qu’on garde leur geste, une grande jauge circulaire se remplit autour de la main, l’effet grossit, l’écran s’illumine et vibre, puis au bout d’environ 6 secondes un **déclenchement final** se produit (flash, ondes de choc, rayons et éclairs).
 4. L’écran de chargement n’apparaît qu’à la toute première ouverture (téléchargement des modèles).
 5. Bouton rouge : **3, 2, 1**, puis enregistrement.
 
@@ -17,6 +17,19 @@ Aucun message pendant le tournage. Au premier lancement, une seule question : «
 ## Pouvoirs
 
 Kamehameha, Rayon de feu, Sabre laser, Portail magique, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Galaxie spirale, Cœur d’amour, Pétales de sakura, Papillons, Bassin de koïs, Feu d’artifice, Pouvoir de glace, Maîtrise de l’eau, Magie des ombres, Aura magique, Ailes d’ange, Téléportation, Télékinésie, Objets flottants. Le geste de chaque pouvoir est écrit sous sa carte ; chaque pouvoir a plusieurs couleurs (bouton rond à droite).
+
+## Interface holographique (style armure high-tech)
+
+- Trois écrans de verre flottants : un **radar** dont les cibles sont vos mains, des **statistiques en direct** (vitesse de vos mains, images par seconde) et un **terminal**. On attrape un écran par sa barre de titre avec un pincement pour le déplacer.
+- Un **clavier holographique AZERTY** en perspective : on appuie sur une touche par un petit coup de doigt vers le bas, par un pincement, ou en laissant le doigt posé (un anneau se remplit). Les vrais doigts passent **devant** les hologrammes.
+- Touche **🎤** : on parle, le texte s’écrit dans le terminal et l’interface **répond à voix haute** (heure, date, salutations…). La reconnaissance vocale est celle du navigateur (Chrome l’envoie à son service en ligne) ; la voix est synthétisée par l’appareil.
+
+## Suivi du corps et des mouvements rapides
+
+- Corps entier suivi avec un maillage (bras, jambes, buste, tête), prédit entre deux images comme les mains.
+- Mouvements rapides : les mains sont reconnues même floues (seuils de détection plus tolérants), associées d’une image à l’autre selon leur position prédite, et continuent de glisser un court instant si la détection les perd, sans couper les effets. Le portail se trace donc même en faisant un cercle rapide ou approximatif.
+- Robustesse : une erreur dans un pouvoir ou une image ratée n’arrête jamais l’application ; si la détection en arrière-plan s’arrête, elle redémarre sur la page.
+- Effets : léger flou de mouvement façon caméra et halo lumineux.
 
 ## Installation et mises à jour
 
