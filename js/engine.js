@@ -2,6 +2,7 @@
 // a learned background plate and the active effect on one canvas.
 import { HandTracker, drawHandSkeleton } from './hands.js';
 import { BodyTracker } from './body.js';
+import { PowerCharge } from './charge.js';
 import { makeCanvas, clamp, smoothstep, drawGlow } from './fx/util.js';
 
 const NOOP_AUDIO = { play() {}, loop() {} };
@@ -22,6 +23,8 @@ export class Engine {
     this.t = 0;
     this.last = 0;
     this.shakeAmp = 0;
+    this.zoom = 1;
+    this.charge = new PowerCharge();
     this.flashes = [];
     this.lights = [];
     this.seg = null;
@@ -32,10 +35,15 @@ export class Engine {
     this.effect?.stop?.(this);
     this.effect = effect;
     this.plate = null;
+    this.charge.reset();
     effect?.start?.(this);
   }
 
   // Effects call these to make the scene react.
+  // A quick zoom "punch" (decays back to 1).
+  punch(amount) {
+    this.zoom = Math.max(this.zoom, 1 + amount);
+  }
   shake(amount) {
     this.shakeAmp = Math.max(this.shakeAmp, amount * this.unit);
   }
@@ -273,16 +281,21 @@ export class Engine {
     }
 
     this.lights.length = 0;
+    // Charging makes the power bigger: effects see the hands scaled up.
+    const realHands = this.hands;
+    this.charge.update(dt, this, effect, realHands);
+    const k = this.charge.scale;
+    this.hands = k > 1.01 ? realHands.map((h) => Object.create(h, { size: { value: h.size * k } })) : realHands;
     effect?.update?.(dt, this.hands, this);
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
-    if (this.shakeAmp > 0.3) {
-      const a = this.shakeAmp;
-      ctx.setTransform(1.02, 0, 0, 1.02, -W * 0.01 + (Math.random() * 2 - 1) * a, -H * 0.01 + (Math.random() * 2 - 1) * a);
-    }
+    // Camera shake and zoom punch, around the centre.
+    const z = this.zoom * (this.shakeAmp > 0.3 ? 1.02 : 1);
+    const a = this.shakeAmp > 0.3 ? this.shakeAmp : 0;
+    ctx.setTransform(z, 0, 0, z, (W * (1 - z)) / 2 + (Math.random() * 2 - 1) * a, (H * (1 - z)) / 2 + (Math.random() * 2 - 1) * a);
     this.shakeAmp *= Math.exp(-dt * 8);
+    this.zoom = 1 + (this.zoom - 1) * Math.exp(-dt * 5);
 
     const handled = effect?.drawBackground?.(ctx, this);
     if (!handled && this.segActive) ctx.drawImage(this.layers.frame, 0, 0);
@@ -309,6 +322,8 @@ export class Engine {
     }
 
     effect?.draw?.(ctx, this);
+    this.charge.draw(ctx, this);
+    this.hands = realHands;
 
     // Tracking points: body first, hands (more detailed) on top.
     if (this.settings.points) {

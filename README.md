@@ -4,29 +4,20 @@ Site web gratuit qui utilise la caméra du téléphone ou du PC pour se filmer a
 
 ## Principe
 
-1. L’écran d’accueil présente les **pouvoirs**, chacun avec son icône et le geste à faire.
-2. On touche un pouvoir : la caméra s’ouvre avec ce pouvoir. La rangée d’icônes en bas permet d’en changer.
-3. On touche le bouton rouge : **3, 2, 1**, puis l’enregistrement démarre. On le touche à nouveau pour arrêter.
+1. L’accueil montre uniquement les **25 pouvoirs**, en deux colonnes de cartes dorées illustrées (rendues avec les vrais effets, voir `tools/`).
+2. On touche un pouvoir : la caméra s’ouvre, en plein écran, avec ce pouvoir. La rangée d’icônes en bas permet d’en changer.
+3. **Plus on maintient le pouvoir, plus il devient puissant** : un anneau de charge se remplit autour de la main, l’effet grossit, l’écran s’illumine et vibre, puis au bout d’environ 6 secondes un **déclenchement final** se produit (flash, ondes de choc, rayons et éclairs).
+4. Bouton rouge : **3, 2, 1**, puis enregistrement.
 
-Aucun message ne s’affiche pendant le tournage. Au premier lancement, une seule question : « Voulez-vous les points ? » (points de suivi sur les mains et le corps), modifiable ensuite dans les Paramètres ou avec le bouton à 3 points.
+Aucun message pendant le tournage. Au premier lancement, une seule question : « Voulez-vous les points ? », modifiable dans les Paramètres.
 
 ## Pouvoirs
 
-| Pouvoir                                                            | Geste                                                                                                                                                                   |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Rayon de feu**                                                   | pointez l’index : un jet de flammes sort du doigt dans la direction pointée (petite flamme au bout du doigt sinon)                                                      |
-| **Kamehameha**                                                     | mains jointes : une orbe d’énergie se charge entre les mains ; poussez les mains ou écartez-les vite : faisceau géant. Une main ouverte charge une petite orbe à lancer |
-| **Sabre laser**                                                    | fermez le poing comme sur une poignée : la lame s’allume, avec traînée lumineuse quand on la balance ; deux poings, deux sabres                                         |
-| **Portail magique**                                                | tracez un cercle avec l’index : un portail à étincelles s’ouvre sur un autre monde                                                                                      |
-| **Éclairs**                                                        | main ouverte : arcs entre les doigts ; deux mains proches : arc entre les mains ; poing puis main ouverte : décharge                                                    |
-| **Boule de feu**                                                   | main ouverte : boule de feu ; geste rapide : lancer et explosion ; deux mains proches : boule géante                                                                    |
-| **Aura magique**                                                   | aura qui épouse la silhouette ; mains levées : elle s’intensifie                                                                                                        |
-| **Télékinésie**                                                    | main ouverte : les objets 3D se soulèvent ; pincement : attraper et lancer ; poing puis main ouverte : onde de choc                                                     |
-| **Téléportation**                                                  | poing puis main ouverte (ou bouton / double-tap) : désintégration et réapparition ailleurs                                                                              |
-| **Objets flottants**                                               | paume vers le haut : objets 3D en orbite, qui passent derrière la main et le corps                                                                                      |
-| Cercle magique, Orbe de plasma, Galaxie spirale, Pétales de sakura | effets de paume et d’ambiance                                                                                                                                           |
+Kamehameha, Rayon de feu, Sabre laser, Portail magique, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Galaxie spirale, Cœur d’amour, Pétales de sakura, Papillons, Bassin de koïs, Feu d’artifice, Pouvoir de glace, Maîtrise de l’eau, Magie des ombres, Aura magique, Ailes d’ange, Téléportation, Télékinésie, Objets flottants. Le geste de chaque pouvoir est écrit sous sa carte ; chaque pouvoir a plusieurs couleurs (bouton rond à droite).
 
-Chaque pouvoir a plusieurs couleurs (bouton rond à droite).
+## Installation et mises à jour
+
+Magic Cam s’installe comme une application (bouton « Installer » sur Android et ordinateur, ou Partager › « Sur l’écran d’accueil » sur iPhone). On ne l’installe qu’une fois : à chaque ouverture, l’application récupère la dernière version publiée et se recharge toute seule (jamais pendant un tournage). Les modèles de détection sont gardés en cache, ce qui accélère les lancements suivants.
 
 ## Fonctions
 
@@ -42,6 +33,10 @@ Chaque pouvoir a plusieurs couleurs (bouton rond à droite).
 - **Stabilité** : filtre One Euro sur chaque point, suivi des mains d’une image à l’autre, gestes avec hystérésis.
 - **Rendu** : Canvas 2D (particules additives, éclairs fractals, maillages 3D éclairés, projection dans le plan de la paume), lumière projetée sur la scène, tremblement de caméra et flashs ; fond appris en continu pour la téléportation.
 - **Aucune dépendance à installer, aucune étape de build** : ce sont des modules JavaScript natifs.
+
+## Illustrations
+
+Les cartes (`assets/powers/`), la bannière et l’icône sont générées par `tools/art.js` avec les vrais effets sur une main dorée en fil de fer. Pour les régénérer : lancer `node magic-cam/serve.js`, puis `node magic-cam/tools/render-art.cjs` (nécessite Playwright).
 
 ## Lancer en local
 

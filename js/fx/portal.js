@@ -144,7 +144,7 @@ export function portalEffect() {
           }
         }
       }
-      trail = trail.filter((p) => now - p.t < 1.6);
+      trail = trail.filter((p) => now - p.t < 2.6);
 
       if (portal) {
         portal.open = Math.min(1, portal.open + dt * 1.8);

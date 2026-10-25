@@ -105,7 +105,7 @@ export function fireballEffect() {
       for (const h of live) {
         const c = Math.min(1, (charge.get(h.id) ?? 0) + dt * 2);
         charge.set(h.id, c);
-        const r = h.size * 0.38 * c * h.presence;
+        const r = h.size * 0.48 * c * h.presence;
         if (h.fist) {
           // Burning fist.
           for (let i = 0; i < 4; i++) {
@@ -174,7 +174,7 @@ export function fireballEffect() {
         if (h.presence < 0.2 || h.fist || this.merged || !(h.open || h.gesture === 'relaxed')) continue;
         const c = charge.get(h.id) ?? 0;
         const b = holdPoint(h);
-        cores.push([b.x, b.y, h.size * 0.38 * c * h.presence]);
+        cores.push([b.x, b.y, h.size * 0.48 * c * h.presence]);
       }
       if (this.merged) cores.push([this.merged.x, this.merged.y, this.merged.r]);
       for (const p of projectiles) cores.push([p.x, p.y, p.r]);

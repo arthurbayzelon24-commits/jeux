@@ -145,6 +145,13 @@ export class SoundFx {
         noise('bandpass', 500, 2.5, 0.03, 0.05, 0.25, 0.5, 1400);
         tone('sawtooth', 110, 150, 0.03, 0.05, 0.2, 0.12);
         break;
+      case 'drop':
+        tone('sine', 1100 + Math.random() * 400, 280, 0.002, 0.01, 0.12, 0.25);
+        break;
+      case 'crack':
+        noise('highpass', 2500, 1, 0.001, 0.01, 0.06, 0.5);
+        tone('square', 1800, 900, 0.001, 0.005, 0.04, 0.05);
+        break;
       case 'tick':
         tone('sine', 880, 880, 0.002, 0.05, 0.12, 0.25);
         break;
@@ -222,7 +229,42 @@ export class SoundFx {
     l.g.gain.setTargetAtTime(Math.max(0, Math.min(1, level)) * l.peak, ctx.currentTime, 0.08);
   }
 
+  // Rising tone while a power charges (level 0..1).
+  charge(level) {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state !== 'running') return;
+    if (!this.chargeOsc) {
+      if (level < 0.02) return;
+      const o = ctx.createOscillator();
+      const o2 = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o2.type = 'sine';
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 900;
+      const g = ctx.createGain();
+      g.gain.value = 0;
+      o.connect(f);
+      o2.connect(f);
+      f.connect(g).connect(this.master);
+      o.start();
+      o2.start();
+      this.chargeOsc = { o, o2, g };
+    }
+    const { o, o2, g } = this.chargeOsc;
+    const t = ctx.currentTime;
+    o.frequency.setTargetAtTime(70 + level * level * 420, t, 0.1);
+    o2.frequency.setTargetAtTime(140 + level * level * 840, t, 0.1);
+    g.gain.setTargetAtTime(level < 0.02 ? 0 : 0.03 + level * 0.12, t, 0.08);
+  }
+
   stopLoops() {
+    if (this.chargeOsc) {
+      this.chargeOsc.o.stop();
+      this.chargeOsc.o2.stop();
+      this.chargeOsc.g.disconnect();
+      this.chargeOsc = null;
+    }
     for (const l of Object.values(this.loops)) {
       l.nodes.forEach((n) => n.stop());
       l.g.disconnect();
