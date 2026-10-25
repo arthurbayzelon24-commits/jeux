@@ -1,44 +1,54 @@
-// Offline cache for the app shell. The detection models are cached by the
-// browser's HTTP cache after the first visit.
-const CACHE = 'magic-cam-v3';
+// Magic Cam service worker: works offline and keeps the installed app up to
+// date. Every launch fetches the newest files first (cache only as fallback),
+// and a new version of this file takes over immediately.
+const VERSION = 'magic-cam-v4';
+const LIB = 'magic-cam-lib';
+const POWERS = [
+  'kamehameha',
+  'firebeam',
+  'saber',
+  'portal',
+  'circle',
+  'plasma',
+  'lightning',
+  'thunder',
+  'fireball',
+  'rasengan',
+  'blackhole',
+  'galaxy',
+  'heart',
+  'sakura',
+  'butterflies',
+  'koi',
+  'fireworks',
+  'ice',
+  'water',
+  'shadow',
+  'aura',
+  'wings',
+  'teleport',
+  'telekinesis',
+  'floating',
+];
 const SHELL = [
   './',
   'index.html',
   'css/style.css',
   'manifest.webmanifest',
-  'assets/icon.svg',
-  'js/main.js',
-  'js/engine.js',
-  'js/hands.js',
-  'js/tracker.js',
-  'js/audio.js',
-  'js/recorder.js',
-  'js/gallery.js',
-  'js/effects.js',
-  'js/fx/util.js',
-  'js/fx/lightning.js',
-  'js/fx/fireball.js',
-  'js/fx/aura.js',
-  'js/fx/telekinesis.js',
-  'js/fx/teleport.js',
-  'js/fx/floating.js',
-  'js/fx/magiccircle.js',
-  'js/fx/plasma.js',
-  'js/fx/galaxy.js',
-  'js/fx/sakura.js',
-  'js/body.js',
-  'js/icons.js',
-  'js/fx/firebeam.js',
-  'js/fx/kamehameha.js',
-  'js/fx/saber.js',
-  'js/fx/portal.js',
+  'assets/header.jpg',
+  'assets/icon-64.png',
+  'assets/icon-180.png',
+  'assets/icon-192.png',
+  'assets/icon-512.png',
+  ...POWERS.map((id) => `assets/powers/${id}.jpg`),
 ];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches
-      .open(CACHE)
+      .open(VERSION)
       .then((c) => c.addAll(SHELL))
+      .catch(() => {})
       .then(() => self.skipWaiting()),
   );
 });
@@ -47,22 +57,44 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== LIB).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
 
-// Network first for our own files (always fresh when online), cache as fallback.
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== location.origin) return;
+  if (e.request.method !== 'GET') return;
+  const own = url.origin === location.origin;
+  // Detection library and models: cache first (they never change for a version).
+  const lib = /cdn\.jsdelivr\.net|storage\.googleapis\.com|fonts\.(googleapis|gstatic)\.com/.test(url.host);
+  if (lib) {
+    e.respondWith(
+      caches.match(e.request).then(
+        (hit) =>
+          hit ||
+          fetch(e.request).then((res) => {
+            if (res.ok || res.type === 'opaque') {
+              const copy = res.clone();
+              caches.open(LIB).then((c) => c.put(e.request, copy));
+            }
+            return res;
+          }),
+      ),
+    );
+    return;
+  }
+  if (!own) return;
+  // Our own files: always the newest from the network, cache when offline.
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' })
       .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy));
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(VERSION).then((c) => c.put(e.request, copy));
+        }
         return res;
       })
-      .catch(() => caches.match(e.request)),
+      .catch(() => caches.match(e.request).then((hit) => hit || caches.match('index.html'))),
   );
 });

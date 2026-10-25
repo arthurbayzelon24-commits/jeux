@@ -9,8 +9,12 @@
       content="Magic Cam : choisissez un pouvoir et filmez-vous avec des effets de magie en temps réel (rayon de feu, kamehameha, sabre laser, portail, éclairs…). Gratuit, dans le navigateur."
     />
     <meta name="theme-color" content="#0b0a0f" />
-    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="assets/icon.svg" />
+    <link rel="icon" href="assets/icon-64.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Magic Cam" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,17 +24,10 @@
   <body>
     <!-- Powers: choose your magic -->
     <main class="home" id="view-home">
-      <header class="home-head">
-        <div class="brand">
-          <img src="assets/icon.svg" alt="" class="brand-icon" />
-          <h1 class="title">Magic Cam</h1>
-        </div>
-        <div class="home-actions">
-          <button class="icon-btn" id="home-gallery" aria-label="Mes vidéos"><span data-icon="video"></span></button>
-          <button class="icon-btn" id="home-settings" aria-label="Paramètres"><span data-icon="gear"></span></button>
-        </div>
+      <header class="banner">
+        <h1 class="title">Magic<br />Cam</h1>
+        <button class="install-btn" id="install-btn" hidden><span data-icon="download"></span>Installer</button>
       </header>
-      <p class="home-sub">Choisissez un pouvoir</p>
       <div class="powers" id="powers"></div>
     </main>
 
@@ -99,6 +96,16 @@
           <label class="row toggle"><span>Garder dans Mes vidéos</span><input type="checkbox" name="autosave" /></label>
           <label class="row toggle"><span>Micro dans les vidéos</span><input type="checkbox" name="mic" /></label>
           <label class="row toggle"><span>Sons des pouvoirs</span><input type="checkbox" name="sound" /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Application</legend>
+          <button type="button" class="btn btn-gold" id="install-settings" hidden>
+            <span data-icon="download"></span>Installer Magic Cam
+          </button>
+          <p class="muted small" id="install-help">
+            Installez Magic Cam sur l’écran d’accueil : sur Android et ordinateur, menu du navigateur › « Installer l’application » ; sur
+            iPhone, bouton Partager › « Sur l’écran d’accueil ». Une fois installée, elle se met à jour toute seule.
+          </p>
         </fieldset>
         <fieldset>
           <legend>Données</legend>
@@ -197,6 +204,12 @@
         </div>
       </div>
     </div>
+
+    <nav class="tabbar" id="tabbar">
+      <button class="tab active" data-tab="home"><span data-icon="sparkle"></span>Pouvoirs</button>
+      <button class="tab" data-tab="gallery"><span data-icon="folder"></span>Mes vidéos</button>
+      <button class="tab" data-tab="settings"><span data-icon="gear"></span>Paramètres</button>
+    </nav>
 
     <script type="module" src="js/main.js"></script>
   </body>

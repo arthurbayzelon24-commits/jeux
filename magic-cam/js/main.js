@@ -4,7 +4,6 @@ import { Tracker } from './tracker.js';
 import { SoundFx } from './audio.js';
 import { CanvasRecorder, extensionFor } from './recorder.js';
 import { gallery, videoThumbnail } from './gallery.js';
-import { powerIcon } from './icons.js';
 import { quality } from './fx/util.js';
 
 // ---------- Interface icons ----------
@@ -24,6 +23,9 @@ const ICONS = {
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
   points:
     '<circle cx="6" cy="18" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="18" cy="14" r="2"/><path d="M7.2 16.4 10.8 7.7M13.6 7.3l3.4 5.2"/>',
+  sparkle:
+    '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8zM5 2l.6 1.4L7 4l-1.4.6L5 6l-.6-1.4L3 4l1.4-.6z"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 10.5v5l4-2.5z"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
 };
 const svg = (name) =>
@@ -116,6 +118,9 @@ function note(msg) {
 }
 
 // ---------- Powers screen ----------
+// Card art is rendered from the real effects by tools/art.js.
+const art = (id) => `assets/powers/${id}.jpg`;
+
 function buildPowers() {
   const grid = $('powers');
   const carousel = $('carousel');
@@ -125,7 +130,7 @@ function buildPowers() {
     card.className = 'power';
     card.dataset.id = def.id;
     card.style.setProperty('--tint', def.tint);
-    card.innerHTML = `<span class="power-icon">${powerIcon(def.id, def.tint)}</span><span class="power-name">${fx.name}</span><span class="power-gesture">${def.gesture}</span>`;
+    card.innerHTML = `<span class="power-art"><img src="${art(def.id)}" alt="" loading="lazy" decoding="async"></span><span class="power-name">${fx.name}</span><span class="power-gesture">${def.gesture}</span>`;
     card.addEventListener('click', () => openStudio(def.id));
     grid.append(card);
 
@@ -135,7 +140,7 @@ function buildPowers() {
     chip.setAttribute('role', 'option');
     chip.setAttribute('aria-label', fx.name);
     chip.style.setProperty('--tint', def.tint);
-    chip.innerHTML = `<div class="thumb">${powerIcon(def.id, def.tint)}</div>`;
+    chip.innerHTML = `<div class="thumb"><img src="${art(def.id)}" alt="" loading="lazy"></div>`;
     chip.addEventListener('click', () => selectEffect(def.id, true));
     carousel.append(chip);
   }
@@ -151,16 +156,23 @@ async function showPage(name) {
 }
 function closePage() {
   document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === 'home'));
   if (pageFrom === 'studio') openStudio(currentEffect);
 }
 document.querySelectorAll('[data-back]').forEach((b) => b.addEventListener('click', closePage));
-$('home-gallery').addEventListener('click', () => showPage('gallery'));
-$('home-settings').addEventListener('click', () => showPage('settings'));
+// Bottom tab bar on the powers screen.
+document.querySelectorAll('.tab').forEach((t) =>
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === t));
+    if (t.dataset.tab === 'home') closePage();
+    else showPage(t.dataset.tab);
+  }),
+);
 
 // ---------- First launch: tracking points? ----------
 function askPoints() {
   if (settings.pointsAsked) return;
-  $('ask-visual').innerHTML = powerIcon('telekinesis', '#f3c56b');
+  $('ask-visual').innerHTML = '<img src="assets/icon-192.png" alt="">';
   $('points-ask').hidden = false;
 }
 function answerPoints(yes) {
@@ -187,7 +199,7 @@ function selectEffect(id, fromUser = false) {
   engine.setEffect(fx);
   if (fx.colors && colorIndex[id] !== undefined) fx.setColor(colorIndex[id]);
   updateSwatch();
-  $('power-pill').innerHTML = `<span class="pill-icon">${powerIcon(def.id, def.tint)}</span>${fx.name}`;
+  $('power-pill').innerHTML = `<img class="pill-icon" src="${art(def.id)}" alt="">${fx.name}`;
   $('power-pill').style.setProperty('--tint', def.tint);
   document.querySelectorAll('.fx-chip').forEach((c) => {
     const on = c.dataset.id === id;
@@ -320,7 +332,7 @@ function loop(now) {
   if (video.currentTime !== lastVideoTime) {
     lastVideoTime = video.currentTime;
     try {
-      det = tracker.detect(video, !!fx?.needs?.seg, settings.points);
+      det = tracker.detect(video, !!fx?.needs?.seg, settings.points || !!fx?.needs?.pose);
     } catch (err) {
       console.warn(err);
     }
@@ -652,4 +664,45 @@ refreshMiniThumb();
 askPoints();
 document.addEventListener('pointerdown', () => audio.init(), { passive: true });
 loadModels();
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+
+// ---------- Install & automatic updates ----------
+let installEvent = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installEvent = e;
+  $('install-btn').hidden = false;
+  $('install-settings').hidden = false;
+});
+async function install() {
+  if (!installEvent) return;
+  installEvent.prompt();
+  await installEvent.userChoice.catch(() => {});
+  installEvent = null;
+  $('install-btn').hidden = true;
+  $('install-settings').hidden = true;
+}
+$('install-btn').addEventListener('click', install);
+$('install-settings').addEventListener('click', install);
+window.addEventListener('appinstalled', () => ($('install-btn').hidden = true));
+
+// The installed app updates itself: the service worker checks for a new
+// version at each launch and when the app comes back to the screen; the new
+// version takes over and the page reloads (never in the middle of filming).
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  let reloadPending = false;
+  const reloadWhenIdle = () => {
+    if (studioOpen) reloadPending = true;
+    else location.reload();
+  };
+  navigator.serviceWorker
+    .register('sw.js', { updateViaCache: 'none' })
+    .then((reg) => {
+      const check = () => reg.update().catch(() => {});
+      document.addEventListener('visibilitychange', () => !document.hidden && check());
+      setInterval(check, 30 * 60 * 1000);
+    })
+    .catch(() => {});
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => hadController && reloadWhenIdle());
+  $('btn-back').addEventListener('click', () => reloadPending && location.reload());
+}

@@ -84,8 +84,8 @@ export function galaxyEffect() {
           const p = palmPoint(h, Math.cos(a) * s.r * R, Math.sin(a) * s.r * R, s.z * R, o);
           const c = scheme.arms[s.arm];
           const tw = 0.6 + 0.4 * Math.sin(e.t * 4 + s.tw);
-          const size = s.size * e.unit * (1.6 - s.r) * 1.2;
-          ctx.fillStyle = `rgba(${c.join(',')},${0.7 * tw * h.presence})`;
+          const size = s.size * e.unit * (1.6 - s.r) * 1.8;
+          ctx.fillStyle = `rgba(${c.join(',')},${0.9 * tw * h.presence})`;
           ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
         }
         // Dust lanes glow along the arms.
@@ -94,7 +94,7 @@ export function galaxyEffect() {
             const r = k / 7;
             const a = (arm / 3) * TAU + r * 5.5 + spin * (1.6 - r);
             const p = palmPoint(h, Math.cos(a) * r * R, Math.sin(a) * r * R, 0, o);
-            drawGlow(ctx, scheme.arms[arm], p.x, p.y, h.size * 0.4 * g * (1.2 - r), 0.1, 0.05);
+            drawGlow(ctx, scheme.arms[arm], p.x, p.y, h.size * 0.4 * g * (1.2 - r), 0.16, 0.05);
           }
         const f = 0.9 + 0.1 * noise1(e.t * 3);
         drawGlow(ctx, [255, 245, 220], o.x, o.y, h.size * 0.4 * g * f, 0.75);
