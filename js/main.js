@@ -27,6 +27,7 @@ const ICONS = {
   sparkle:
     '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8zM5 2l.6 1.4L7 4l-1.4.6L5 6l-.6-1.4L3 4l1.4-.6z"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 10.5v5l4-2.5z"/>',
+  film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
 };
 const svg = (name) =>
@@ -55,6 +56,7 @@ const DEFAULTS = {
   mic: true,
   sound: true,
   points: true,
+  look: 'normal',
   pointsAsked: false,
   eco: false,
 };
@@ -101,6 +103,8 @@ const audio = new SoundFx();
 audio.setEnabled(settings.sound);
 const renderSide = () => (settings.priority === 'sharp' ? maxSideFor(settings.quality) : maxSideFor('smooth'));
 const engine = new Engine(stage, { audio, settings, maxSide: renderSide() });
+engine.look = settings.look || 'normal';
+$('btn-look').classList.toggle('on', engine.look !== 'normal');
 const recorder = new CanvasRecorder(stage);
 const tracker = new Tracker();
 // Handle for debugging from the browser console.
@@ -763,6 +767,27 @@ $('btn-color').addEventListener('click', () => {
   colorIndex[currentEffect] = i;
   fx.setColor(i);
   updateSwatch();
+});
+// Image looks (colour grade of the scene, the powers keep their colours).
+const LOOKS = [
+  ['normal', 'Normal'],
+  ['cinema', 'Cinéma'],
+  ['neon', 'Néon'],
+  ['vintage', 'Vintage'],
+  ['noir', 'Noir et blanc'],
+];
+let lookTimer = 0;
+$('btn-look').addEventListener('click', () => {
+  const i = (LOOKS.findIndex(([id]) => id === settings.look) + 1) % LOOKS.length;
+  settings.look = LOOKS[i][0];
+  engine.look = settings.look;
+  saveSettings();
+  $('btn-look').classList.toggle('on', settings.look !== 'normal');
+  const chip = $('look-chip');
+  chip.textContent = LOOKS[i][1];
+  chip.hidden = false;
+  clearTimeout(lookTimer);
+  lookTimer = setTimeout(() => (chip.hidden = true), 900);
 });
 $('btn-sound').addEventListener('click', () => {
   settings.sound = !settings.sound;

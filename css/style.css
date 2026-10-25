@@ -1217,3 +1217,31 @@ body.in-studio {
 #stage {
   will-change: transform;
 }
+
+/* Name of the image look, shown briefly when it changes */
+.look-chip {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  z-index: 30;
+  transform: translate(-50%, -50%);
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: rgba(10, 9, 12, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(243, 197, 107, 0.5);
+  pointer-events: none;
+  animation: look-in 0.25s ease;
+}
+.look-chip[hidden] {
+  display: none;
+}
+@keyframes look-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}

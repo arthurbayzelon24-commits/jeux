@@ -429,6 +429,7 @@ export class Engine {
       this.#safe('drawBehind', ctx, this);
       if (!handled) ctx.drawImage(this.layers.person, 0, 0);
     } else this.#safe('drawBehind', ctx, this);
+    this.#grade(ctx, W, H);
 
     // Effect light spilling onto the scene.
     if (this.lights.length) {
@@ -502,5 +503,72 @@ export class Engine {
     }
     this.flashes = this.flashes.filter((fl) => fl.alpha > 0.01);
     ctx.globalCompositeOperation = 'source-over';
+    this.#lookOverlay(ctx, W, H);
+  }
+
+  // Image look (studio filter button): colour grade of the filmed scene,
+  // under the effects so the powers keep their own colours. Blend-mode fills
+  // only, which are cheap and work in every browser (ctx.filter does not).
+  #grade(ctx, W, H) {
+    const look = this.look;
+    if (!look || look === 'normal') return;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const fill = (op, color, alpha = 1) => {
+      ctx.globalCompositeOperation = op;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, W, H);
+    };
+    if (look === 'cinema') {
+      fill('soft-light', 'rgb(0,90,110)', 0.55);
+      fill('soft-light', 'rgb(255,150,60)', 0.25);
+    } else if (look === 'neon') {
+      fill('saturation', 'rgb(255,0,0)', 0.55);
+      fill('multiply', 'rgb(120,60,170)', 0.45);
+      fill('screen', 'rgb(40,0,60)', 0.5);
+    } else if (look === 'vintage') {
+      fill('color', 'rgb(160,120,70)', 0.55);
+      fill('screen', 'rgb(60,40,20)', 0.35);
+      fill('multiply', 'rgb(255,235,200)', 0.6);
+    } else if (look === 'noir') {
+      fill('saturation', '#000');
+      fill('soft-light', '#000', 0.5);
+    }
+    ctx.restore();
+  }
+
+  #lookOverlay(ctx, W, H) {
+    const look = this.look;
+    if (look === 'cinema') {
+      // Wide-screen 2.39:1 bars.
+      const bar = Math.max(0, (H - W / 2.39) / 2);
+      if (bar > 0) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, bar);
+        ctx.fillRect(0, H - bar, W, bar);
+      }
+    } else if (look === 'vintage' || look === 'noir') {
+      // Film grain: a small noise tile, moved every frame.
+      if (!this.grain) {
+        const c = makeCanvas(128, 128);
+        const g = c.getContext('2d');
+        const img = g.createImageData(128, 128);
+        for (let i = 0; i < img.data.length; i += 4) {
+          const v = Math.random() * 255;
+          img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+          img.data[i + 3] = 255;
+        }
+        g.putImageData(img, 0, 0);
+        this.grain = ctx.createPattern(c, 'repeat');
+      }
+      ctx.save();
+      ctx.globalCompositeOperation = 'overlay';
+      ctx.globalAlpha = look === 'noir' ? 0.16 : 0.12;
+      ctx.translate((Math.random() * 128) | 0, (Math.random() * 128) | 0);
+      ctx.fillStyle = this.grain;
+      ctx.fillRect(-128, -128, W + 128, H + 128);
+      ctx.restore();
+    }
   }
 }
