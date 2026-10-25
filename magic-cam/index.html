@@ -56,13 +56,37 @@
           <label class="row">
             <span>Qualité<small>La caméra donne la meilleure qualité qu’elle peut, jusqu’à celle choisie</small></span>
             <select name="quality">
-              <option value="smooth">Fluidité maximale (recommandé)</option>
-              <option value="720">HD 720p · 120 i/s</option>
-              <option value="1080">Full HD 1080p · 60 i/s</option>
-              <option value="2160">4K · 30 i/s</option>
-              <option value="4320">8K · 30 i/s</option>
+              <option value="32k">32K · maximum (recommandé)</option>
+              <option value="16k">16K</option>
+              <option value="4320">8K</option>
+              <option value="2160">4K</option>
+              <option value="1080">Full HD 1080p</option>
+              <option value="720">HD 720p</option>
+              <option value="smooth">Définition de l’écran</option>
             </select>
           </label>
+          <label class="row">
+            <span>Images par seconde<small>Demandées à la caméra ; l’affichage suit la fréquence de l’écran</small></span>
+            <select name="fpsTarget">
+              <option value="250">250 i/s · maximum</option>
+              <option value="240">240 i/s</option>
+              <option value="144">144 i/s</option>
+              <option value="120">120 i/s</option>
+              <option value="60">60 i/s</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Qualité des effets</span>
+            <select name="fxQuality">
+              <option value="ultra">Ultra</option>
+              <option value="high">Haute</option>
+              <option value="eco">Économie</option>
+            </select>
+          </label>
+          <label class="row toggle"
+            ><span>Halo lumineux (bloom)<small>Lueur cinéma autour des effets</small></span
+            ><input type="checkbox" name="bloom"
+          /></label>
           <label class="row toggle"
             ><span>Points de suivi<small>Points sur les mains et le corps détectés par la caméra</small></span
             ><input type="checkbox" name="points"
@@ -72,10 +96,6 @@
           <label class="row toggle"
             ><span>Afficher les images par seconde<small>Compteur en haut de l’écran de la caméra</small></span
             ><input type="checkbox" name="fps"
-          /></label>
-          <label class="row toggle"
-            ><span>Mode économie<small>Moins de particules, pour les téléphones plus anciens</small></span
-            ><input type="checkbox" name="eco"
           /></label>
         </fieldset>
         <fieldset>

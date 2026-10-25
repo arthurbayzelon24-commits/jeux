@@ -58,7 +58,12 @@ export class Engine {
   }
 
   #resize(sw, sh) {
-    const k = Math.min(1, this.maxSide / Math.max(sw, sh)) * this.renderScale;
+    let k = Math.min(1, this.maxSide / Math.max(sw, sh)) * this.renderScale;
+    // Browsers cap canvas sizes (iPhone/iPad far lower than computers).
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const maxArea = ios ? 16e6 : 2.6e8;
+    if (sw * k * sh * k > maxArea) k = Math.sqrt(maxArea / (sw * sh));
+    k = Math.min(k, 32767 / Math.max(sw, sh));
     const W = Math.round(sw * k);
     const H = Math.round(sh * k);
     if (W !== this.canvas.width || H !== this.canvas.height) {
@@ -70,6 +75,18 @@ export class Engine {
     this.W = W;
     this.H = H;
     this.unit = Math.min(W, H) / 720;
+  }
+
+  #fxLayer() {
+    const { W, H } = this;
+    if (this.fx?.canvas.width === W && this.fx.canvas.height === H) return this.fx;
+    const layer = (w, h) => {
+      const canvas = makeCanvas(w, h);
+      return { canvas, ctx: canvas.getContext('2d') };
+    };
+    const base = layer(W, H);
+    this.fx = { ...base, levels: [4, 8, 16].map((d) => layer(W / d, H / d)) };
+    return this.fx;
   }
 
   #ensureLayers() {
@@ -296,7 +313,8 @@ export class Engine {
     // Camera shake and zoom punch, around the centre.
     const z = this.zoom * (this.shakeAmp > 0.3 ? 1.02 : 1);
     const a = this.shakeAmp > 0.3 ? this.shakeAmp : 0;
-    ctx.setTransform(z, 0, 0, z, (W * (1 - z)) / 2 + (Math.random() * 2 - 1) * a, (H * (1 - z)) / 2 + (Math.random() * 2 - 1) * a);
+    const m = [z, 0, 0, z, (W * (1 - z)) / 2 + (Math.random() * 2 - 1) * a, (H * (1 - z)) / 2 + (Math.random() * 2 - 1) * a];
+    ctx.setTransform(...m);
     this.shakeAmp *= Math.exp(-dt * 8);
     this.zoom = 1 + (this.zoom - 1) * Math.exp(-dt * 5);
 
@@ -309,7 +327,10 @@ export class Engine {
         ctx.translate(W, 0);
         ctx.scale(-1, 1);
       }
+      // Ultra quality: a light cinema grade (contrast and colour).
+      if (this.settings.fxQuality === 'ultra') ctx.filter = 'contrast(1.06) saturate(1.12)';
       ctx.drawImage(input.source, 0, 0, W, H);
+      ctx.filter = 'none';
       ctx.restore();
     }
     if (effect?.drawBehind && this.segActive) {
@@ -324,8 +345,39 @@ export class Engine {
       ctx.globalCompositeOperation = 'source-over';
     }
 
-    effect?.draw?.(ctx, this);
-    this.charge.draw(ctx, this);
+    // Effects are drawn on their own layer, then composited with a bloom
+    // (soft glow around everything bright), like in films and games.
+    if (this.settings.bloom !== false) {
+      const fx = this.#fxLayer();
+      fx.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      fx.ctx.clearRect(0, 0, W, H);
+      fx.ctx.setTransform(...m);
+      effect?.draw?.(fx.ctx, this);
+      this.charge.draw(fx.ctx, this);
+      fx.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.drawImage(fx.canvas, 0, 0);
+      // Downsample chain: each smaller copy, scaled back up, is a wider blur.
+      let prev = fx.canvas;
+      for (const level of fx.levels) {
+        level.ctx.clearRect(0, 0, level.canvas.width, level.canvas.height);
+        level.ctx.drawImage(prev, 0, 0, level.canvas.width, level.canvas.height);
+        prev = level.canvas;
+      }
+      ctx.globalCompositeOperation = 'lighter';
+      fx.levels.forEach((level, i) => {
+        ctx.globalAlpha = [0.4, 0.35, 0.3][i];
+        ctx.drawImage(level.canvas, 0, 0, W, H);
+      });
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.setTransform(...m);
+    } else {
+      effect?.draw?.(ctx, this);
+      this.charge.draw(ctx, this);
+    }
     this.hands = realHands;
 
     // Tracking points: body first, hands (more detailed) on top.

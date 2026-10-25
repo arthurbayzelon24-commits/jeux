@@ -22,10 +22,24 @@ export class PowerCharge {
     this.sparks.clear();
   }
 
-  // Effects can say what "holding the power" means; default: a hand in view.
+  // Only some powers charge, and only while their gesture is held
+  // (open hand, pointing finger, fist or hand raised to the sky).
   update(dt, e, effect, hands) {
-    const main = hands.filter((h) => h.visible && h.presence > 0.6).sort((a, b) => b.size - a.size)[0];
-    const holding = effect?.holding ? effect.holding(hands, e) : !!main;
+    const mode = effect?.chargeMode;
+    const holds = (h) =>
+      h.visible &&
+      h.presence > 0.6 &&
+      (mode === 'open'
+        ? h.open || h.gesture === 'relaxed'
+        : mode === 'point'
+          ? h.point || (h.fingers.index && !h.fingers.middle)
+          : mode === 'fist'
+            ? h.fist
+            : mode === 'raised'
+              ? h.palm.y < e.H * 0.45
+              : false);
+    const main = mode ? hands.filter(holds).sort((a, b) => b.size - a.size)[0] : null;
+    const holding = !!main;
     this.anchor = main ? { x: main.palm.x, y: main.palm.y, r: main.size } : null;
     if (this.cooldown > 0) {
       this.cooldown -= dt;
@@ -118,17 +132,28 @@ export class PowerCharge {
     // Charge ring around the hand: fills up clockwise, pulses near the end.
     if (this.anchor && p > 0.02 && this.cooldown <= 0) {
       const { x, y, r } = this.anchor;
-      const R = r * (1.7 + 0.15 * Math.sin(e.t * (4 + p * 12)) * p);
+      const R = r * (2.2 + 0.18 * Math.sin(e.t * (4 + p * 12)) * p);
       ctx.globalCompositeOperation = 'lighter';
       ctx.lineCap = 'round';
-      ctx.strokeStyle = `rgba(${this.tint.join(',')},0.18)`;
-      ctx.lineWidth = 10 * e.unit;
+      // Track of the gauge, with graduations.
+      ctx.strokeStyle = `rgba(${this.tint.join(',')},0.22)`;
+      ctx.lineWidth = 22 * e.unit;
       ctx.beginPath();
       ctx.arc(x, y, R, 0, TAU);
       ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 2 * e.unit;
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * TAU;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * (R - 13 * e.unit), y + Math.sin(a) * (R - 13 * e.unit));
+        ctx.lineTo(x + Math.cos(a) * (R + 13 * e.unit), y + Math.sin(a) * (R + 13 * e.unit));
+        ctx.stroke();
+      }
       for (const [w, a] of [
-        [14, 0.25],
-        [5, 0.9],
+        [34, 0.25],
+        [18, 0.55],
+        [7, 1],
       ]) {
         ctx.strokeStyle = `rgba(${this.tint.map((v) => Math.min(255, v + 60)).join(',')},${a})`;
         ctx.lineWidth = w * e.unit;
@@ -137,7 +162,7 @@ export class PowerCharge {
         ctx.stroke();
       }
       const tip = -Math.PI / 2 + TAU * p;
-      drawGlow(ctx, [255, 255, 255], x + Math.cos(tip) * R, y + Math.sin(tip) * R, 16 * e.unit, 0.9);
+      drawGlow(ctx, [255, 255, 255], x + Math.cos(tip) * R, y + Math.sin(tip) * R, 34 * e.unit, 1);
       // The whole frame glows at the edges as power builds.
       if (p > 0.3) {
         const g = ctx.createRadialGradient(e.W / 2, e.H / 2, Math.min(e.W, e.H) * 0.35, e.W / 2, e.H / 2, Math.hypot(e.W, e.H) * 0.6);
