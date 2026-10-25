@@ -1,6 +1,6 @@
 // Turns raw MediaPipe hand landmarks into stable, smoothed "hands" in canvas
 // pixels, with a 3D palm basis, gestures and gesture events.
-import { v3, clamp, drawGlow } from './fx/util.js';
+import { v3, clamp } from './fx/util.js';
 
 // One Euro filter: low jitter when still, low lag when moving fast.
 class OneEuro {
@@ -70,21 +70,22 @@ export class HandTracker {
 
   // Predicts hand positions between detections from the palm velocity
   // (at most a few frames ahead, so a wrong guess never shows).
+  // Every joint moves along its own velocity (fingers move on their own),
+  // fading out after a few frames so a wrong guess never shows.
   advance(dt) {
     for (const t of this.tracks) {
-      if (!t.visible || !t.palm) continue;
+      if (!t.visible || !t.palm || !t.lmVel) continue;
       t.ahead = (t.ahead || 0) + dt;
-      if (t.ahead > 0.06) continue;
-      const dx = t.vel.x * dt;
-      const dy = t.vel.y * dt;
-      for (const p of t.lm) {
-        p.x += dx;
-        p.y += dy;
-      }
-      t.palm.x += dx;
-      t.palm.y += dy;
-      t.pinchPoint.x += dx;
-      t.pinchPoint.y += dy;
+      const k = t.ahead < 0.05 ? 1 : t.ahead < 0.09 ? 0.5 : 0;
+      if (!k) continue;
+      t.lm.forEach((p, i) => {
+        p.x += t.lmVel[i].x * dt * k;
+        p.y += t.lmVel[i].y * dt * k;
+      });
+      t.palm.x += t.vel.x * dt * k;
+      t.palm.y += t.vel.y * dt * k;
+      t.pinchPoint.x = (t.lm[4].x + t.lm[8].x) / 2;
+      t.pinchPoint.y = (t.lm[4].y + t.lm[8].y) / 2;
     }
   }
 
@@ -139,7 +140,8 @@ export class HandTracker {
     return {
       id: nextId++,
       label: input.label,
-      filters: input.lm.map(() => [new OneEuro(), new OneEuro(), new OneEuro(0.8, 0.01)]),
+      // Responsive filters: little lag on fast moves, steady when still.
+      filters: input.lm.map(() => [new OneEuro(1.8, 0.05), new OneEuro(1.8, 0.05), new OneEuro(0.8, 0.01)]),
       wfilters: input.world.map(() => [new OneEuro(1.5), new OneEuro(1.5), new OneEuro(1.5)]),
       lm: input.lm,
       world: input.world,
@@ -168,6 +170,15 @@ export class HandTracker {
       y: t.filters[i][1].filter(p.y, dt),
       z: t.filters[i][2].filter(p.z, dt),
     }));
+    // Per-joint velocity from detected (not predicted) positions.
+    const prevRaw = t.rawLm;
+    t.rawLm = t.lm.map((p) => ({ x: p.x, y: p.y }));
+    if (prevRaw) {
+      t.lmVel = t.rawLm.map((p, i) => {
+        const v = t.lmVel?.[i] || { x: 0, y: 0 };
+        return { x: v.x + ((p.x - prevRaw[i].x) / dt - v.x) * 0.6, y: v.y + ((p.y - prevRaw[i].y) / dt - v.y) * 0.6 };
+      });
+    }
     t.world = input.world.map((p, i) => ({
       x: t.wfilters[i][0].filter(p.x, dt),
       y: t.wfilters[i][1].filter(p.y, dt),
@@ -257,48 +268,5 @@ export class HandTracker {
   }
 }
 
-// Draws the tracking points of a hand: golden bones, a glowing dot on every
-// joint and a ring on each fingertip, so finger movements are visible.
-export function drawHandSkeleton(ctx, hand) {
-  const lm = hand.lm;
-  const a = hand.presence;
-  ctx.save();
-  ctx.lineCap = 'round';
-  const s = Math.max(1.2, hand.size * 0.028);
-  // Dark under-stroke keeps the bones readable on bright scenes.
-  for (const [w, color] of [
-    [s * 2.2, `rgba(0,0,0,${0.35 * a})`],
-    [s, `rgba(255,205,120,${0.95 * a})`],
-  ]) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = w;
-    ctx.beginPath();
-    for (const [i, j] of HAND_EDGES) {
-      ctx.moveTo(lm[i].x, lm[i].y);
-      ctx.lineTo(lm[j].x, lm[j].y);
-    }
-    ctx.stroke();
-  }
-  ctx.globalCompositeOperation = 'lighter';
-  for (const p of lm) drawGlow(ctx, [255, 170, 60], p.x, p.y, s * 4, 0.35 * a);
-  ctx.globalCompositeOperation = 'source-over';
-  lm.forEach((p, i) => {
-    const tip = TIPS.includes(i);
-    const r = s * (tip ? 1.9 : 1.3);
-    ctx.fillStyle = `rgba(255,255,255,${a})`;
-    ctx.strokeStyle = `rgba(150,80,10,${0.9 * a})`;
-    ctx.lineWidth = Math.max(1, s * 0.45);
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    if (tip) {
-      ctx.strokeStyle = `rgba(255,220,150,${0.95 * a})`;
-      ctx.lineWidth = Math.max(1, s * 0.55);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, s * 3.4, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-  });
-  ctx.restore();
-}
+// Draws the tracking points of a hand as a dense mesh (see handmesh.js).
+export { drawHandMesh as drawHandSkeleton } from './handmesh.js';

@@ -5,6 +5,7 @@ import { SoundFx } from './audio.js';
 import { CanvasRecorder, extensionFor } from './recorder.js';
 import { gallery, videoThumbnail } from './gallery.js';
 import { quality } from './fx/util.js';
+import { MESH_POINTS } from './handmesh.js';
 
 // ---------- Interface icons ----------
 const ICONS = {
@@ -391,7 +392,7 @@ function adaptResolution(now) {
     fpsShown = now;
     const recent = frameTimes.slice(-30);
     const fps = 1000 / (recent.reduce((s, x) => s + x, 0) / recent.length);
-    $('fps').textContent = `${Math.round(fps)} i/s · détection ${Math.round(tracker.detectFps)} i/s`;
+    $('fps').textContent = `${Math.round(fps)} i/s · détection ${Math.round(tracker.detectFps)} i/s · ${MESH_POINTS} points/main`;
   }
   if (now - lastAdapt < 1500 || frameTimes.length < 60 || recorder.recording) return;
   lastAdapt = now;

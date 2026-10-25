@@ -10,6 +10,8 @@ Site web gratuit qui utilise la caméra du téléphone ou du PC pour se filmer a
 4. L’écran de chargement n’apparaît qu’à la toute première ouverture (téléchargement des modèles).
 5. Bouton rouge : **3, 2, 1**, puis enregistrement.
 
+**Points de suivi** : chaque main est couverte d’un maillage de **220 points** (bords des doigts, phalanges, grille de la paume), calculé à chaque image à partir des 21 articulations détectées par le modèle, qui sont mises en évidence. Chaque articulation est prédite entre deux images de la caméra selon sa propre vitesse, pour que les points collent aux doigts.
+
 Aucun message pendant le tournage. Au premier lancement, une seule question : « Voulez-vous les points ? », modifiable dans les Paramètres.
 
 ## Pouvoirs
