@@ -137,6 +137,28 @@ export class Engine {
     ctx.drawImage(this.occl, 0, 0);
   }
 
+  #frameBlend(input) {
+    if (this.settings.frameBlend === false || !input.camInterval) return null;
+    // Only useful when the screen refreshes clearly faster than the camera.
+    if (input.camInterval < this.dt * 1000 * 1.4) return null;
+    // Half resolution is plenty for a fading ghost, and 4x cheaper.
+    const bw = Math.round(this.W / 2);
+    const bh = Math.round(this.H / 2);
+    if (!this.blend || this.blend.cur.width !== bw || this.blend.cur.height !== bh)
+      this.blend = { cur: makeCanvas(bw, bh), prev: makeCanvas(bw, bh), ok: false };
+    const b = this.blend;
+    if (input.newFrame) {
+      [b.cur, b.prev] = [b.prev, b.cur];
+      b.cur.getContext('2d').drawImage(input.source, 0, 0, bw, bh);
+      b.ok = b.hasPrev;
+      b.hasPrev = true;
+    }
+    if (!b.ok) return null;
+    const t = clamp(input.frameAge / input.camInterval);
+    const alpha = 0.5 * (1 - t);
+    return alpha > 0.02 ? { canvas: b.prev, alpha } : null;
+  }
+
   #fxLayer() {
     const { W, H } = this;
     if (this.fx?.canvas.width === W && this.fx.canvas.height === H) return this.fx;
@@ -392,6 +414,14 @@ export class Engine {
       // Ultra quality: a light cinema grade (contrast and colour).
       if (this.settings.fxQuality === 'ultra') ctx.filter = 'contrast(1.06) saturate(1.12)';
       ctx.drawImage(input.source, 0, 0, W, H);
+      // Camera slower than the screen: the previous camera frame fades out
+      // over the new one, so your own motion glides instead of jumping.
+      const blend = this.#frameBlend(input);
+      if (blend) {
+        ctx.globalAlpha = blend.alpha;
+        ctx.drawImage(blend.canvas, 0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
       ctx.filter = 'none';
       ctx.restore();
     }
