@@ -293,21 +293,27 @@ async function startCamera() {
   audio.attachMic(stream);
 }
 
+// Pushes the camera to 100+ frames per second when it can: first at the
+// sharpest size that reaches 100 i/s, then, if none does, the fastest size
+// at 50+ i/s. Browsers without getCapabilities (Firefox) just get the ideal.
 async function boostFrameRate(track, portrait) {
-  const caps = track?.getCapabilities?.() || {};
-  const max = Math.min(Number(settings.fpsTarget) || 250, caps.frameRate?.max || 0);
-  if (!max || max <= (track.getSettings().frameRate || 0)) return;
-  for (const long of [1920, 1280, 960]) {
-    const short = Math.round((long * 9) / 16);
-    try {
-      await track.applyConstraints({
-        width: { ideal: portrait ? short : long },
-        height: { ideal: portrait ? long : short },
-        frameRate: { min: Math.min(50, max), ideal: max },
-      });
-      if ((track.getSettings().frameRate || 0) >= Math.min(max, 120) * 0.9) return;
-    } catch {
-      /* this resolution cannot go that fast: try a smaller one */
+  if (!track) return;
+  const caps = track.getCapabilities?.() || {};
+  const max = Math.min(Number(settings.fpsTarget) || 250, caps.frameRate?.max || 120);
+  if (max <= (track.getSettings().frameRate || 0)) return;
+  for (const floor of [Math.min(100, max), Math.min(50, max)]) {
+    for (const long of [1920, 1280, 960, 640]) {
+      const short = Math.round((long * 9) / 16);
+      try {
+        await track.applyConstraints({
+          width: { ideal: portrait ? short : long },
+          height: { ideal: portrait ? long : short },
+          frameRate: { min: floor, ideal: max },
+        });
+        if ((track.getSettings().frameRate || floor) >= floor * 0.9) return;
+      } catch {
+        /* this size cannot go that fast: try a smaller one */
+      }
     }
   }
 }

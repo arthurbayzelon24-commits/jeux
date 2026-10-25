@@ -1,7 +1,7 @@
 // Magic Cam service worker: works offline and keeps the installed app up to
 // date. Every launch fetches the newest files first (cache only as fallback),
 // and a new version of this file takes over immediately.
-const VERSION = 'magic-cam-v9';
+const VERSION = 'magic-cam-v10';
 const LIB = 'magic-cam-lib';
 const POWERS = [
   'kamehameha',
@@ -30,6 +30,30 @@ const POWERS = [
   'teleport',
   'telekinesis',
   'floating',
+  'dragon',
+  'tornado',
+  'meteor',
+  'lava',
+  'sun',
+  'sonic',
+  'shield',
+  'lasereyes',
+  'web',
+  'neon',
+  'matrix',
+  'halo',
+  'planet',
+  'crystalball',
+  'aurora',
+  'stars',
+  'comet',
+  'rainbow',
+  'bubbles',
+  'confetti',
+  'coins',
+  'snow',
+  'fireflies',
+  'wisps',
 ];
 const SHELL = [
   './',
