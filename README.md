@@ -21,8 +21,8 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 
 ## Fonctions
 
-- Qualité jusqu’en **4K** (par défaut) ou **8K** : la caméra fournit la meilleure résolution qu’elle peut jusqu’à celle choisie, et la vidéo est enregistrée à cette résolution.
-- Fluidité : la détection tourne sur une copie réduite de l’image, et entre deux images de la caméra la position des mains est prédite, ce qui fait suivre les pouvoirs au rythme de l’écran (60 images/s ou plus).
+- **Fluidité** : l’image et les pouvoirs sont dessinés à la fréquence de l’écran (60, 90, 120 ou 144 Hz : jusqu’à environ 140 images/s sur un écran 144 Hz). La détection des mains et du corps tourne dans un **worker** (un fil séparé), donc l’affichage n’attend jamais l’IA ; entre deux images de la caméra, la position des mains est prédite. Si l’appareil ne suit pas, la résolution baisse un peu toute seule, puis remonte (jamais pendant un enregistrement). Compteur d’images par seconde activable dans les Paramètres.
+- **Qualité** : « Fluidité maximale » (par défaut : image à la définition de l’écran, caméra jusqu’à 120 i/s), 720p, 1080p, 4K ou 8K (la 4K et la 8K sont plus nettes mais limitées à 30 i/s par les caméras).
 - Enregistrement vidéo avec compte à rebours (3, 2, 1 par défaut), micro et sons des pouvoirs synthétisés ; MP4 quand le navigateur le permet, sinon WebM. Photo.
 - Télécharger, Partager (TikTok, Instagram, WhatsApp… depuis le téléphone), Mes vidéos (stockées dans le navigateur).
 - Caméra avant / arrière, miroir, vignette cinéma, mode économie.

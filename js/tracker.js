@@ -1,175 +1,146 @@
-// Loads MediaPipe (hand landmarks + selfie segmentation) and runs it on video
-// frames. Everything runs locally in the browser; nothing is uploaded.
-const VERSION = '0.10.14';
-export const MP_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${VERSION}`;
-const HAND_MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
-const POSE_MODEL =
-  'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
-const SEG_MODEL = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite';
+// Runs hand / body / silhouette detection on the camera, preferably in a
+// worker (off the main thread) so rendering never waits for the models.
+// Falls back to the page itself when workers cannot run MediaPipe.
+import { Detector } from './detector.js';
 
-// Downloads a model while reporting progress (0..1).
-async function fetchModel(url, onProgress) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Téléchargement du modèle impossible (${res.status})`);
-  const total = Number(res.headers.get('content-length')) || 0;
-  if (!res.body || !total) {
-    const buf = new Uint8Array(await res.arrayBuffer());
-    onProgress(1);
-    return buf;
-  }
-  const reader = res.body.getReader();
-  const chunks = [];
-  let got = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    got += value.length;
-    onProgress(got / total);
-  }
-  const out = new Uint8Array(got);
-  let o = 0;
-  for (const c of chunks) {
-    out.set(c, o);
-    o += c.length;
-  }
-  return out;
-}
+const SIZE = 640; // detection image size (the models work on small images)
 
 export class Tracker {
   constructor() {
-    this.hands = null;
-    this.segmenter = null;
-    this.pose = null;
-    this.lastTs = 0;
+    this.worker = null;
+    this.local = null;
+    this.busy = false;
+    this.latest = null;
+    this.fresh = false;
     this.mask = null;
-    this.segEvery = 1;
-    this.frameNo = 0;
-    this.detectMs = 16;
+    this.maskFresh = false;
+    this.pose = undefined;
+    this.ready = false;
+    this.hasPose = false;
+    this.hasSeg = false;
+    this.detectFps = 0;
+    this.id = 0;
   }
 
   async load(onProgress = () => {}) {
-    const progress = { wasm: 0, hand: 0, pose: 0, seg: 0 };
-    const report = () => onProgress(progress.wasm * 0.1 + progress.hand * 0.45 + progress.pose * 0.35 + progress.seg * 0.1);
-    const vision = await import(`${MP_BASE}/vision_bundle.mjs`);
-    const fileset = await vision.FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
-    progress.wasm = 1;
-    report();
-    const [handBuf, poseBuf, segBuf] = await Promise.all([
-      fetchModel(HAND_MODEL, (p) => ((progress.hand = p), report())),
-      fetchModel(POSE_MODEL, (p) => ((progress.pose = p), report())).catch(() => null),
-      fetchModel(SEG_MODEL, (p) => ((progress.seg = p), report())).catch(() => null),
-    ]);
-    const create = async (Task, options) => {
+    if (typeof Worker === 'function' && typeof createImageBitmap === 'function') {
       try {
-        return await Task.createFromOptions(fileset, { ...options, baseOptions: { ...options.baseOptions, delegate: 'GPU' } });
-      } catch {
-        return Task.createFromOptions(fileset, { ...options, baseOptions: { ...options.baseOptions, delegate: 'CPU' } });
-      }
-    };
-    this.hands = await create(vision.HandLandmarker, {
-      baseOptions: { modelAssetBuffer: handBuf },
-      runningMode: 'VIDEO',
-      numHands: 2,
-      minHandDetectionConfidence: 0.55,
-      minHandPresenceConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
-    // Body points are optional: without them the hands still work.
-    if (poseBuf) {
-      try {
-        this.pose = await create(vision.PoseLandmarker, {
-          baseOptions: { modelAssetBuffer: poseBuf },
-          runningMode: 'VIDEO',
-          numPoses: 1,
-          minPoseDetectionConfidence: 0.5,
-          minPosePresenceConfidence: 0.5,
-          minTrackingConfidence: 0.5,
-        });
+        await this.#loadWorker(onProgress);
+        this.ready = true;
+        return;
       } catch (err) {
-        console.warn('Points du corps indisponibles', err);
+        console.warn('Détection dans un worker impossible, détection sur la page.', err);
+        this.worker?.terminate();
+        this.worker = null;
       }
     }
-    if (segBuf) {
-      try {
-        this.segmenter = await create(vision.ImageSegmenter, {
-          baseOptions: { modelAssetBuffer: segBuf },
-          runningMode: 'VIDEO',
-          outputCategoryMask: false,
-          outputConfidenceMasks: true,
-        });
-      } catch (err) {
-        console.warn('Segmentation indisponible', err);
-      }
-    }
-    onProgress(1);
+    this.local = new Detector();
+    await this.local.load(onProgress);
+    this.hasPose = !!this.local.pose;
+    this.hasSeg = !!this.local.segmenter;
+    this.ready = true;
   }
 
-  // Runs detection on the current video frame.
-  // Returns { raw, mask, maskFresh, pose } (pose: undefined when not run this frame).
-  detect(video, wantSeg, wantPose) {
-    // The models work on small images anyway: hand them a 640 px copy so a
-    // 4K/8K camera does not cost three full-size uploads per frame.
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
-    const k = Math.min(1, 640 / Math.max(vw, vh));
+  #loadWorker(onProgress) {
+    return new Promise((resolve, reject) => {
+      const w = new Worker(new URL('./detect-worker.js', import.meta.url), { type: 'module' });
+      this.worker = w;
+      const timer = setTimeout(() => reject(new Error('délai dépassé')), 90000);
+      w.onerror = (e) => {
+        clearTimeout(timer);
+        reject(e.error || new Error(e.message || 'worker'));
+      };
+      w.onmessage = ({ data }) => {
+        if (data.type === 'progress') onProgress(data.p);
+        else if (data.type === 'ready') {
+          clearTimeout(timer);
+          this.hasPose = data.pose;
+          this.hasSeg = data.seg;
+          w.onmessage = ({ data: r }) => r.type === 'result' && this.#receive(r);
+          resolve();
+        } else if (data.type === 'error') {
+          clearTimeout(timer);
+          reject(new Error(data.message));
+        }
+      };
+      w.postMessage({ type: 'load', delegate: this.delegate || 'GPU' });
+    });
+  }
+
+  #receive(r) {
+    this.busy = false;
+    if (r.error) {
+      console.warn('Détection :', r.error);
+      return;
+    }
+    this.latest = r.raw;
+    this.fresh = true;
+    if (r.mask) {
+      this.mask = r.mask;
+      this.maskFresh = true;
+    }
+    if (r.pose !== undefined) this.pose = r.pose;
+    const now = performance.now();
+    if (this.lastResult) {
+      const fps = 1000 / Math.max(1, now - this.lastResult);
+      this.detectFps = this.detectFps ? this.detectFps * 0.9 + fps * 0.1 : fps;
+    }
+    this.lastResult = now;
+  }
+
+  #smallFrame(video) {
+    const k = Math.min(1, SIZE / Math.max(video.videoWidth, video.videoHeight));
+    const w = Math.max(1, Math.round(video.videoWidth * k));
+    const h = Math.max(1, Math.round(video.videoHeight * k));
     if (!this.small) {
       this.small = document.createElement('canvas');
-      this.sctx = this.small.getContext('2d', { alpha: false });
+      this.sctx = this.small.getContext('2d', { alpha: false, willReadFrequently: false });
     }
-    const sw = Math.round(vw * k);
-    const sh = Math.round(vh * k);
-    if (this.small.width !== sw || this.small.height !== sh) {
-      this.small.width = sw;
-      this.small.height = sh;
+    if (this.small.width !== w || this.small.height !== h) {
+      this.small.width = w;
+      this.small.height = h;
     }
-    this.sctx.drawImage(video, 0, 0, sw, sh);
-    const frame = this.small;
-    let ts = performance.now();
-    if (ts <= this.lastTs) ts = this.lastTs + 1;
-    this.lastTs = ts;
-    const t0 = performance.now();
-    const raw = [];
-    if (this.hands) {
-      const r = this.hands.detectForVideo(frame, ts);
-      for (let i = 0; i < (r.landmarks?.length || 0); i++) {
-        raw.push({
-          landmarks: r.landmarks[i],
-          world: r.worldLandmarks?.[i],
-          handedness: r.handednesses?.[i]?.[0]?.categoryName || r.handedness?.[i]?.[0]?.categoryName || '',
-        });
-      }
+    this.sctx.drawImage(video, 0, 0, w, h);
+    return this.small;
+  }
+
+  // Sends the current camera frame for detection (skipped while busy).
+  request(video, wantSeg, wantPose) {
+    if (!this.ready || this.busy) return;
+    const ts = performance.now();
+    if (this.worker) {
+      this.busy = true;
+      const id = ++this.id;
+      // Downscale on the GPU while copying the frame (cheap even for 4K/8K).
+      createImageBitmap(this.#smallFrame(video))
+        .then((bitmap) => this.worker.postMessage({ type: 'detect', id, bitmap, ts, wantSeg, wantPose }, [bitmap]))
+        .catch(() => (this.busy = false));
+      return;
     }
-    let maskFresh = false;
-    this.frameNo++;
-    // Body points every third frame: they move slower than fingers.
-    let pose;
-    if (wantPose && this.pose && this.frameNo % 3 === 0) {
-      const r = this.pose.detectForVideo(frame, ts);
-      pose = r.landmarks?.[0] || null;
-    }
-    if (wantSeg && this.segmenter && this.frameNo % this.segEvery === 0) {
-      this.segmenter.segmentForVideo(frame, ts, (res) => {
-        const masks = res.confidenceMasks;
-        if (!masks?.length) return;
-        // Multi-class models put the person in the last mask.
-        const m = masks[masks.length - 1];
-        const data = m.getAsFloat32Array();
-        if (!this.mask || this.mask.data.length !== data.length)
-          this.mask = { width: m.width, height: m.height, data: new Float32Array(data.length) };
-        this.mask.data.set(data);
-        maskFresh = true;
-        masks.forEach((x) => x.close());
-      });
-    }
-    // Adapt: on slow devices, segment every other frame.
-    const ms = performance.now() - t0;
-    this.detectMs = this.detectMs * 0.9 + ms * 0.1;
-    this.segEvery = this.detectMs > 32 ? 2 : 1;
-    return { raw, mask: wantSeg ? this.mask : null, maskFresh, pose };
+    const r = this.local.detect(this.#smallFrame(video), ts, wantSeg, wantPose);
+    this.#receive({ raw: r.raw, mask: r.mask, pose: r.pose });
+  }
+
+  // Latest results for the engine: raw hands only when new since last call.
+  take(wantSeg) {
+    const out = {
+      raw: this.fresh ? this.latest : null,
+      mask: wantSeg ? this.mask : null,
+      maskFresh: this.maskFresh,
+      pose: this.fresh ? this.pose : undefined,
+    };
+    this.fresh = false;
+    this.maskFresh = false;
+    return out;
+  }
+
+  reset() {
+    this.mask = null;
+    this.pose = undefined;
+    this.fresh = false;
   }
 
   get hasSegmentation() {
-    return !!this.segmenter;
+    return this.hasSeg;
   }
 }

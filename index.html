@@ -56,10 +56,11 @@
           <label class="row">
             <span>Qualité<small>La caméra donne la meilleure qualité qu’elle peut, jusqu’à celle choisie</small></span>
             <select name="quality">
-              <option value="720">HD (720p)</option>
-              <option value="1080">Full HD (1080p)</option>
-              <option value="2160">4K</option>
-              <option value="4320">8K</option>
+              <option value="smooth">Fluidité maximale (recommandé)</option>
+              <option value="720">HD 720p · 120 i/s</option>
+              <option value="1080">Full HD 1080p · 60 i/s</option>
+              <option value="2160">4K · 30 i/s</option>
+              <option value="4320">8K · 30 i/s</option>
             </select>
           </label>
           <label class="row toggle"
@@ -68,6 +69,10 @@
           /></label>
           <label class="row toggle"><span>Effet miroir (caméra avant)</span><input type="checkbox" name="mirror" /></label>
           <label class="row toggle"><span>Vignette cinéma</span><input type="checkbox" name="cinema" /></label>
+          <label class="row toggle"
+            ><span>Afficher les images par seconde<small>Compteur en haut de l’écran de la caméra</small></span
+            ><input type="checkbox" name="fps"
+          /></label>
           <label class="row toggle"
             ><span>Mode économie<small>Moins de particules, pour les téléphones plus anciens</small></span
             ><input type="checkbox" name="eco"
@@ -129,6 +134,7 @@
         <button class="icon-btn" id="btn-back" aria-label="Choisir un autre pouvoir"><span data-icon="grid"></span></button>
         <div class="power-pill" id="power-pill"></div>
         <div class="rec-chip" id="rec-chip" hidden><i></i><span id="rec-time">00:00</span></div>
+        <div class="fps" id="fps" hidden></div>
       </div>
 
       <div class="studio-side">

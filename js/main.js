@@ -36,9 +36,10 @@ paintIcons();
 const $ = (id) => document.getElementById(id);
 
 // ---------- Settings ----------
-const SETTINGS_KEY = 'magic-cam-settings-v2';
+const SETTINGS_KEY = 'magic-cam-settings-v3';
 const DEFAULTS = {
-  quality: '2160',
+  quality: 'smooth',
+  fps: false,
   maxDuration: '60',
   countdown: '3',
   mirror: true,
@@ -52,7 +53,12 @@ const DEFAULTS = {
 };
 const settings = (() => {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    if (saved) return { ...DEFAULTS, ...JSON.parse(saved) };
+    // Keep the earlier answers, but switch to the new smooth default.
+    const old = JSON.parse(localStorage.getItem('magic-cam-settings-v2') || '{}');
+    delete old.quality;
+    return { ...DEFAULTS, ...old };
   } catch {
     return { ...DEFAULTS };
   }
@@ -64,7 +70,10 @@ const saveSettings = () => {
     /* private mode: settings only last for this visit */
   }
 };
-const maxSideFor = (q) => ({ 720: 1280, 1080: 1920, 2160: 3840, 4320: 7680 })[q] || 3840;
+// "smooth": image as sharp as the screen shows it, camera at up to 120 i/s.
+const screenSide = () => Math.round(Math.max(screen.width, screen.height) * Math.min(2, window.devicePixelRatio || 1));
+const maxSideFor = (q) => ({ 720: 1280, 1080: 1920, 2160: 3840, 4320: 7680 })[q] || Math.min(1920, Math.max(1280, screenSide()));
+const cameraFps = (q) => (q === 'smooth' || q === '720' ? 120 : q === '1080' ? 60 : 30);
 
 // ---------- Core objects ----------
 const video = $('cam');
@@ -225,6 +234,7 @@ function updateToggles() {
   $('btn-sound').querySelector('[data-icon]').innerHTML = svg(settings.sound ? 'sound' : 'mute');
   $('btn-points').classList.toggle('on', settings.points);
   $('vignette').hidden = !settings.cinema;
+  $('fps').hidden = !settings.fps;
 }
 
 async function startCamera() {
@@ -232,14 +242,14 @@ async function startCamera() {
   if (!window.isSecureContext) throw Object.assign(new Error('insecure'), { name: 'InsecureContext' });
   if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error('unsupported'), { name: 'Unsupported' });
   const portrait = window.innerHeight > window.innerWidth;
-  const long = maxSideFor(settings.quality);
+  const long = settings.quality === 'smooth' ? 1920 : maxSideFor(settings.quality);
   const short = Math.round((long * 9) / 16);
   // "ideal" values: the camera gives its best resolution up to the chosen one.
   const videoC = {
     facingMode: facing,
     width: { ideal: portrait ? short : long },
     height: { ideal: portrait ? long : short },
-    frameRate: { ideal: 60 },
+    frameRate: { ideal: cameraFps(settings.quality) },
   };
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -307,6 +317,9 @@ async function openStudio(id) {
   $('loading').hidden = true;
   engine.tracker.reset();
   engine.body.reset();
+  tracker.reset();
+  frameTimes.length = 0;
+  lastFrame = 0;
   cancelAnimationFrame(loopId);
   loopId = requestAnimationFrame(loop);
 }
@@ -327,27 +340,56 @@ function loop(now) {
   loopId = requestAnimationFrame(loop);
   if (video.readyState < 2 || !video.videoWidth) return;
   const fx = engine.effect;
-  let det = { raw: null, mask: tracker.mask, maskFresh: false };
-  // Detect once per new camera frame; in between, the engine predicts motion.
+  const wantSeg = !!fx?.needs?.seg;
+  // Each new camera frame goes to the detection worker; rendering never waits
+  // for it, and the engine predicts the hands' motion in between.
   if (video.currentTime !== lastVideoTime) {
     lastVideoTime = video.currentTime;
-    try {
-      det = tracker.detect(video, !!fx?.needs?.seg, settings.points || !!fx?.needs?.pose);
-    } catch (err) {
-      console.warn(err);
-    }
+    tracker.request(video, wantSeg, settings.points || !!fx?.needs?.pose);
   }
+  const det = tracker.take(wantSeg);
+  adaptResolution(now);
   engine.frame({
     source: video,
     sw: video.videoWidth,
     sh: video.videoHeight,
     mirror: settings.mirror && facing === 'user',
     raw: det.raw,
-    mask: fx?.needs?.seg ? det.mask : null,
+    mask: det.mask,
     maskFresh: det.maskFresh,
     pose: det.pose,
     now,
   });
+}
+
+// ---------- Smoothness: frame rate and adaptive resolution ----------
+// The loop runs at the screen's refresh rate (60, 90, 120, 144 Hz…). If the
+// device cannot keep up, the image resolution is lowered a little until it
+// does, then raised again when there is room. Never while recording.
+const frameTimes = [];
+let lastFrame = 0;
+let lastAdapt = 0;
+let fpsShown = 0;
+function adaptResolution(now) {
+  if (lastFrame) {
+    frameTimes.push(now - lastFrame);
+    if (frameTimes.length > 120) frameTimes.shift();
+  }
+  lastFrame = now;
+  if (settings.fps && now - fpsShown > 500 && frameTimes.length > 10) {
+    fpsShown = now;
+    const recent = frameTimes.slice(-30);
+    const fps = 1000 / (recent.reduce((s, x) => s + x, 0) / recent.length);
+    $('fps').textContent = `${Math.round(fps)} i/s · détection ${Math.round(tracker.detectFps)} i/s`;
+  }
+  if (now - lastAdapt < 1500 || frameTimes.length < 60 || recorder.recording) return;
+  lastAdapt = now;
+  // Share of dropped frames: intervals much longer than the usual one.
+  const sorted = [...frameTimes].sort((a, b) => a - b);
+  const usual = sorted[Math.floor(sorted.length * 0.25)];
+  const dropped = frameTimes.filter((t) => t > usual * 1.6).length / frameTimes.length;
+  if (dropped > 0.2 && engine.renderScale > 0.45) engine.renderScale = Math.max(0.45, engine.renderScale * 0.85);
+  else if (dropped < 0.04 && engine.renderScale < 1) engine.renderScale = Math.min(1, engine.renderScale * 1.1);
 }
 
 // ---------- Recording: tap -> 3, 2, 1 -> record ----------

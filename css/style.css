@@ -1140,3 +1140,21 @@ body.in-studio .tabbar {
 body.in-studio {
   overflow: hidden;
 }
+
+.fps {
+  position: absolute;
+  right: 12px;
+  top: calc(16px + var(--safe-t));
+  padding: 4px 10px;
+  border-radius: 8px;
+  font:
+    600 0.72rem/1.4 ui-monospace,
+    Menlo,
+    monospace;
+  color: #9dff9d;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+#stage {
+  will-change: transform;
+}
