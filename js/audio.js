@@ -134,6 +134,23 @@ export class SoundFx {
         tone('sine', f * 2, f * 2.002, 0.005, 0.02, 0.6, 0.05);
         break;
       }
+      case 'saberOn':
+        tone('sawtooth', 70, 140, 0.02, 0.15, 0.25, 0.25);
+        noise('bandpass', 600, 3, 0.02, 0.1, 0.25, 0.4, 2400);
+        break;
+      case 'saberOff':
+        tone('sawtooth', 140, 50, 0.01, 0.1, 0.25, 0.22);
+        break;
+      case 'swing':
+        noise('bandpass', 500, 2.5, 0.03, 0.05, 0.25, 0.5, 1400);
+        tone('sawtooth', 110, 150, 0.03, 0.05, 0.2, 0.12);
+        break;
+      case 'tick':
+        tone('sine', 880, 880, 0.002, 0.05, 0.12, 0.25);
+        break;
+      case 'go':
+        tone('sine', 1320, 1320, 0.002, 0.08, 0.3, 0.3);
+        break;
       case 'shutter':
         noise('highpass', 3000, 0.7, 0.001, 0.01, 0.05, 0.5);
         break;
@@ -165,6 +182,24 @@ export class SoundFx {
         src.connect(crackle).connect(cg).connect(g);
         src.start();
         l = { g, nodes: [src], peak: 0.5 };
+      } else if (name === 'saber') {
+        // Classic saber hum: two detuned low saws through a resonant filter.
+        const o1 = ctx.createOscillator();
+        const o2 = ctx.createOscillator();
+        o1.type = 'sawtooth';
+        o2.type = 'sawtooth';
+        o1.frequency.value = 90;
+        o2.frequency.value = 91.5;
+        const f = ctx.createBiquadFilter();
+        f.type = 'lowpass';
+        f.frequency.value = 300;
+        f.Q.value = 6;
+        o1.connect(f);
+        o2.connect(f);
+        f.connect(g);
+        o1.start();
+        o2.start();
+        l = { g, nodes: [o1, o2], peak: 0.25 };
       } else {
         const o1 = ctx.createOscillator();
         const o2 = ctx.createOscillator();

@@ -65,10 +65,35 @@ export class HandTracker {
 
   reset() {
     this.tracks = [];
+    this.lastNow = 0;
+  }
+
+  // Predicts hand positions between detections from the palm velocity
+  // (at most a few frames ahead, so a wrong guess never shows).
+  advance(dt) {
+    for (const t of this.tracks) {
+      if (!t.visible || !t.palm) continue;
+      t.ahead = (t.ahead || 0) + dt;
+      if (t.ahead > 0.06) continue;
+      const dx = t.vel.x * dt;
+      const dy = t.vel.y * dt;
+      for (const p of t.lm) {
+        p.x += dx;
+        p.y += dy;
+      }
+      t.palm.x += dx;
+      t.palm.y += dy;
+      t.pinchPoint.x += dx;
+      t.pinchPoint.y += dy;
+    }
   }
 
   // raw: [{ landmarks, world, handedness }] with normalised coordinates.
   update(raw, { width: W, height: H, mirror, dt, now }) {
+    // Time between detections (not between rendered frames): filters and
+    // velocities must follow the camera's rhythm.
+    if (this.lastNow) dt = (now - this.lastNow) / 1000;
+    this.lastNow = now;
     dt = clamp(dt, 1 / 240, 0.1);
     const inputs = raw.map((r) => {
       const lm = r.landmarks.map((p) => ({ x: (mirror ? 1 - p.x : p.x) * W, y: p.y * H, z: p.z * W }));
@@ -135,6 +160,7 @@ export class HandTracker {
 
   #apply(t, input, dt, now) {
     t.visible = true;
+    t.ahead = 0;
     t.label = input.label;
     t.presence = Math.min(1, t.presence + dt * 6);
     t.lm = input.lm.map((p, i) => ({
@@ -150,12 +176,14 @@ export class HandTracker {
     const lm = t.lm;
     const w = t.world;
 
-    const prevPalm = t.palm;
+    // Velocity from detected positions only (the predicted ones would skew it).
+    const prevPalm = t.rawPalm;
     const ids = [0, 5, 9, 13, 17];
     t.palm = {
       x: ids.reduce((s, i) => s + lm[i].x, 0) / 5,
       y: ids.reduce((s, i) => s + lm[i].y, 0) / 5,
     };
+    t.rawPalm = { ...t.palm };
     if (prevPalm) {
       const vx = (t.palm.x - prevPalm.x) / dt;
       const vy = (t.palm.y - prevPalm.y) / dt;

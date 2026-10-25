@@ -429,3 +429,50 @@ export function palmRing(ctx, hand, radius, segments = 64, lift = 0, origin) {
     else ctx.moveTo(p.x, p.y);
   }
 }
+
+// Distance along (dx, dy) (unit vector) from (x, y) to the edge of a W x H frame.
+export function rayToEdge(x, y, dx, dy, W, H) {
+  let t = Infinity;
+  if (dx > 1e-6) t = Math.min(t, (W - x) / dx);
+  if (dx < -1e-6) t = Math.min(t, -x / dx);
+  if (dy > 1e-6) t = Math.min(t, (H - y) / dy);
+  if (dy < -1e-6) t = Math.min(t, -y / dy);
+  return Math.max(0, t === Infinity ? Math.max(W, H) : t);
+}
+
+// An energy beam with wavy, flickering layers (outer glow -> white core).
+export function drawBeam(ctx, x1, y1, x2, y2, width, rgb, alpha, time, layers) {
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  if (len < 1 || width <= 0 || alpha <= 0) return;
+  const dx = (x2 - x1) / len;
+  const dy = (y2 - y1) / len;
+  const nx = -dy;
+  const ny = dx;
+  const steps = Math.max(8, Math.min(48, (len / 25) | 0));
+  const [r, g, b] = rgb;
+  const passes = layers || [
+    [2.6, `rgba(${r},${g},${b},${0.12 * alpha})`, 0.35],
+    [1.6, `rgba(${r},${g},${b},${0.28 * alpha})`, 0.25],
+    [0.95, `rgba(${(r + 255) >> 1},${(g + 255) >> 1},${(b + 255) >> 1},${0.6 * alpha})`, 0.12],
+    [0.45, `rgba(255,255,255,${0.95 * alpha})`, 0.04],
+  ];
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const [k, color, wobble] of passes) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width * k;
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const s = i / steps;
+      // Waves travel along the beam and fade at the source.
+      const w = noise1(s * 6 - time * 9 + k * 13) * width * wobble * Math.min(1, s * 4);
+      const x = x1 + dx * len * s + nx * w;
+      const y = y1 + dy * len * s + ny * w;
+      if (i) ctx.lineTo(x, y);
+      else ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
