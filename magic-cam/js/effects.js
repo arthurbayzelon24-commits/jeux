@@ -24,6 +24,10 @@ import { blackholeEffect } from './fx/blackhole.js';
 import { wingsEffect } from './fx/wings.js';
 import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
+import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
+import { planetEffect, crystalBallEffect, auroraEffect, starsEffect, cometEffect, rainbowEffect } from './fx/pack-cosmic.js';
+import { bubblesEffect, confettiEffect, coinsEffect, snowEffect, firefliesEffect, wispsEffect } from './fx/pack-fun.js';
+import { shieldEffect, neonEffect, matrixEffect, webEffect, laserEyesEffect, haloEffect } from './fx/pack-tech.js';
 
 // Order shown on the powers screen. `charge`: the gesture that charges the
 // power up to its final blast (powers without it have no charge). `tint` colours the icon and the card,
@@ -55,6 +59,30 @@ export const EFFECTS = [
   { id: 'teleport', make: teleportEffect, tint: '#2fe0d0', gesture: 'Poing puis main ouverte' },
   { id: 'telekinesis', make: telekinesisEffect, tint: '#3fc1ff', gesture: 'Main ouverte, pincez pour attraper' },
   { id: 'floating', make: floatingEffect, tint: '#8fb8ff', gesture: 'Paume vers le haut' },
+  { id: 'dragon', make: dragonEffect, tint: '#ff7020', gesture: 'Guidez-le avec l’index' },
+  { id: 'tornado', make: tornadoEffect, tint: '#c8d7e6', gesture: 'Main ouverte', charge: 'open' },
+  { id: 'meteor', make: meteorEffect, tint: '#ff8c32', gesture: 'Levez la main', charge: 'raised' },
+  { id: 'lava', make: lavaEffect, tint: '#ff5a14', gesture: 'Main ouverte', charge: 'open' },
+  { id: 'sun', make: sunEffect, tint: '#ffc850', gesture: 'Main ouverte', charge: 'open' },
+  { id: 'sonic', make: sonicEffect, tint: '#dcebff', gesture: 'Tapez dans vos mains' },
+  { id: 'shield', make: shieldEffect, tint: '#50beff', gesture: 'Paume face à la caméra', charge: 'open' },
+  { id: 'lasereyes', make: laserEyesEffect, tint: '#ff2828', gesture: 'Regardez, visez avec l’index' },
+  { id: 'web', make: webEffect, tint: '#e6e6f0', gesture: 'Pointez l’index pour tirer' },
+  { id: 'neon', make: neonEffect, tint: '#ff3cc8', gesture: 'Pincez pour dessiner' },
+  { id: 'matrix', make: matrixEffect, tint: '#50ff78', gesture: 'Écartez le code avec les mains' },
+  { id: 'halo', make: haloEffect, tint: '#ffd76e', gesture: 'Regardez la caméra' },
+  { id: 'planet', make: planetEffect, tint: '#78beff', gesture: 'Main ouverte' },
+  { id: 'crystalball', make: crystalBallEffect, tint: '#aa6eff', gesture: 'Main ouverte' },
+  { id: 'aurora', make: auroraEffect, tint: '#50ffa0', gesture: 'Bougez la main, levez-la' },
+  { id: 'stars', make: starsEffect, tint: '#fff0c8', gesture: 'Pointez l’index' },
+  { id: 'comet', make: cometEffect, tint: '#ffb450', gesture: 'Bougez les doigts' },
+  { id: 'rainbow', make: rainbowEffect, tint: '#ffe63c', gesture: 'Écartez les deux mains' },
+  { id: 'bubbles', make: bubblesEffect, tint: '#a0d8ff', gesture: 'Main ouverte, crevez-les' },
+  { id: 'confetti', make: confettiEffect, tint: '#ff4d6d', gesture: 'Poing puis main ouverte' },
+  { id: 'coins', make: coinsEffect, tint: '#ffc83c', gesture: 'Pincez les doigts' },
+  { id: 'snow', make: snowEffect, tint: '#e6f4ff', gesture: 'Soufflez la neige avec la main' },
+  { id: 'fireflies', make: firefliesEffect, tint: '#d2ff5a', gesture: 'Ouvrez les mains' },
+  { id: 'wisps', make: wispsEffect, tint: '#5ac8ff', gesture: 'Main ouverte' },
 ];
 
 const instances = new Map();

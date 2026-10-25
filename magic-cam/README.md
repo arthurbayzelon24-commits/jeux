@@ -4,9 +4,9 @@ Site web gratuit qui utilise la caméra du téléphone ou du PC pour se filmer a
 
 ## Principe
 
-1. L’accueil montre uniquement les **25 pouvoirs**, en deux colonnes de cartes dorées illustrées (rendues avec les vrais effets, voir `tools/`).
+1. L’accueil montre uniquement les **50 pouvoirs**, en deux colonnes de cartes dorées illustrées (rendues avec les vrais effets, voir `tools/`).
 2. On touche un pouvoir : la caméra s’ouvre, en plein écran, avec ce pouvoir. La rangée d’icônes en bas permet d’en changer.
-3. **Pouvoirs à charge** (**Interface holographique**, Kamehameha, Rayon de feu, Sabre laser, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Magie des ombres, Glace) : tant qu’on garde leur geste, une grande jauge circulaire se remplit autour de la main, l’effet grossit, l’écran s’illumine et vibre, puis au bout d’environ 6 secondes un **déclenchement final** se produit (flash, ondes de choc, rayons et éclairs).
+3. **Pouvoirs à charge** (**Interface holographique**, Kamehameha, Rayon de feu, Sabre laser, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Magie des ombres, Glace, Tornade, Pluie de météorites, Orbe de lave, Mini soleil, Bouclier d’énergie) : tant qu’on garde leur geste, une grande jauge circulaire se remplit autour de la main, l’effet grossit, l’écran s’illumine et vibre, puis au bout d’environ 6 secondes un **déclenchement final** se produit (flash, ondes de choc, rayons et éclairs).
 4. L’écran de chargement n’apparaît qu’à la toute première ouverture (téléchargement des modèles).
 5. Bouton rouge : **3, 2, 1**, puis enregistrement.
 
@@ -16,7 +16,7 @@ Aucun message pendant le tournage. Au premier lancement, une seule question : «
 
 ## Pouvoirs
 
-Kamehameha, Rayon de feu, Sabre laser, Portail magique, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Galaxie spirale, Cœur d’amour, Pétales de sakura, Papillons, Bassin de koïs, Feu d’artifice, Pouvoir de glace, Maîtrise de l’eau, Magie des ombres, Aura magique, Ailes d’ange, Téléportation, Télékinésie, Objets flottants. Le geste de chaque pouvoir est écrit sous sa carte ; chaque pouvoir a plusieurs couleurs (bouton rond à droite).
+Kamehameha, Rayon de feu, Sabre laser, Portail magique, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Galaxie spirale, Cœur d’amour, Pétales de sakura, Papillons, Bassin de koïs, Feu d’artifice, Pouvoir de glace, Maîtrise de l’eau, Magie des ombres, Aura magique, Ailes d’ange, Téléportation, Télékinésie, Objets flottants, Dragon de feu, Tornade, Pluie de météorites, Orbe de lave, Mini soleil, Clap sonique, Bouclier d’énergie, Yeux laser, Lance-toile, Dessin néon, Pluie de code, Auréole d’ange, Planète, Boule de cristal, Aurore boréale, Étoiles filantes, Doigts comètes, Arc-en-ciel, Bulles de savon, Confettis, Pluie de pièces, Neige magique, Lucioles, Feux follets. Le geste de chaque pouvoir est écrit sous sa carte ; chaque pouvoir a plusieurs couleurs (bouton rond à droite).
 
 ## Interface holographique (style armure high-tech)
 
@@ -38,7 +38,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 ## Fonctions
 
 - **Fluidité** : l’image et les pouvoirs sont dessinés à la fréquence de l’écran (60, 90, 120 ou 144 Hz : jusqu’à environ 140 images/s sur un écran 144 Hz). La détection des mains et du corps tourne dans un **worker** (un fil séparé), donc l’affichage n’attend jamais l’IA ; entre deux images de la caméra, la position des mains est prédite. Si l’appareil ne suit pas, la résolution baisse un peu toute seule, puis remonte (jamais pendant un enregistrement). Compteur d’images par seconde activable dans les Paramètres.
-- **Priorité « Fluidité maximale »** (par défaut) : la caméra est poussée à son plus grand nombre d’images par seconde (60, 120 ou 240 selon l’appareil), quitte à baisser un peu la définition, car en 4K les caméras ne filment qu’à 30 i/s. Si la caméra reste plus lente que l’écran, une **transition douce** fait glisser l’image d’une prise de vue à la suivante au lieu de la faire sauter. En « Netteté maximale », la définition choisie (jusqu’à 32K demandés) passe en premier. Effets en qualité Ultra avec halo lumineux. Le compteur (Paramètres) affiche les images/s de l’écran, de la caméra et de la détection.
+- **Priorité « Fluidité maximale »** (par défaut) : la caméra vise d’abord **100 images par seconde ou plus** (120 ou 240 selon l’appareil) en prenant la plus grande définition qui l’atteint (1080p, 720p, 540p, puis 360p) ; si la caméra n’en est pas capable, elle prend la définition la plus rapide à 50-60 i/s. En 4K, les caméras ne filment qu’à 30 i/s. Si la caméra reste plus lente que l’écran, une **transition douce** fait glisser l’image d’une prise de vue à la suivante au lieu de la faire sauter. En « Netteté maximale », la définition choisie (jusqu’à 32K demandés) passe en premier. Effets en qualité Ultra avec halo lumineux. Le compteur (Paramètres) affiche les images/s de l’écran, de la caméra et de la détection.
 - Enregistrement vidéo avec compte à rebours (3, 2, 1 par défaut), micro et sons des pouvoirs synthétisés ; MP4 quand le navigateur le permet, sinon WebM. Photo.
 - Télécharger, Partager (TikTok, Instagram, WhatsApp… depuis le téléphone), Mes vidéos (stockées dans le navigateur).
 - Caméra avant / arrière, miroir, vignette cinéma, mode économie.

@@ -230,6 +230,12 @@ function pose(W, H) {
   set(16, 0.14, 0.3);
   set(13, 0.8, 0.45);
   set(14, 0.2, 0.45);
+  // Face: nose, eyes, ears (on the head of the person shape).
+  set(0, 0.5, 0.37);
+  set(2, 0.465, 0.32);
+  set(5, 0.535, 0.32);
+  set(7, 0.41, 0.33);
+  set(8, 0.59, 0.33);
   return pts;
 }
 
@@ -278,6 +284,52 @@ function scene(id, W, H) {
       frames: 60,
     },
     ice: { hands: one('open', 0.5, 0.95), frames: 55 },
+    dragon: {
+      hands: (t) => [hand('point', W * (0.5 + Math.cos(t * 3) * 0.25), H * (0.75 + Math.sin(t * 6) * 0.1), L * 0.8, W, H)],
+      frames: 70,
+    },
+    tornado: { hands: one('open', 0.5, 1.02), frames: 60 },
+    meteor: { hands: one('open', 0.3, 0.55), frames: 90 },
+    lava: { hands: one('open', 0.5, 1.0), frames: 60 },
+    sun: { hands: one('open', 0.5, 1.0), frames: 50 },
+    sonic: {
+      hands: (t) => {
+        const d = Math.max(0.12, 0.3 - t * 0.6);
+        return [
+          hand('open', W * (0.5 - d), H * 0.8, L * 0.9, W, H, { roll: -1.2 }),
+          hand('open', W * (0.5 + d), H * 0.8, L * 0.9, W, H, { roll: 1.2, flip: true }),
+        ];
+      },
+      frames: 32,
+      trigger: 22,
+    },
+    shield: { hands: one('open', 0.5, 0.85), frames: 40 },
+    lasereyes: { hands: () => [], frames: 30, person: true, pose: true },
+    halo: { hands: () => [], frames: 40, person: true, pose: true },
+    web: { hands: (t) => [hand('point', W * 0.3, H * 0.95, L, W, H, { roll: 0.5 + (t > 0.5 ? 0.5 : 0) })], frames: 40 },
+    neon: {
+      hands: (t) => [hand('pinch', W * (0.5 + Math.cos(t * 3) * 0.25), H * (0.85 + Math.sin(t * 6) * 0.12), L * 0.8, W, H)],
+      frames: 70,
+    },
+    matrix: { hands: one('open', 0.5, 0.9), frames: 60 },
+    planet: { hands: one('open', 0.5, 1.0), frames: 40 },
+    crystalball: { hands: one('open', 0.5, 1.0), frames: 50 },
+    aurora: { hands: one('open', 0.6, 0.8), frames: 50 },
+    stars: { hands: one('point', 0.35, 0.95, { roll: 0.4 }), frames: 50 },
+    comet: { hands: (t) => [hand('open', W * (0.3 + t * 0.25), H * (0.85 - Math.sin(t * 3) * 0.1), L, W, H, { roll: 0.2 })], frames: 45 },
+    rainbow: {
+      hands: () => [
+        hand('open', W * 0.18, H * 0.9, L * 0.8, W, H, { roll: -0.3 }),
+        hand('open', W * 0.82, H * 0.9, L * 0.8, W, H, { roll: 0.3, flip: true }),
+      ],
+      frames: 40,
+    },
+    bubbles: { hands: one('open', 0.5, 0.95), frames: 120 },
+    confetti: { hands: (t) => [hand(t < 0.6 ? 'fist' : 'open', W * 0.5, H * 0.95, L, W, H)], frames: 40 },
+    coins: { hands: one('pinch', 0.55, 0.65), frames: 70 },
+    snow: { hands: one('open', 0.5, 0.95), frames: 120 },
+    fireflies: { hands: one('open', 0.5, 0.95), frames: 120 },
+    wisps: { hands: one('open', 0.5, 0.95), frames: 60 },
   };
   return S[id] || { hands: one('open', 0.5, 0.92), frames: 50 };
 }
