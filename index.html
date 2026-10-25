@@ -54,7 +54,19 @@
         <fieldset>
           <legend>Image</legend>
           <label class="row">
-            <span>Qualité<small>La caméra donne la meilleure qualité qu’elle peut, jusqu’à celle choisie</small></span>
+            <span
+              >Priorité<small
+                >Les caméras ne filment qu’à 30 i/s en 4K : la fluidité baisse un peu la définition pour aller jusqu’à 60, 120 ou 240
+                i/s</small
+              ></span
+            >
+            <select name="priority">
+              <option value="smooth">Fluidité maximale (recommandé)</option>
+              <option value="sharp">Netteté maximale</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Définition<small>Utilisée en « Netteté maximale » : la caméra donne le mieux qu’elle peut</small></span>
             <select name="quality">
               <option value="32k">32K · maximum (recommandé)</option>
               <option value="16k">16K</option>
@@ -90,6 +102,13 @@
           <label class="row toggle"
             ><span>Points de suivi<small>Points sur les mains et le corps détectés par la caméra</small></span
             ><input type="checkbox" name="points"
+          /></label>
+          <label class="row toggle"
+            ><span
+              >Transition douce entre les images<small
+                >Quand la caméra est plus lente que l’écran, votre image glisse au lieu de sauter</small
+              ></span
+            ><input type="checkbox" name="frameBlend"
           /></label>
           <label class="row toggle"><span>Effet miroir (caméra avant)</span><input type="checkbox" name="mirror" /></label>
           <label class="row toggle"><span>Vignette cinéma</span><input type="checkbox" name="cinema" /></label>

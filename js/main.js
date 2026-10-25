@@ -37,8 +37,11 @@ paintIcons();
 const $ = (id) => document.getElementById(id);
 
 // ---------- Settings ----------
-const SETTINGS_KEY = 'magic-cam-settings-v4';
+const SETTINGS_KEY = 'magic-cam-settings-v5';
 const DEFAULTS = {
+  // smooth: the camera's highest frame rate first; sharp: its highest resolution.
+  priority: 'smooth',
+  frameBlend: true,
   quality: '32k',
   fpsTarget: '250',
   fxQuality: 'ultra',
@@ -60,8 +63,13 @@ const settings = (() => {
     const saved = localStorage.getItem(SETTINGS_KEY);
     if (saved) return { ...DEFAULTS, ...JSON.parse(saved) };
     // Keep the earlier answers, but switch to the new smooth default.
-    const old = JSON.parse(localStorage.getItem('magic-cam-settings-v3') || localStorage.getItem('magic-cam-settings-v2') || '{}');
-    delete old.quality;
+    const old = JSON.parse(
+      localStorage.getItem('magic-cam-settings-v4') ||
+        localStorage.getItem('magic-cam-settings-v3') ||
+        localStorage.getItem('magic-cam-settings-v2') ||
+        '{}',
+    );
+    delete old.priority;
     if (old.eco) old.fxQuality = 'eco';
     delete old.eco;
     return { ...DEFAULTS, ...old };
@@ -91,7 +99,8 @@ const video = $('cam');
 const stage = $('stage');
 const audio = new SoundFx();
 audio.setEnabled(settings.sound);
-const engine = new Engine(stage, { audio, settings, maxSide: maxSideFor(settings.quality) });
+const renderSide = () => (settings.priority === 'sharp' ? maxSideFor(settings.quality) : maxSideFor('smooth'));
+const engine = new Engine(stage, { audio, settings, maxSide: renderSide() });
 const recorder = new CanvasRecorder(stage);
 const tracker = new Tracker();
 // Handle for debugging from the browser console.
@@ -102,6 +111,8 @@ let stream = null;
 let facing = 'user';
 let loopId = 0;
 let lastVideoTime = -1;
+let lastCamFrame = 0;
+let camInterval = 0;
 const colorIndex = {};
 let currentEffect = (() => {
   try {
@@ -253,7 +264,8 @@ async function startCamera() {
   if (!window.isSecureContext) throw Object.assign(new Error('insecure'), { name: 'InsecureContext' });
   if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error('unsupported'), { name: 'Unsupported' });
   const portrait = window.innerHeight > window.innerWidth;
-  const long = settings.quality === 'smooth' ? 1920 : maxSideFor(settings.quality);
+  const smooth = settings.priority !== 'sharp';
+  const long = smooth || settings.quality === 'smooth' ? 1920 : maxSideFor(settings.quality);
   const short = Math.round((long * 9) / 16);
   // "ideal" values: the camera gives its best resolution up to the chosen one.
   const videoC = {
@@ -272,10 +284,32 @@ async function startCamera() {
     // Microphone refused or missing: continue with the camera only.
     stream = await navigator.mediaDevices.getUserMedia({ video: videoC, audio: false });
   }
+  // Fluidity first: push the camera to its highest frame rate (60, 120, 240 i/s),
+  // lowering the resolution a step if that is what it takes.
+  if (smooth) await boostFrameRate(stream.getVideoTracks()[0], portrait);
   video.srcObject = stream;
   await video.play().catch(() => {});
   if (!video.videoWidth) await new Promise((r) => video.addEventListener('loadedmetadata', r, { once: true }));
   audio.attachMic(stream);
+}
+
+async function boostFrameRate(track, portrait) {
+  const caps = track?.getCapabilities?.() || {};
+  const max = Math.min(Number(settings.fpsTarget) || 250, caps.frameRate?.max || 0);
+  if (!max || max <= (track.getSettings().frameRate || 0)) return;
+  for (const long of [1920, 1280, 960]) {
+    const short = Math.round((long * 9) / 16);
+    try {
+      await track.applyConstraints({
+        width: { ideal: portrait ? short : long },
+        height: { ideal: portrait ? long : short },
+        frameRate: { min: Math.min(50, max), ideal: max },
+      });
+      if ((track.getSettings().frameRate || 0) >= Math.min(max, 120) * 0.9) return;
+    } catch {
+      /* this resolution cannot go that fast: try a smaller one */
+    }
+  }
 }
 
 function stopCamera() {
@@ -332,6 +366,8 @@ async function openStudio(id) {
   tracker.reset();
   frameTimes.length = 0;
   lastFrame = 0;
+  lastCamFrame = 0;
+  camInterval = 0;
   cancelAnimationFrame(loopId);
   loopId = requestAnimationFrame(loop);
 }
@@ -355,8 +391,12 @@ function loop(now) {
   const wantSeg = !!fx?.needs?.seg;
   // Each new camera frame goes to the detection worker; rendering never waits
   // for it, and the engine predicts the hands' motion in between.
+  let newFrame = false;
   if (video.currentTime !== lastVideoTime) {
     lastVideoTime = video.currentTime;
+    newFrame = true;
+    if (lastCamFrame) camInterval = camInterval ? camInterval * 0.9 + (now - lastCamFrame) * 0.1 : now - lastCamFrame;
+    lastCamFrame = now;
     tracker.request(video, wantSeg, settings.points || !!fx?.needs?.pose);
   }
   const det = tracker.take(wantSeg);
@@ -372,6 +412,9 @@ function loop(now) {
       mask: det.mask,
       maskFresh: det.maskFresh,
       pose: det.pose,
+      newFrame,
+      frameAge: now - lastCamFrame,
+      camInterval,
       now,
     });
   } catch (err) {
@@ -397,7 +440,9 @@ function adaptResolution(now) {
     fpsShown = now;
     const recent = frameTimes.slice(-30);
     const fps = 1000 / (recent.reduce((s, x) => s + x, 0) / recent.length);
-    $('fps').textContent = `${Math.round(fps)} i/s · détection ${Math.round(tracker.detectFps)} i/s · ${MESH_POINTS} points/main`;
+    const cam = Math.round(stream?.getVideoTracks()[0]?.getSettings().frameRate || 0);
+    $('fps').textContent =
+      `écran ${Math.round(fps)} i/s · caméra ${cam} i/s · détection ${Math.round(tracker.detectFps)} i/s · ${MESH_POINTS} points/main`;
   }
   if (now - lastAdapt < 1500 || frameTimes.length < 60 || recorder.recording) return;
   lastAdapt = now;
@@ -710,7 +755,7 @@ form.addEventListener('change', (e) => {
   saveSettings();
   audio.setEnabled(settings.sound);
   quality.particles = PARTICLES[settings.fxQuality] || 1;
-  engine.maxSide = maxSideFor(settings.quality);
+  engine.maxSide = renderSide();
   updateToggles();
 });
 syncForm();
