@@ -1,4 +1,4 @@
-import { EFFECTS, getEffect } from './effects.js';
+import { EFFECTS, CATEGORIES, getEffect } from './effects.js';
 import { Engine } from './engine.js';
 import { Tracker } from './tracker.js';
 import { SoundFx } from './audio.js';
@@ -152,18 +152,38 @@ function note(msg) {
 // Card art is rendered from the real effects by tools/art.js.
 const art = (id) => `assets/powers/${id}.jpg`;
 
+// Favourite powers (★ on the cards), kept in this browser.
+const FAVS_KEY = 'magic-cam-favs';
+let favs = new Set();
+try {
+  favs = new Set(JSON.parse(localStorage.getItem(FAVS_KEY) || '[]'));
+} catch {
+  /* private mode: favourites last for this visit only */
+}
+let category = 'all';
+
 function buildPowers() {
   const grid = $('powers');
   const carousel = $('carousel');
   for (const def of EFFECTS) {
     const fx = getEffect(def.id);
+    const wrap = document.createElement('div');
+    wrap.className = 'power-wrap';
+    wrap.dataset.id = def.id;
+    wrap.dataset.cat = def.cat;
     const card = document.createElement('button');
     card.className = 'power';
     card.dataset.id = def.id;
     card.style.setProperty('--tint', def.tint);
     card.innerHTML = `<span class="power-art"><img src="${art(def.id)}" alt="" loading="lazy" decoding="async"></span><span class="power-name">${fx.name}</span><span class="power-gesture">${def.gesture}</span>`;
     card.addEventListener('click', () => openStudio(def.id));
-    grid.append(card);
+    const star = document.createElement('button');
+    star.className = 'fav-btn';
+    star.setAttribute('aria-label', `Favori : ${fx.name}`);
+    star.textContent = '★';
+    star.addEventListener('click', () => toggleFav(def.id));
+    wrap.append(card, star);
+    grid.append(wrap);
 
     const chip = document.createElement('button');
     chip.className = 'fx-chip';
@@ -175,6 +195,54 @@ function buildPowers() {
     chip.addEventListener('click', () => selectEffect(def.id, true));
     carousel.append(chip);
   }
+  const cats = $('cats');
+  for (const c of [{ id: 'all', name: 'Tous' }, { id: 'fav', name: '★ Favoris' }, ...CATEGORIES]) {
+    const b = document.createElement('button');
+    b.className = 'cat';
+    b.dataset.cat = c.id;
+    b.textContent = c.name;
+    b.addEventListener('click', () => {
+      category = c.id;
+      filterPowers();
+      b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+      // Back to the top of the list when the user had scrolled past it.
+      if (window.scrollY > cats.offsetTop) window.scrollTo({ top: cats.offsetTop, behavior: 'smooth' });
+    });
+    cats.append(b);
+  }
+  filterPowers();
+}
+
+function toggleFav(id) {
+  if (favs.has(id)) favs.delete(id);
+  else favs.add(id);
+  try {
+    localStorage.setItem(FAVS_KEY, JSON.stringify([...favs]));
+  } catch {
+    /* not saved */
+  }
+  filterPowers();
+}
+
+// Shows the chosen category; favourites come first, in the cards and the studio carousel.
+function filterPowers() {
+  if (category === 'fav' && !favs.size) category = 'all';
+  document.querySelectorAll('.cat').forEach((b) => b.classList.toggle('active', b.dataset.cat === category));
+  for (const parent of [$('powers'), $('carousel')]) {
+    const items = [...parent.children];
+    items.sort(
+      (a, b) =>
+        favs.has(b.dataset.id) - favs.has(a.dataset.id) ||
+        EFFECTS.findIndex((d) => d.id === a.dataset.id) - EFFECTS.findIndex((d) => d.id === b.dataset.id),
+    );
+    parent.append(...items);
+  }
+  for (const w of $('powers').children) {
+    const id = w.dataset.id;
+    w.classList.toggle('fav', favs.has(id));
+    w.hidden = !(category === 'all' || (category === 'fav' ? favs.has(id) : w.dataset.cat === category));
+  }
+  $('cats').querySelector('[data-cat="fav"]').hidden = !favs.size;
 }
 
 // ---------- Pages over the app ----------

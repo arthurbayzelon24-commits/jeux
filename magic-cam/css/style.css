@@ -883,7 +883,7 @@ button {
 }
 .powers {
   max-width: 1100px;
-  margin: -8px auto 0;
+  margin: 0 auto;
   padding: 0 16px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -898,6 +898,65 @@ button {
   .powers {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+.cats {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  max-width: 1100px;
+  margin: -8px auto 12px;
+  padding: 10px 16px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: linear-gradient(180deg, rgba(11, 10, 15, 0.95) 70%, rgba(11, 10, 15, 0));
+}
+.cats::-webkit-scrollbar {
+  display: none;
+}
+.cat {
+  flex: none;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1px solid rgba(201, 158, 96, 0.4);
+  background: #18161b;
+}
+.cat.active {
+  color: #2a1704;
+  border-color: transparent;
+  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+}
+.cat[hidden],
+.power-wrap[hidden] {
+  display: none;
+}
+.power-wrap {
+  position: relative;
+  display: flex;
+}
+.power-wrap > .power {
+  flex: 1;
+}
+.fav-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(10, 9, 12, 0.55);
+  backdrop-filter: blur(6px);
+}
+.power-wrap.fav .fav-btn {
+  color: var(--gold-1);
+  text-shadow: 0 0 10px rgba(243, 197, 107, 0.8);
 }
 .power {
   display: flex;
