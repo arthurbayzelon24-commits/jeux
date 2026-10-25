@@ -1,6 +1,6 @@
 // Turns raw MediaPipe hand landmarks into stable, smoothed "hands" in canvas
 // pixels, with a 3D palm basis, gestures and gesture events.
-import { v3, clamp } from './fx/util.js';
+import { v3, clamp, drawGlow } from './fx/util.js';
 
 // One Euro filter: low jitter when still, low lag when moving fast.
 class OneEuro {
@@ -229,18 +229,20 @@ export class HandTracker {
   }
 }
 
-// Draws the golden wireframe hand used in previews and as an optional overlay.
-export function drawHandSkeleton(ctx, hand, color = 'rgba(255,214,140,', alpha = 0.85) {
+// Draws the tracking points of a hand: golden bones, a glowing dot on every
+// joint and a ring on each fingertip, so finger movements are visible.
+export function drawHandSkeleton(ctx, hand) {
   const lm = hand.lm;
+  const a = hand.presence;
   ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
   ctx.lineCap = 'round';
-  const s = Math.max(1, hand.size * 0.035);
-  for (const [w, a] of [
-    [s * 4, 0.12],
-    [s, 0.9],
+  const s = Math.max(1.2, hand.size * 0.028);
+  // Dark under-stroke keeps the bones readable on bright scenes.
+  for (const [w, color] of [
+    [s * 2.2, `rgba(0,0,0,${0.35 * a})`],
+    [s, `rgba(255,205,120,${0.95 * a})`],
   ]) {
-    ctx.strokeStyle = color + a * alpha * hand.presence + ')';
+    ctx.strokeStyle = color;
     ctx.lineWidth = w;
     ctx.beginPath();
     for (const [i, j] of HAND_EDGES) {
@@ -249,11 +251,26 @@ export function drawHandSkeleton(ctx, hand, color = 'rgba(255,214,140,', alpha =
     }
     ctx.stroke();
   }
-  ctx.fillStyle = 'rgba(255,255,255,' + 0.9 * alpha * hand.presence + ')';
-  for (const p of lm) {
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of lm) drawGlow(ctx, [255, 170, 60], p.x, p.y, s * 4, 0.35 * a);
+  ctx.globalCompositeOperation = 'source-over';
+  lm.forEach((p, i) => {
+    const tip = TIPS.includes(i);
+    const r = s * (tip ? 1.9 : 1.3);
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.strokeStyle = `rgba(150,80,10,${0.9 * a})`;
+    ctx.lineWidth = Math.max(1, s * 0.45);
     ctx.beginPath();
-    ctx.arc(p.x, p.y, s * 1.3, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
     ctx.fill();
-  }
+    ctx.stroke();
+    if (tip) {
+      ctx.strokeStyle = `rgba(255,220,150,${0.95 * a})`;
+      ctx.lineWidth = Math.max(1, s * 0.55);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, s * 3.4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  });
   ctx.restore();
 }

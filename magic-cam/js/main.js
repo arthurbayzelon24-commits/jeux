@@ -4,7 +4,6 @@ import { Tracker } from './tracker.js';
 import { SoundFx } from './audio.js';
 import { CanvasRecorder, extensionFor } from './recorder.js';
 import { gallery, videoThumbnail } from './gallery.js';
-import { renderPreview } from './preview.js';
 import { quality } from './fx/util.js';
 
 // ---------- Icons ----------
@@ -26,6 +25,8 @@ const ICONS = {
     '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>',
   trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  points:
+    '<circle cx="6" cy="18" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="18" cy="14" r="2"/><path d="M7.2 16.4 10.8 7.7M13.6 7.3l3.4 5.2"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
 };
 const svg = (name) =>
@@ -45,7 +46,7 @@ const DEFAULTS = {
   autosave: true,
   mic: true,
   sound: true,
-  skeleton: false,
+  points: true,
   eco: false,
 };
 const settings = (() => {
@@ -74,20 +75,22 @@ function toast(msg, ms = 2600) {
   toastTimer = setTimeout(() => el.classList.remove('show'), ms);
 }
 
-// ---------- Navigation ----------
-let currentView = 'home';
-function showView(name) {
+// ---------- Pages (over the camera) ----------
+let currentView = 'studio';
+async function showPage(name) {
+  await closeStudio();
   currentView = name;
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`));
-  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
-  window.scrollTo(0, 0);
   if (name === 'gallery') renderGallery();
 }
-document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
-document.querySelectorAll('[data-start]').forEach((b) => b.addEventListener('click', () => openStudio(currentEffect)));
+function backToCamera() {
+  currentView = 'studio';
+  document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+  openStudio(currentEffect);
+}
+document.querySelectorAll('[data-camera]').forEach((b) => b.addEventListener('click', backToCamera));
 
-// ---------- Effect cards with rendered previews ----------
-const previews = new Map();
+// ---------- Effect picker ----------
 let currentEffect = (() => {
   try {
     return localStorage.getItem('magic-cam-effect') || EFFECTS[0].id;
@@ -96,89 +99,32 @@ let currentEffect = (() => {
   }
 })();
 
-function buildCards() {
-  const grid = $('effects-grid');
+// Quick carousel above the record button, plus the full "Effets" panel.
+function buildPicker() {
   const carousel = $('carousel');
+  const grid = $('fx-grid');
   for (const def of EFFECTS) {
     const fx = getEffect(def.id);
-    const card = document.createElement('button');
-    card.className = 'card';
-    card.dataset.id = def.id;
-    card.innerHTML = `<div class="card-media"></div><span class="card-tag">${def.tag}</span><span class="card-name">${fx.name}</span>`;
-    card.addEventListener('click', () => openStudio(def.id));
-    grid.append(card);
-
     const chip = document.createElement('button');
     chip.className = 'fx-chip';
     chip.dataset.id = def.id;
     chip.setAttribute('role', 'option');
-    chip.innerHTML = `<div class="thumb"></div><span>${fx.name}</span>`;
+    chip.style.setProperty('--tint', def.tint);
+    chip.innerHTML = `<div class="thumb">${def.icon}</div><span>${fx.name}</span>`;
     chip.addEventListener('click', () => selectEffect(def.id, true));
     carousel.append(chip);
-  }
-  // Render previews one by one without blocking the page.
-  const queue = [...EFFECTS];
-  const next = () => {
-    const def = queue.shift();
-    if (!def) return;
-    try {
-      const url = renderPreview(def);
-      previews.set(def.id, url);
-      document.querySelectorAll(`[data-id="${def.id}"] .card-media, [data-id="${def.id}"] .thumb`).forEach((el) => {
-        el.innerHTML = '';
-        const img = new Image();
-        img.alt = '';
-        img.src = url;
-        el.append(img);
-      });
-    } catch (err) {
-      console.warn('Aperçu impossible', def.id, err);
-    }
-    if (window.requestIdleCallback) requestIdleCallback(next, { timeout: 300 });
-    else setTimeout(next, 30);
-  };
-  setTimeout(next, 50);
-}
 
-// ---------- Hero sky (golden dust) ----------
-function heroSky() {
-  const c = $('hero-sky');
-  const g = c.getContext('2d');
-  let w;
-  let h;
-  const dots = Array.from({ length: 120 }, () => ({
-    x: Math.random(),
-    y: Math.random(),
-    r: Math.random() * 1.6 + 0.3,
-    s: Math.random() * 0.02 + 0.005,
-    p: Math.random() * 6,
-  }));
-  const resize = () => {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    w = c.clientWidth;
-    h = c.clientHeight;
-    c.width = w * dpr;
-    c.height = h * dpr;
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  };
-  resize();
-  window.addEventListener('resize', resize);
-  const tick = (t) => {
-    if (currentView === 'home' && !studioOpen) {
-      g.clearRect(0, 0, w, h);
-      for (const d of dots) {
-        d.y -= d.s * 0.05;
-        if (d.y < 0) d.y = 1;
-        const a = 0.4 + 0.6 * Math.sin(t / 700 + d.p);
-        g.fillStyle = `rgba(255,${200 + d.r * 20},${120 + d.r * 40},${a * 0.8})`;
-        g.beginPath();
-        g.arc(d.x * w, d.y * h, d.r, 0, Math.PI * 2);
-        g.fill();
-      }
-    }
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
+    const tile = document.createElement('button');
+    tile.className = 'fx-tile';
+    tile.dataset.id = def.id;
+    tile.style.setProperty('--tint', def.tint);
+    tile.innerHTML = `<span class="fx-icon">${def.icon}</span><span class="fx-name">${fx.name}</span><span class="fx-tag">${def.tag}</span>`;
+    tile.addEventListener('click', () => {
+      selectEffect(def.id, true);
+      $('fx-sheet').hidden = true;
+    });
+    grid.append(tile);
+  }
 }
 
 // ---------- Studio ----------
@@ -216,9 +162,10 @@ function selectEffect(id, fromUser = false) {
   engine.setEffect(fx);
   if (fx.colors && colorIndex[id] !== undefined) fx.setColor(colorIndex[id]);
   updateSwatch();
-  document.querySelectorAll('.fx-chip').forEach((c) => {
+  document.querySelectorAll('.fx-chip, .fx-tile').forEach((c) => {
     const on = c.dataset.id === id;
     c.classList.toggle('active', on);
+    if (!c.classList.contains('fx-chip')) return;
     c.setAttribute('aria-selected', on);
     if (on) c.scrollIntoView({ inline: 'center', block: 'nearest', behavior: fromUser ? 'smooth' : 'auto' });
   });
@@ -315,9 +262,6 @@ function showError(err) {
 
 async function openStudio(id) {
   studioOpen = true;
-  $('view-studio').hidden = false;
-  $('tabbar').hidden = true;
-  document.body.style.overflow = 'hidden';
   $('error').hidden = true;
   $('loading').hidden = false;
   $('loading-text').textContent = 'Accès à la caméra…';
@@ -362,10 +306,8 @@ async function closeStudio() {
   cancelAnimationFrame(loopId);
   stopCamera();
   audio.stopLoops();
-  $('view-studio').hidden = true;
-  $('tabbar').hidden = false;
-  document.body.style.overflow = '';
   $('hint').hidden = true;
+  $('fx-sheet').hidden = true;
 }
 
 function loop(now) {
@@ -377,7 +319,7 @@ function loop(now) {
   if (video.currentTime !== lastVideoTime) {
     lastVideoTime = video.currentTime;
     try {
-      det = tracker.detect(video, !!fx?.needs?.seg);
+      det = tracker.detect(video, !!fx?.needs?.seg, settings.points);
     } catch (err) {
       console.warn(err);
     }
@@ -391,15 +333,18 @@ function loop(now) {
     raw: det.raw,
     mask: fx?.needs?.seg ? det.mask : null,
     maskFresh: det.maskFresh,
+    pose: det.pose,
     now,
   });
 
-  // Status chip: guide the user when no hand is seen.
-  const seen = engine.hands.some((h) => h.visible);
-  if (seen) noHandSince = now;
-  if (fx?.needs?.seg && fx.id !== 'floating') setStatus(engine.seg?.present ? '' : 'Reculez pour être visible');
-  else if (fx?.id === 'sakura') setStatus('');
-  else setStatus(now - noHandSince > 1500 ? '🖐 Montrez votre main' : '');
+  // Status chip: what the camera currently tracks.
+  const handCount = engine.hands.filter((h) => h.visible).length;
+  if (handCount) noHandSince = now;
+  const body = engine.body.presence > 0.5;
+  if (fx?.needs?.seg && fx.id !== 'floating' && !engine.seg?.present) setStatus('Reculez pour être visible en entier');
+  else if (handCount) setStatus(`✋ ${handCount === 2 ? '2 mains suivies' : 'Main suivie'}${body ? ' · corps suivi' : ''}`);
+  else if (now - noHandSince > 1200) setStatus(body ? 'Corps suivi · montrez vos mains 🖐' : 'Placez-vous face à la caméra 🖐');
+  else setStatus('');
 }
 
 // ---------- Recording ----------
@@ -613,20 +558,20 @@ $('clear-gallery').addEventListener('click', async () => {
 function updateToggles() {
   $('btn-sound').classList.toggle('off', !settings.sound);
   $('btn-sound').querySelector('[data-icon]').innerHTML = svg(settings.sound ? 'sound' : 'mute');
-  $('btn-skeleton').classList.toggle('on', settings.skeleton);
+  $('btn-points').classList.toggle('on', settings.points);
   $('timer-label').textContent = Number(settings.countdown) ? `${settings.countdown}` : '';
   $('btn-timer').classList.toggle('on', Number(settings.countdown) > 0);
 }
 
-$('btn-back').addEventListener('click', closeStudio);
-$('error-back').addEventListener('click', closeStudio);
+$('btn-settings').addEventListener('click', () => showPage('settings'));
+$('btn-effects').addEventListener('click', () => ($('fx-sheet').hidden = false));
+$('fx-sheet').addEventListener('click', (e) => {
+  if (e.target.id === 'fx-sheet' || e.target.closest('[data-close-sheet]')) $('fx-sheet').hidden = true;
+});
 $('error-retry').addEventListener('click', () => openStudio(currentEffect));
 $('btn-record').addEventListener('click', () => (recorder.recording ? stopRecording() : startRecording()));
 $('btn-photo').addEventListener('click', takePhoto);
-$('btn-gallery').addEventListener('click', async () => {
-  await closeStudio();
-  showView('gallery');
-});
+$('btn-gallery').addEventListener('click', () => showPage('gallery'));
 $('btn-help').addEventListener('click', () => {
   const fx = getEffect(currentEffect);
   $('help-title').textContent = fx.name;
@@ -661,11 +606,13 @@ $('btn-sound').addEventListener('click', () => {
   syncForm();
   updateToggles();
 });
-$('btn-skeleton').addEventListener('click', () => {
-  settings.skeleton = !settings.skeleton;
+$('btn-points').addEventListener('click', () => {
+  settings.points = !settings.points;
+  if (!settings.points) engine.body.reset();
   saveSettings();
   syncForm();
   updateToggles();
+  toast(settings.points ? 'Points de suivi affichés' : 'Points de suivi masqués', 1200);
 });
 $('btn-timer').addEventListener('click', () => {
   const steps = ['0', '3', '5', '10'];
@@ -692,7 +639,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (!$('result').hidden) closeResult();
     else if (!$('help').hidden) $('help').hidden = true;
-    else if (studioOpen) closeStudio();
+    else if (!$('fx-sheet').hidden) $('fx-sheet').hidden = true;
+    else if (currentView !== 'studio') backToCamera();
   }
   if (!studioOpen || e.target.closest('input, select')) return;
   if (e.key === ' ') {
@@ -734,7 +682,10 @@ syncForm();
 quality.particles = settings.eco ? 0.5 : 1;
 
 // ---------- Boot ----------
-buildCards();
-heroSky();
+buildPicker();
 refreshMiniThumb();
+// Sound needs a user gesture: unlock it on the first touch or click.
+document.addEventListener('pointerdown', () => audio.init(), { passive: true });
+// The camera is the home page: start it right away.
+openStudio(currentEffect);
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

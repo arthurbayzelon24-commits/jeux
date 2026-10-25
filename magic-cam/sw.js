@@ -1,6 +1,6 @@
 // Offline cache for the app shell. The detection models are cached by the
 // browser's HTTP cache after the first visit.
-const CACHE = 'magic-cam-v1';
+const CACHE = 'magic-cam-v2';
 const SHELL = [
   './',
   'index.html',
@@ -14,7 +14,6 @@ const SHELL = [
   'js/audio.js',
   'js/recorder.js',
   'js/gallery.js',
-  'js/preview.js',
   'js/effects.js',
   'js/fx/util.js',
   'js/fx/lightning.js',
@@ -27,6 +26,7 @@ const SHELL = [
   'js/fx/plasma.js',
   'js/fx/galaxy.js',
   'js/fx/sakura.js',
+  'js/body.js',
 ];
 
 self.addEventListener('install', (e) => {

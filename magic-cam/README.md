@@ -2,6 +2,10 @@
 
 Site web gratuit qui utilise la caméra du téléphone ou du PC pour se filmer avec des **effets de magie en temps réel**, dans le style des vidéos de magie sur TikTok. Tout fonctionne dans le navigateur : il n’y a ni compte, ni serveur, ni envoi d’images.
 
+## Principe
+
+Le site s’ouvre directement sur la caméra. La caméra vous voit et affiche des **points de suivi** sur vos mains (21 points par main, bouts des doigts entourés) et sur votre corps (épaules, coudes, poignets, hanches, jambes, visage) : ils montrent ce que le système suit, et les effets bougent avec vos doigts. Le bouton **Effets** ouvre la section qui permet de choisir l’effet ; la rangée d’icônes au-dessus du bouton d’enregistrement permet de passer rapidement de l’un à l’autre. Les points peuvent être masqués (bouton à droite ou Paramètres), par exemple pour enregistrer une vidéo sans eux.
+
 ## Effets
 
 | Effet                                                              | Ce qui est suivi                        | Gestes                                                                                                                                                                                |
@@ -18,7 +22,7 @@ Chaque effet a plusieurs couleurs (bouton rond à droite de l’écran).
 
 ## Fonctions
 
-- Bouton **Démarrer la caméra** ; demande d’autorisation, messages clairs en cas de refus.
+- La caméra démarre à l’ouverture du site (demande d’autorisation, messages clairs et bouton « Activer la caméra » en cas de refus).
 - Caméra avant / arrière, effet miroir, compte à rebours, qualité 480p / 720p / 1080p.
 - **Enregistrement vidéo** de l’image avec les effets, le micro et les sons des effets (synthétisés en direct). MP4 quand le navigateur le permet (Safari, Chrome récent), sinon WebM.
 - **Photo** avec effets.
@@ -29,7 +33,7 @@ Chaque effet a plusieurs couleurs (bouton rond à droite de l’écran).
 
 ## Technique
 
-- **Suivi** : [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) (HandLandmarker pour 2 mains en 3D, ImageSegmenter « selfie » pour la silhouette), exécuté localement en WebAssembly/WebGL. La bibliothèque est chargée depuis jsDelivr et les modèles depuis les serveurs de Google au premier lancement (environ 8 Mo).
+- **Suivi** : [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) (HandLandmarker pour 2 mains en 3D, PoseLandmarker pour les points du corps, ImageSegmenter « selfie » pour la silhouette), exécuté localement en WebAssembly/WebGL. La bibliothèque est chargée depuis jsDelivr et les modèles depuis les serveurs de Google au premier lancement (environ 14 Mo).
 - **Stabilité** : filtre One Euro sur chaque point, suivi des mains d’une image à l’autre, gestes avec hystérésis.
 - **Rendu** : Canvas 2D (particules additives, éclairs fractals, maillages 3D éclairés, projection dans le plan de la paume), lumière projetée sur la scène, tremblement de caméra et flashs ; fond appris en continu pour la téléportation.
 - **Aucune dépendance à installer, aucune étape de build** : ce sont des modules JavaScript natifs.

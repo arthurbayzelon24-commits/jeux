@@ -1,6 +1,7 @@
 // Render engine: composes the camera frame, the body cut-out (segmentation),
 // a learned background plate and the active effect on one canvas.
 import { HandTracker, drawHandSkeleton } from './hands.js';
+import { BodyTracker } from './body.js';
 import { makeCanvas, clamp, smoothstep, drawGlow } from './fx/util.js';
 
 const NOOP_AUDIO = { play() {}, loop() {} };
@@ -10,10 +11,11 @@ export class Engine {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d', { alpha: false });
     this.tracker = new HandTracker();
+    this.body = new BodyTracker();
     this.effect = null;
     this.hands = [];
     this.audio = options.audio || NOOP_AUDIO;
-    this.settings = options.settings || { skeleton: false, cinema: true };
+    this.settings = options.settings || { points: false, cinema: true };
     this.maxSide = options.maxSide || 1280;
     this.W = canvas.width;
     this.H = canvas.height;
@@ -261,6 +263,7 @@ export class Engine {
     if (input.raw) this.hands = this.tracker.update(input.raw, { width: W, height: H, mirror: input.mirror, dt, now });
     // Gesture events only last for the frame of the detection that produced them.
     else for (const h of this.hands) h.events = {};
+    if (input.pose !== undefined) this.body.update(input.pose, { width: W, height: H, mirror: input.mirror, dt });
 
     // Mirrored camera frame.
     const f = L.frame.getContext('2d');
@@ -308,7 +311,11 @@ export class Engine {
 
     effect?.draw?.(ctx, this);
 
-    if (this.settings.skeleton) for (const h of this.hands) drawHandSkeleton(ctx, h);
+    // Tracking points: body first, hands (more detailed) on top.
+    if (this.settings.points) {
+      this.body.draw(ctx, this.unit);
+      for (const h of this.hands) drawHandSkeleton(ctx, h);
+    }
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     for (const fl of this.flashes) {

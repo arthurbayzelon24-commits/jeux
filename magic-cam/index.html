@@ -17,53 +17,10 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <!-- Home -->
-    <main class="view active" id="view-home">
-      <header class="hero">
-        <canvas class="hero-sky" id="hero-sky" aria-hidden="true"></canvas>
-        <div class="hero-inner">
-          <p class="eyebrow">Effets de magie en réalité augmentée</p>
-          <h1 class="title">Magic Cam</h1>
-          <p class="lead">
-            Filmez-vous avec des éclairs dans les mains, des boules de feu, une aura, la télékinésie ou la téléportation. Les effets suivent
-            vos mains et votre corps en temps réel.
-          </p>
-          <button class="btn btn-gold btn-xl" data-start>
-            <span data-icon="camera"></span>
-            Démarrer la caméra
-          </button>
-          <ul class="badges">
-            <li>100 % gratuit</li>
-            <li>Sans installation</li>
-            <li>Rien n’est envoyé : tout se passe sur votre appareil</li>
-          </ul>
-        </div>
-      </header>
-
-      <section class="section">
-        <h2 class="section-title">Choisissez votre pouvoir</h2>
-        <div class="grid" id="effects-grid"></div>
-      </section>
-
-      <section class="section how">
-        <h2 class="section-title">Comment ça marche</h2>
-        <ol class="steps">
-          <li>
-            <strong>Autorisez la caméra.</strong> L’image reste sur votre appareil : l’intelligence artificielle de suivi tourne dans votre
-            navigateur.
-          </li>
-          <li><strong>Montrez vos mains.</strong> Main ouverte, poing, pincement, geste rapide : chaque effet réagit à vos gestes.</li>
-          <li>
-            <strong>Enregistrez et partagez.</strong> Téléchargez la vidéo ou partagez-la directement sur TikTok, Instagram, WhatsApp…
-          </li>
-        </ol>
-      </section>
-      <footer class="foot">Magic Cam · gratuit · fonctionne sur téléphone et ordinateur (Chrome, Edge, Safari, Firefox récents)</footer>
-    </main>
-
     <!-- Gallery -->
     <main class="view" id="view-gallery">
       <header class="page-head">
+        <button class="btn btn-ghost back-cam" data-camera><span data-icon="back"></span>Retour à la caméra</button>
         <h1 class="page-title">Mes vidéos</h1>
         <p class="muted">Vos vidéos et photos restent dans ce navigateur, sur cet appareil.</p>
       </header>
@@ -71,13 +28,14 @@
       <div class="empty" id="gallery-empty" hidden>
         <span data-icon="video"></span>
         <p>Aucune vidéo pour l’instant.</p>
-        <button class="btn btn-gold" data-start>Créer ma première vidéo</button>
+        <button class="btn btn-gold" data-camera>Créer ma première vidéo</button>
       </div>
     </main>
 
     <!-- Settings -->
     <main class="view" id="view-settings">
       <header class="page-head">
+        <button class="btn btn-ghost back-cam" data-camera><span data-icon="back"></span>Retour à la caméra</button>
         <h1 class="page-title">Paramètres</h1>
       </header>
       <form class="settings" id="settings-form">
@@ -123,8 +81,8 @@
         <fieldset>
           <legend>Effets</legend>
           <label class="row toggle"
-            ><span>Afficher le squelette de la main<small>Utile pour vérifier la détection</small></span
-            ><input type="checkbox" name="skeleton"
+            ><span>Afficher les points de suivi<small>Points sur les mains et le corps détectés par la caméra</small></span
+            ><input type="checkbox" name="points"
           /></label>
           <label class="row toggle"
             ><span>Mode économie<small>Moins de particules, pour les téléphones plus anciens</small></span
@@ -143,13 +101,13 @@
     </main>
 
     <!-- Camera studio -->
-    <section class="studio" id="view-studio" hidden>
+    <section class="studio" id="view-studio">
       <video id="cam" playsinline muted autoplay></video>
       <canvas id="stage"></canvas>
       <div class="flash" id="shutter-flash"></div>
 
       <div class="studio-top">
-        <button class="icon-btn" id="btn-back" aria-label="Retour"><span data-icon="back"></span></button>
+        <button class="icon-btn" id="btn-settings" aria-label="Paramètres"><span data-icon="gear"></span></button>
         <div class="top-center">
           <div class="rec-chip" id="rec-chip" hidden><i></i><span id="rec-time">00:00</span></div>
           <div class="status-chip" id="status-chip"></div>
@@ -159,9 +117,10 @@
 
       <div class="studio-side">
         <button class="icon-btn" id="btn-flip" aria-label="Changer de caméra"><span data-icon="flip"></span></button>
+        <button class="icon-btn" id="btn-photo" aria-label="Prendre une photo"><span data-icon="camera"></span></button>
         <button class="icon-btn" id="btn-color" aria-label="Changer la couleur"><span class="swatch" id="swatch"></span></button>
         <button class="icon-btn" id="btn-sound" aria-label="Sons des effets"><span data-icon="sound"></span></button>
-        <button class="icon-btn" id="btn-skeleton" aria-label="Afficher la main"><span data-icon="hand"></span></button>
+        <button class="icon-btn" id="btn-points" aria-label="Afficher les points de suivi"><span data-icon="points"></span></button>
         <button class="icon-btn" id="btn-timer" aria-label="Compte à rebours">
           <span data-icon="timer"></span><b id="timer-label"></b>
         </button>
@@ -182,7 +141,21 @@
             </svg>
             <span class="rec-core"></span>
           </button>
-          <button class="icon-btn big" id="btn-photo" aria-label="Prendre une photo"><span data-icon="camera"></span></button>
+          <button class="fx-btn" id="btn-effects" aria-label="Choisir un effet"><span data-icon="sparkle"></span>Effets</button>
+        </div>
+      </div>
+
+      <!-- Effect picker -->
+      <div class="sheet" id="fx-sheet" hidden>
+        <div class="sheet-card">
+          <div class="sheet-head">
+            <h2>Choisir un effet</h2>
+            <button class="icon-btn" data-close-sheet aria-label="Fermer"><span data-icon="close"></span></button>
+          </div>
+          <p class="muted small">
+            Les points sur vos mains et votre corps montrent ce que la caméra suit : bougez les doigts, l’effet suit.
+          </p>
+          <div class="fx-grid" id="fx-grid"></div>
         </div>
       </div>
 
@@ -201,8 +174,7 @@
           <h2 id="error-title">Caméra indisponible</h2>
           <p id="error-text"></p>
           <div class="error-actions">
-            <button class="btn btn-gold" id="error-retry">Réessayer</button>
-            <button class="btn btn-ghost" id="error-back">Retour</button>
+            <button class="btn btn-gold" id="error-retry">Activer la caméra</button>
           </div>
         </div>
       </div>
@@ -240,12 +212,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-    <nav class="tabbar" id="tabbar">
-      <button class="tab active" data-view="home"><span data-icon="sparkle"></span>Effets</button>
-      <button class="tab" data-view="gallery"><span data-icon="video"></span>Mes vidéos</button>
-      <button class="tab" data-view="settings"><span data-icon="gear"></span>Paramètres</button>
-    </nav>
 
     <script type="module" src="js/main.js"></script>
   </body>
