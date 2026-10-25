@@ -1,6 +1,6 @@
 // Tech & hero powers: energy shield, neon drawing, code rain, web shooter,
 // laser eyes, angel halo.
-import { Particles, drawGlow, rand, TAU, noise1, clamp, palmPoint, rayToEdge, drawBeam, pick } from './util.js';
+import { Particles, drawGlow, rand, TAU, noise1, clamp, palmPoint, rayToEdge, drawBeam, pick, makeCanvas } from './util.js';
 
 const mainHand = (hands) => hands.filter((h) => h.presence > 0.4).sort((a, b) => b.size - a.size)[0];
 
@@ -180,6 +180,23 @@ export function matrixEffect() {
   ];
   let rgb = COLORS[0].rgb;
   let cols = [];
+  let atlas = null;
+  // Every glyph pre-drawn once (row 0 in colour, row 1 white for the heads):
+  // drawing images is much cheaper than fillText for a thousand characters a frame.
+  const glyphAtlas = (cell, col) => {
+    const canvas = makeCanvas(cell * GLYPHS.length, cell * 2);
+    const g = canvas.getContext('2d');
+    g.font = `${cell}px ui-monospace, Menlo, monospace`;
+    g.textAlign = 'center';
+    g.textBaseline = 'alphabetic';
+    GLYPHS.forEach((ch, i) => {
+      g.fillStyle = `rgb(${col.join(',')})`;
+      g.fillText(ch, i * cell + cell / 2, cell * 0.85);
+      g.fillStyle = '#eaffea';
+      g.fillText(ch, i * cell + cell / 2, cell * 1.85);
+    });
+    return { canvas, cell, rgb: col };
+  };
   return {
     id: 'matrix',
     name: 'Pluie de code',
@@ -221,17 +238,18 @@ export function matrixEffect() {
       const size = 18 * e.unit;
       ctx.fillStyle = 'rgba(0,10,0,0.25)';
       ctx.fillRect(0, 0, e.W, e.H);
-      ctx.font = `${Math.round(size)}px ui-monospace, Menlo, monospace`;
-      ctx.textAlign = 'center';
+      const cell = Math.round(size);
+      if (!atlas || atlas.cell !== cell || atlas.rgb !== rgb) atlas = glyphAtlas(cell, rgb);
       for (const c of cols) {
         for (let k = 0; k < 16; k++) {
           const y = c.y - k * size;
           if (y < -size || y > e.H + size) continue;
-          ctx.fillStyle = k === 0 ? '#eaffea' : `rgba(${rgb.join(',')},${(1 - k / 16) * 0.85})`;
-          ctx.fillText(c.chars[k], c.x + size / 2 + c.off, y);
+          const gi = GLYPHS.indexOf(c.chars[k]);
+          ctx.globalAlpha = k === 0 ? 1 : (1 - k / 16) * 0.85;
+          ctx.drawImage(atlas.canvas, gi * cell, k === 0 ? cell : 0, cell, cell, c.x + c.off, y - cell * 0.85, cell, cell);
         }
       }
-      ctx.textAlign = 'left';
+      ctx.globalAlpha = 1;
     },
   };
 }
@@ -407,6 +425,28 @@ export function laserEyesEffect() {
   };
 }
 
+// A light ray: a thin triangle fading away from its tip (cached per colour).
+const RAYS = new Map();
+function haloRay(rgb) {
+  const key = String(rgb);
+  if (!RAYS.has(key)) {
+    const c = makeCanvas(256, 32);
+    const g = c.getContext('2d');
+    const grad = g.createLinearGradient(0, 0, 256, 0);
+    grad.addColorStop(0, `rgba(${key},0.18)`);
+    grad.addColorStop(1, `rgba(${key},0)`);
+    g.fillStyle = grad;
+    g.beginPath();
+    g.moveTo(0, 16);
+    g.lineTo(256, 0);
+    g.lineTo(256, 32);
+    g.closePath();
+    g.fill();
+    RAYS.set(key, c);
+  }
+  return RAYS.get(key);
+}
+
 // ---------- Angel halo: a glowing halo above your head, light rays behind ----------
 export function haloEffect() {
   const COLORS = [
@@ -457,16 +497,11 @@ export function haloEffect() {
       for (let k = 0; k < 12; k++) {
         const a = -Math.PI / 2 + (k - 5.5) * 0.22 + Math.sin(e.t * 0.5) * 0.05;
         const L = w * (3 + noise1(e.t + k) * 0.6);
-        const grad = ctx.createLinearGradient(x, y + w, x + Math.cos(a) * L, y + w + Math.sin(a) * L);
-        grad.addColorStop(0, `rgba(${rgb.join(',')},0.18)`);
-        grad.addColorStop(1, `rgba(${rgb.join(',')},0)`);
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(x, y + w);
-        ctx.lineTo(x + Math.cos(a - 0.06) * L, y + w + Math.sin(a - 0.06) * L);
-        ctx.lineTo(x + Math.cos(a + 0.06) * L, y + w + Math.sin(a + 0.06) * L);
-        ctx.closePath();
-        ctx.fill();
+        ctx.save();
+        ctx.translate(x, y + w);
+        ctx.rotate(a);
+        ctx.drawImage(haloRay(rgb), 0, -L * 0.06, L, L * 0.12);
+        ctx.restore();
       }
       ctx.save();
       ctx.translate(x, y + Math.sin(e.t * 2) * w * 0.04);

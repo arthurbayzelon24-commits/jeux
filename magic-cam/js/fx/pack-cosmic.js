@@ -1,6 +1,6 @@
 // Cosmic powers: planet, crystal ball, aurora, shooting stars, comet
 // fingertips, rainbow.
-import { Particles, drawGlow, rand, TAU, noise1, clamp, dist, makeCanvas } from './util.js';
+import { Particles, drawGlow, rand, TAU, noise1, clamp, dist, makeCanvas, strip } from './util.js';
 
 const mainHand = (hands) => hands.filter((h) => h.presence > 0.4).sort((a, b) => b.size - a.size)[0];
 
@@ -206,6 +206,11 @@ export function crystalBallEffect() {
 }
 
 // ---------- Aurora: northern lights across the sky, steered by your hands ----------
+const AURORA_STOPS = [
+  [0, 0],
+  [0.25, 1],
+  [1, 0],
+];
 export function auroraEffect() {
   const SETS = [
     {
@@ -264,14 +269,11 @@ export function auroraEffect() {
           const y = baseY + noise1(u * 4 + e.t * 0.4 + b * 10) * e.H * 0.08;
           const h = e.H * (0.18 + 0.12 * Math.abs(noise1(u * 6 + e.t * 0.6 + b)));
           const a = (0.07 + 0.06 * Math.abs(noise1(u * 9 + e.t + b * 3))) * bright;
-          const grad = ctx.createLinearGradient(0, y, 0, y + h);
-          grad.addColorStop(0, `rgba(${col.join(',')},0)`);
-          grad.addColorStop(0.25, `rgba(${col.join(',')},${a})`);
-          grad.addColorStop(1, `rgba(${col.join(',')},0)`);
-          ctx.fillStyle = grad;
-          ctx.fillRect(x, y, (e.W * 1.2) / steps + 2, h);
+          ctx.globalAlpha = Math.min(1, a);
+          ctx.drawImage(strip(col, AURORA_STOPS, true), x, y, (e.W * 1.2) / steps + 2, h);
         }
       }
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
     },
   };
