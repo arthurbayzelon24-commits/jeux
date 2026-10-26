@@ -369,11 +369,17 @@
       <div class="modal-card result-card">
         <button class="icon-btn close" data-close aria-label="Fermer"><span data-icon="close"></span></button>
         <div class="result-media" id="result-media"></div>
+        <div class="trim-panel" id="trim-panel" hidden>
+          <label>Début <b id="trim-a-v">0,0 s</b><input type="range" id="trim-a" min="0" max="10" step="0.1" value="0" /></label>
+          <label>Fin <b id="trim-b-v">0,0 s</b><input type="range" id="trim-b" min="0" max="10" step="0.1" value="10" /></label>
+          <button class="btn btn-gold" id="trim-ok"><span class="lbl">Couper la vidéo</span></button>
+        </div>
         <div class="result-actions">
           <button class="btn btn-gold" id="res-share"><span data-icon="share"></span>Partager</button>
           <button class="btn btn-ghost" id="res-download"><span data-icon="download"></span>Télécharger</button>
           <button class="btn btn-ghost" id="res-save"><span data-icon="video"></span>Garder</button>
           <button class="btn btn-ghost" id="res-slow"><span data-icon="slow"></span><span class="lbl">Ralenti</span></button>
+          <button class="btn btn-ghost" id="res-trim"><span data-icon="scissors"></span><span class="lbl">Couper</span></button>
           <button class="btn btn-ghost" id="res-boom"><span data-icon="boomerang"></span><span class="lbl">Boomerang</span></button>
           <button class="btn btn-ghost danger" id="res-delete"><span data-icon="trash"></span>Supprimer</button>
         </div>

@@ -46,8 +46,9 @@ function eachFrame(v, draw) {
   });
 }
 
-function makeRecorder(canvas) {
+function makeRecorder(canvas, audioTracks = []) {
   const stream = canvas.captureStream(FPS);
+  audioTracks.forEach((t) => stream.addTrack(t));
   const mimeType = pickMimeType();
   const opts = { videoBitsPerSecond: 8e6 };
   if (mimeType) opts.mimeType = mimeType;
@@ -65,6 +66,65 @@ function makeRecorder(canvas) {
       };
       rec.stop();
     });
+}
+
+// Trim: keeps the part between start and end (seconds), with its sound. The
+// clip is played (fast up to the start), drawn into a canvas and recorded;
+// the sound goes through WebAudio to the recording only, not the speakers.
+export async function trim(blob, start, end, onProgress = () => {}) {
+  const v = await loadVideo(blob);
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ac = AC ? new AC() : null;
+  let dest = null;
+  try {
+    if (ac) {
+      await ac.resume?.();
+      const src = ac.createMediaElementSource(v);
+      dest = ac.createMediaStreamDestination();
+      src.connect(dest);
+      v.muted = false;
+    }
+    const k = Math.min(1, 1280 / Math.max(v.videoWidth, v.videoHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(v.videoWidth * k) & ~1;
+    canvas.height = Math.round(v.videoHeight * k) & ~1;
+    const g = canvas.getContext('2d');
+    let stop = null;
+    v.playbackRate = start > 0.3 ? 4 : 1;
+    await v.play();
+    await new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        v.pause();
+        resolve();
+      };
+      v.addEventListener('ended', finish, { once: true });
+      const step = () => {
+        if (done) return;
+        const t = v.currentTime;
+        if (t >= start) {
+          if (!stop) {
+            v.playbackRate = 1;
+            stop = makeRecorder(canvas, dest ? dest.stream.getAudioTracks() : []);
+          }
+          g.drawImage(v, 0, 0, canvas.width, canvas.height);
+          onProgress(Math.min(1, (t - start) / Math.max(0.1, end - start)));
+          if (t >= end) return finish();
+        }
+        if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(step);
+        else requestAnimationFrame(step);
+      };
+      step();
+    });
+    if (!stop) throw new Error('trim');
+    return await stop();
+  } finally {
+    v.pause();
+    URL.revokeObjectURL(v.src);
+    ac?.close?.();
+  }
 }
 
 // mode: 'slow' | 'boomerang'. duration: length of the source in seconds (the

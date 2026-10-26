@@ -1979,3 +1979,32 @@ body.rec-paused #btn-pause {
 .frame-grid[hidden] {
   display: none;
 }
+
+/* Trim panel in the result screen */
+.trim-panel {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.trim-panel[hidden] {
+  display: none;
+}
+.trim-panel label {
+  display: grid;
+  grid-template-columns: 50px 1fr 64px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+.trim-panel label b {
+  order: 3;
+  text-align: right;
+  color: var(--gold-1);
+}
+.trim-panel input[type='range'] {
+  width: 100%;
+  accent-color: var(--gold-2);
+}
