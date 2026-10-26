@@ -33,6 +33,7 @@ const ICONS = {
   sparkle:
     '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8zM5 2l.6 1.4L7 4l-1.4.6L5 6l-.6-1.4L3 4l1.4-.6z"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 10.5v5l4-2.5z"/>',
+  fast: '<path d="M4 6l8 6-8 6zM12 6l8 6-8 6z"/>',
   slow: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
   boomerang: '<path d="M4 12a5 5 0 0 1 8-4l4 3a5 5 0 1 1 0 2l-4 3a5 5 0 0 1-8-4z"/>',
   scissors: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1 20 20M8.1 15.9 20 4"/>',
@@ -79,6 +80,7 @@ const DEFAULTS = {
   music: 'off',
   format: 'auto',
   fillLight: false,
+  fades: true,
   grid: false,
   // Two extra full-screen passes per frame: off by default on phones.
   motionBlur: !MOBILE,
@@ -779,6 +781,11 @@ async function startRecording() {
   btn.classList.remove('arming');
   if (!go || !studioOpen) return;
   recStartedAt = performance.now();
+  // Cinematic start: the video opens from black.
+  if (settings.fades) {
+    engine.fadeAlpha = 1;
+    engine.fade(0, 0.6);
+  }
   // The size of the video cannot change while recording: if frames were
   // being dropped, step the resolution down once before starting.
   const recent = frameTimes.slice(-60);
@@ -815,6 +822,12 @@ async function startRecording() {
 
 async function stopRecording(show = true) {
   cancelAnimationFrame(recTimer);
+  // Cinematic end: fade to black before the last frame.
+  if (settings.fades && show && recorder.recording && !recorder.paused && studioOpen) {
+    engine.fade(1, 0.45);
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  engine.fade(0, 0.3);
   setPaused(false);
   document.body.classList.remove('is-recording');
   const btn = $('btn-record');
@@ -917,7 +930,7 @@ async function showResult(item, fromGallery = false) {
     media.append(v);
   }
   $('res-save').hidden = !!item.saved;
-  $('res-slow').hidden = $('res-boom').hidden = $('res-trim').hidden = item.kind === 'photo';
+  $('res-slow').hidden = $('res-boom').hidden = $('res-trim').hidden = $('res-fast').hidden = item.kind === 'photo';
   $('trim-panel').hidden = true;
   $('result').hidden = false;
 }
@@ -928,10 +941,10 @@ async function remixResult(mode) {
   const src = lastResult;
   if (remixing || !src || src.kind === 'photo') return;
   remixing = true;
-  const btn = $(mode === 'slow' ? 'res-slow' : 'res-boom');
+  const btn = $({ slow: 'res-slow', fast: 'res-fast', boomerang: 'res-boom' }[mode]);
   const lbl = btn.querySelector('.lbl');
   const label = lbl.textContent;
-  $('res-slow').disabled = $('res-boom').disabled = true;
+  $('res-slow').disabled = $('res-boom').disabled = $('res-fast').disabled = true;
   try {
     const { remix } = await import('./remix.js');
     const res = await remix(src.blob, mode, src.duration || 0, (p) => (lbl.textContent = `${Math.round(p * 100)} %`));
@@ -946,7 +959,7 @@ async function remixResult(mode) {
     await new Promise((r) => setTimeout(r, 1500));
   } finally {
     lbl.textContent = label;
-    $('res-slow').disabled = $('res-boom').disabled = false;
+    $('res-slow').disabled = $('res-boom').disabled = $('res-fast').disabled = false;
     remixing = false;
   }
 }
@@ -1012,6 +1025,7 @@ $('trim-ok').addEventListener('click', async () => {
 });
 
 $('res-slow').addEventListener('click', () => remixResult('slow'));
+$('res-fast').addEventListener('click', () => remixResult('fast'));
 $('res-boom').addEventListener('click', () => remixResult('boomerang'));
 
 function closeResult() {

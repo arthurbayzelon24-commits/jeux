@@ -127,7 +127,7 @@ export async function trim(blob, start, end, onProgress = () => {}) {
   }
 }
 
-// mode: 'slow' | 'boomerang'. duration: length of the source in seconds (the
+// mode: 'slow' | 'fast' | 'boomerang'. duration: length of the source in seconds (the
 // file itself may not know it). onProgress(0..1).
 export async function remix(blob, mode, duration, onProgress = () => {}) {
   const v = await loadVideo(blob);
@@ -141,6 +141,17 @@ export async function remix(blob, mode, duration, onProgress = () => {}) {
 
     // Freshly recorded files often cannot seek reliably (no index), so the
     // clip is always played from the start: fast up to the part we keep.
+    // Fast forward x2: the whole clip at double speed.
+    if (mode === 'fast') {
+      const stop = makeRecorder(canvas);
+      v.playbackRate = 2;
+      await v.play();
+      await eachFrame(v, () => {
+        draw();
+        onProgress(Math.min(1, v.currentTime / Math.max(0.1, duration)));
+      });
+      return await stop();
+    }
     if (mode === 'slow') {
       const start = Math.max(0, duration - SLOW_MAX);
       let stop = null;
