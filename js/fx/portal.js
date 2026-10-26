@@ -90,8 +90,21 @@ export function portalEffect() {
     id: 'portal',
     name: 'Portail magique',
     colors: COLORS,
-    hint: 'Fais des cercles avec la main, comme Doctor Strange : un portail s’ouvre sur ton paysage. Continue de tourner dessus pour l’agrandir.',
+    hint: 'Fais des cercles avec la main, comme Doctor Strange : un portail s’ouvre sur ton paysage. Continue de tourner dessus pour l’agrandir (ou touche « Portail »).',
     needs: { seg: true, plate: true },
+    // The easy way: a button that opens the portal at your hand.
+    action: {
+      label: 'Portail',
+      run: (e) => {
+        const h = e.hands.filter((x) => x.presence > 0.3).sort((a, b) => b.size - a.size)[0];
+        const max = Math.min(e.W, e.H) * 0.48;
+        const r = Math.min(max, (h?.size ?? e.H * 0.1) * 2.6);
+        portal = { x: h?.palm.x ?? e.W / 2, y: h ? h.palm.y - h.size : e.H / 2, r: r * 0.6, target: r, open: 0, spin: 0 };
+        world = null;
+        e.audio.play('teleport', 0.9);
+        e.flash(scheme.rgb, 0.25, 3);
+      },
+    },
     setColor(i) {
       scheme = COLORS[i];
       world = null;
@@ -132,10 +145,10 @@ export function portalEffect() {
           const max = Math.min(e.W, e.H) * 0.48;
           if (portal && Math.hypot(loop.x - portal.x, loop.y - portal.y) < portal.r * 1.2) {
             // Circling again on the portal makes it grow.
-            portal.target = Math.min(max, portal.target * 1.35);
+            portal.target = Math.min(max, portal.target * 1.45);
             e.audio.play('whoosh', 0.6);
           } else {
-            const r = Math.min(max, Math.max(loop.r, h.size * 1.4));
+            const r = Math.min(max, Math.max(loop.r * 1.2, h.size * 2.2));
             portal = { x: loop.x, y: loop.y, r: r * 0.6, target: r, open: 0, spin: 0 };
             world = null;
             e.audio.play('teleport', 0.9);
@@ -144,7 +157,7 @@ export function portalEffect() {
           trail = [];
         }
       }
-      trail = trail.filter((p) => now - p.t < 2.6);
+      trail = trail.filter((p) => now - p.t < 2);
 
       if (portal) {
         portal.open = Math.min(1, portal.open + dt * 1.8);
@@ -209,6 +222,19 @@ export function portalEffect() {
         }
         ctx.globalCompositeOperation = 'source-over';
       }
+      // The circle being drawn fills up with sparks, so you see it coming.
+      if (progress && progress.k > 0.15 && trail.length > 1) {
+        ctx.globalCompositeOperation = 'lighter';
+        const a0 = e.t * 3;
+        ctx.strokeStyle = `rgba(${scheme.rgb.join(',')},${0.25 + 0.5 * progress.k})`;
+        ctx.lineWidth = 6 * e.unit;
+        ctx.setLineDash([3 * e.unit, 9 * e.unit]);
+        ctx.beginPath();
+        ctx.arc(progress.x, progress.y, progress.r, a0, a0 + TAU * progress.k);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalCompositeOperation = 'source-over';
+      }
       // The glowing path drawn by the finger.
       if (trail.length > 1) {
         ctx.globalCompositeOperation = 'lighter';
@@ -268,8 +294,12 @@ function landscape(e, portal) {
 // A circle is recognised either when the fingertip comes back close to its
 // path (even between two sparse points of a fast move), or when the path has
 // turned almost all the way around its centre. Rough circles are fine.
+// How far the current circle has gone (shown as a ring of sparks filling up).
+let progress = null;
+
 function closedLoop(trail, size, now) {
-  if (trail.length < 8) return null;
+  progress = null;
+  if (trail.length < 6) return null;
   const tip = trail[trail.length - 1];
   const fit = (pts) => {
     const x = pts.reduce((s, q) => s + q.x, 0) / pts.length;
@@ -280,28 +310,30 @@ function closedLoop(trail, size, now) {
   // 1) The tip crosses back over an older part of the path.
   let length = 0;
   for (let i = 1; i < trail.length; i++) length += Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y);
-  if (length > size * 3.5) {
+  if (length > size * 2.4) {
     for (let i = 1; i < trail.length - 4; i++) {
       const a = trail[i - 1];
       const b = trail[i];
       if (now - b.t < 0.25) break;
-      if (segDist(tip, a, b) < size * 0.9) {
+      if (segDist(tip, a, b) < size * 1.2) {
         const c = fit(trail.slice(i));
-        if (c.r > size * 0.6) return c;
+        if (c.r > size * 0.35) return c;
         break;
       }
     }
   }
   // 2) The path winds ~300° around its centre.
   const c = fit(trail);
-  if (c.r < size * 0.6) return null;
+  if (c.r < size * 0.35) return null;
   let turn = 0;
   for (let i = 1; i < trail.length; i++) {
     let d = Math.atan2(trail[i].y - c.y, trail[i].x - c.x) - Math.atan2(trail[i - 1].y - c.y, trail[i - 1].x - c.x);
     d = Math.atan2(Math.sin(d), Math.cos(d));
     turn += d;
   }
-  return Math.abs(turn) > 5.2 ? c : null;
+  progress = { x: c.x, y: c.y, r: c.r, k: Math.min(1, Math.abs(turn) / 4.2) };
+  // About two thirds of a turn is enough: rough, quick circles work.
+  return Math.abs(turn) > 4.2 ? c : null;
 }
 
 function segDist(p, a, b) {

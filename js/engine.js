@@ -448,6 +448,9 @@ export class Engine {
       // effects move at the screen's refresh rate, not the camera's.
       this.tracker.advance(dt);
     }
+    // A finger snap heard by the microphone counts for a hand that was just
+    // holding the snap pose (thumb on the middle finger).
+    if (input.micSnap) for (const h of this.hands) if (h.snapPrime && now - h.snapPrime < 700) h.events = { ...h.events, snap: true };
     if (input.pose !== undefined) this.body.update(input.pose, { width: W, height: H, mirror: input.mirror, dt });
     else this.body.advance(dt);
 
@@ -619,18 +622,27 @@ export class Engine {
     }
     const { W, H } = this;
     const body = s.area * W * H;
-    const gap = Math.max(1.5, Math.sqrt(body / 120000));
-    this.cloudCount = Math.round(body / (gap * gap));
-    const step = Math.max(2, Math.round(gap * 4) / 4);
-    if (!this.cloud || this.cloud.canvas.width !== W || this.cloud.canvas.height !== H || this.cloud.step !== step) {
-      // Tile of 4x4 points, repeated over the screen.
-      const t = makeCanvas(Math.round(step * 4), Math.round(step * 4));
+    // As many points as the image can show, up to 1 million: at most one
+    // point every other pixel (a checkerboard), finer than that the points
+    // would merge into a flat colour. The count shown is the real one.
+    const step = Math.max(1, Math.min(4, Math.floor(Math.sqrt(body / 1e6))));
+    const checker = step === 1;
+    const perPx = checker ? 0.5 : 1 / (step * step);
+    this.cloudCount = Math.round(body * perPx);
+    const key = checker ? 'c' : step;
+    if (!this.cloud || this.cloud.canvas.width !== W || this.cloud.canvas.height !== H || this.cloud.key !== key) {
+      // Tile of points, repeated over the screen (one fill, whatever the count).
+      const n = checker ? 2 : step * 4;
+      const t = makeCanvas(n, n);
       const tg = t.getContext('2d');
       tg.fillStyle = '#fff';
-      for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) tg.fillRect(Math.round(x * step), Math.round(y * step), 1, 1);
+      if (checker) {
+        tg.fillRect(0, 0, 1, 1);
+        tg.fillRect(1, 1, 1, 1);
+      } else for (let y = 0; y < n; y += step) for (let x = 0; x < n; x += step) tg.fillRect(x, y, 1, 1);
       const canvas = makeCanvas(W, H);
       const c = canvas.getContext('2d');
-      this.cloud = { canvas, c, step, pattern: c.createPattern(t, 'repeat') };
+      this.cloud = { canvas, c, key, pattern: c.createPattern(t, 'repeat') };
     }
     const { c, canvas, pattern } = this.cloud;
     c.globalCompositeOperation = 'copy';
@@ -654,7 +666,7 @@ export class Engine {
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.55;
+    ctx.globalAlpha = this.cloud.key === 'c' ? 0.42 : 0.55;
     ctx.drawImage(canvas, 0, 0);
     ctx.restore();
   }

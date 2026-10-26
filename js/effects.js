@@ -26,6 +26,7 @@ import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
 import { runesEffect } from './fx/runes.js';
 import { freeModeEffect } from './fx/free.js';
+import { clonesEffect, invisibleEffect, sizeEffect } from './fx/pack-body.js';
 import { mindGrabEffect, shockwaveEffect, magnetEffect, chronoEffect, gravityEffect } from './fx/pack-physics.js';
 import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
 import { planetEffect, crystalBallEffect, auroraEffect, starsEffect, cometEffect, rainbowEffect } from './fx/pack-cosmic.js';
@@ -109,6 +110,9 @@ export const EFFECTS = [
   { id: 'aura', cat: 'heros', make: auraEffect, tint: '#9a6bff', gesture: 'Reculez, levez les mains' },
   { id: 'wings', cat: 'heros', make: wingsEffect, tint: '#ffe0a0', gesture: 'Reculez, levez les bras' },
   { id: 'teleport', cat: 'heros', make: teleportEffect, tint: '#2fe0d0', gesture: 'Claquez des doigts comme Thanos' },
+  { id: 'clones', cat: 'heros', make: clonesEffect, tint: '#e6e6f0', gesture: 'Faites le signe V' },
+  { id: 'invisible', cat: 'heros', make: invisibleEffect, tint: '#c8e6ff', gesture: 'Claquez des doigts' },
+  { id: 'size', cat: 'heros', make: sizeEffect, tint: '#ff4646', gesture: 'Claquez des doigts' },
   { id: 'telekinesis', cat: 'heros', make: telekinesisEffect, tint: '#3fc1ff', gesture: 'Main ouverte, pincez pour attraper' },
   { id: 'floating', cat: 'heros', make: floatingEffect, tint: '#8fb8ff', gesture: 'Paume vers le haut' },
   { id: 'dragon', cat: 'feu', make: dragonEffect, tint: '#ff7020', gesture: 'Guidez-le avec l’index' },

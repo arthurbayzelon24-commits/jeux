@@ -68,6 +68,7 @@ const DEFAULTS = {
   maxDuration: '60',
   countdown: '3',
   mirror: true,
+  mirrorFix: true,
   cinema: true,
   autosave: true,
   mic: true,
@@ -91,7 +92,12 @@ const DEFAULTS = {
 const settings = (() => {
   try {
     const saved = localStorage.getItem(SETTINGS_KEY);
-    if (saved) return { ...DEFAULTS, ...JSON.parse(saved) };
+    if (saved) {
+      const s = { ...DEFAULTS, ...JSON.parse(saved) };
+      // Once: the mirror back on (left and right were swapped while filming).
+      if (!s.mirrorFix) Object.assign(s, { mirror: true, mirrorFix: true });
+      return s;
+    }
     // Keep the earlier answers, but switch to the new smooth default.
     const old = JSON.parse(
       localStorage.getItem('magic-cam-settings-v5') ||
@@ -147,6 +153,8 @@ let trackerReady = null;
 let studioOpen = false;
 let stream = null;
 let facing = 'user';
+// The side the camera really looks at (the browser may not give the one asked).
+let camFacing = 'user';
 let loopId = 0;
 let lastVideoTime = -1;
 let camFrameNo = 0;
@@ -386,6 +394,17 @@ function updateToggles() {
   $('frame-grid').hidden = !settings.grid;
 }
 
+// Front or back camera, from what the browser reports. A computer webcam
+// (no facing info) films you: it is mirrored like a front camera.
+function actualFacing(track) {
+  const f = track?.getSettings?.().facingMode;
+  if (f === 'user' || f === 'environment') return f;
+  const label = (track?.label || '').toLowerCase();
+  if (/back|rear|arri[eè]re|environment|world/.test(label)) return 'environment';
+  if (/front|avant|user|face/.test(label)) return 'user';
+  return navigator.maxTouchPoints > 0 ? facing : 'user';
+}
+
 async function startCamera() {
   stopCamera();
   if (!window.isSecureContext) throw Object.assign(new Error('insecure'), { name: 'InsecureContext' });
@@ -418,6 +437,7 @@ async function startCamera() {
   await video.play().catch(() => {});
   if (!video.videoWidth) await new Promise((r) => video.addEventListener('loadedmetadata', r, { once: true }));
   audio.attachMic(stream);
+  camFacing = actualFacing(stream.getVideoTracks()[0]);
   setupZoom(stream.getVideoTracks()[0]);
 }
 
@@ -573,8 +593,9 @@ function loop(now) {
       source: video,
       sw: video.videoWidth,
       sh: video.videoHeight,
-      mirror: settings.mirror && facing === 'user',
+      mirror: settings.mirror && camFacing === 'user',
       raw: det.raw,
+      micSnap: audio.heardSnap?.(now),
       mask: det.mask,
       maskFresh: det.maskFresh,
       pose: det.pose,
@@ -1623,7 +1644,7 @@ function flushUnlocks() {
 }
 
 // "What's new" once per big update (after the first-launch question).
-const NEWS_KEY = 'magic-cam-news-5';
+const NEWS_KEY = 'magic-cam-news-6';
 function showNews() {
   try {
     if (localStorage.getItem(NEWS_KEY) || !settings.pointsAsked) return;
