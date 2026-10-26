@@ -9,8 +9,8 @@
       content="Magic Cam : choisissez un pouvoir et filmez-vous avec des effets de magie en temps réel (rayon de feu, kamehameha, sabre laser, portail, éclairs…). Gratuit, dans le navigateur."
     />
     <meta name="theme-color" content="#0b0a0f" />
-    <link rel="icon" href="assets/icon-64.png" type="image/png" />
-    <link rel="apple-touch-icon" href="assets/icon-180.png" />
+    <link rel="icon" href="assets/icon2-64.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/icon2-180.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -26,15 +26,16 @@
     <main class="home" id="view-home">
       <header class="banner">
         <h1 class="title">Magic<br />Cam</h1>
+        <button class="quick-film" id="quick-film"><i></i>Filmer en Mode libre</button>
         <button class="install-btn" id="install-btn" hidden><span data-icon="download"></span>Installer</button>
       </header>
       <section class="hub">
-        <button class="wallet-card" id="wallet-card" aria-label="Cristaux et boutique">
-          <span class="wallet-gem">💎</span>
+        <button class="wallet-card" id="wallet-card" aria-label="Défis">
+          <span class="wallet-gem">🏆</span>
           <span class="lvl-info"
-            ><strong><span id="wallet-num">0</span> cristaux</strong><small id="wallet-streak"></small
+            ><strong><span id="wallet-num">0</span> défis réussis</strong><small id="wallet-streak"></small
           ></span>
-          <span class="wallet-shop">Boutique ›</span>
+          <span class="wallet-shop">Défis ›</span>
         </button>
         <div class="challenges-card">
           <div class="ch-head"><strong>Défis du jour</strong><small id="hub-done">0/3</small></div>
@@ -49,15 +50,14 @@
     <main class="view" id="view-progress">
       <header class="page-head">
         <button class="btn btn-ghost back-cam" data-back><span data-icon="back"></span>Retour</button>
-        <h1 class="page-title">Boutique · 💎 <span id="shop-crystals">0</span></h1>
+        <h1 class="page-title">Défis</h1>
       </header>
       <div class="progress-page">
         <h2 class="sub-title">Défis du jour</h2>
-        <p class="muted">Chaque défi réussi rapporte des cristaux. Nouveaux défis chaque jour, et un bonus quand tu reviens.</p>
+        <p class="muted">Trois nouveaux défis chaque jour. Reviens tous les jours pour allonger ta série.</p>
         <div class="challenges-card" id="shop-challenges"></div>
         <h2 class="sub-title">Gestes du Mode libre</h2>
         <div class="ach-list" id="free-moves"></div>
-        <h2 class="sub-title">Pouvoirs à débloquer</h2>
         <div class="shop-list" id="shop-list"></div>
       </div>
     </main>
@@ -101,6 +101,24 @@
         <h1 class="page-title">Paramètres</h1>
       </header>
       <form class="settings" id="settings-form">
+        <fieldset>
+          <legend>Affichage</legend>
+          <label class="row toggle"
+            ><span>Afficher les points<small>Les points qui suivent tes mains et ton corps (aussi dans les vidéos)</small></span
+            ><input type="checkbox" name="points"
+          /></label>
+          <label class="row">
+            <span>Couleur de l’application<small>Boutons, cadres et menus</small></span>
+            <select name="theme">
+              <option value="or">Or</option>
+              <option value="violet">Violet</option>
+              <option value="cyan">Cyan</option>
+              <option value="rose">Rose</option>
+              <option value="vert">Vert</option>
+              <option value="rouge">Rouge</option>
+            </select>
+          </label>
+        </fieldset>
         <fieldset>
           <legend>Image</legend>
           <label class="row">
@@ -161,10 +179,6 @@
           <label class="row toggle"
             ><span>Vibrations<small>Le téléphone vibre aux impacts, aux finals et aux cibles touchées</small></span
             ><input type="checkbox" name="haptics"
-          /></label>
-          <label class="row toggle"
-            ><span>Points de suivi<small>Points sur les mains et le corps détectés par la caméra</small></span
-            ><input type="checkbox" name="points"
           /></label>
           <label class="row toggle"
             ><span
@@ -356,13 +370,18 @@
       <div class="modal-card ask-card news-card">
         <h2>Quoi de neuf ? ✨</h2>
         <ul class="news-list">
-          <li><b>📸 Nouvelle icône</b> : un appareil photo dont l’objectif est un portail magique.</li>
-          <li><b>↔️ Gauche / droite corrigé</b> : l’image est en miroir comme un vrai miroir, même sur ordinateur.</li>
-          <li><b>👥 Multiclonage</b> (signe V), <b>👻 Invisibilité</b> et <b>🐜 Taille Ant-Man</b> (claque des doigts).</li>
-          <li><b>🌀 Portail Doctor Strange</b> bien plus facile : un cercle rapide suffit, ou le bouton « Portail ».</li>
-          <li><b>🫰 Claquement de doigts</b> aussi entendu par le micro : il marche beaucoup mieux.</li>
-          <li><b>✨ Points du corps</b> deux fois plus serrés : un point tous les deux pixels.</li>
-          <li><b>🧲 5 pouvoirs de physique</b> : Télékinésie réelle, Onde de choc, Magnétisme, Arrêt du temps, Gravité.</li>
+          <li>
+            <b>🎨 Nouvelle interface</b> : pouvoirs rangés par rayons, gros bouton « Filmer », et <b>6 couleurs au choix</b> (Paramètres).
+          </li>
+          <li><b>📸 Nouvelle icône</b> : caméra et baguette magique.</li>
+          <li><b>🔍 Vrai dézoom</b> : <b>−</b> rend l’image plus petite, tu vois plus de toi (dans la vidéo aussi).</li>
+          <li>
+            <b>🥷 Clones par techniques</b> : mains jointes index levés = clones, poings joints = clones d’ombre, paumes jointes =
+            hologrammes.
+          </li>
+          <li><b>💥 Combo</b> en Mode libre : trois pouvoirs différents en 4 s = explosion finale.</li>
+          <li><b>🏆 Plus de cristaux</b> : tous les pouvoirs sont gratuits, les défis du jour restent.</li>
+          <li><b>✨ Afficher les points</b> : tout en haut des Paramètres.</li>
         </ul>
         <button class="btn btn-gold" id="news-ok">C’est parti !</button>
       </div>

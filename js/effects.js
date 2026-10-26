@@ -110,7 +110,7 @@ export const EFFECTS = [
   { id: 'aura', cat: 'heros', make: auraEffect, tint: '#9a6bff', gesture: 'Reculez, levez les mains' },
   { id: 'wings', cat: 'heros', make: wingsEffect, tint: '#ffe0a0', gesture: 'Reculez, levez les bras' },
   { id: 'teleport', cat: 'heros', make: teleportEffect, tint: '#2fe0d0', gesture: 'Claquez des doigts comme Thanos' },
-  { id: 'clones', cat: 'heros', make: clonesEffect, tint: '#e6e6f0', gesture: 'Faites le signe V' },
+  { id: 'clones', cat: 'heros', make: clonesEffect, tint: '#e6e6f0', gesture: 'Mains jointes, index levés (ninja)' },
   { id: 'invisible', cat: 'heros', make: invisibleEffect, tint: '#c8e6ff', gesture: 'Claquez des doigts' },
   { id: 'size', cat: 'heros', make: sizeEffect, tint: '#ff4646', gesture: 'Claquez des doigts' },
   { id: 'telekinesis', cat: 'heros', make: telekinesisEffect, tint: '#3fc1ff', gesture: 'Main ouverte, pincez pour attraper' },

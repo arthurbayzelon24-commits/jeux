@@ -26,8 +26,7 @@ Magic Cam est une application pour **filmer des vidéos où l’on semble avoir 
 - **Plus de 100 000 points sur le corps** (option « Points de suivi ») : en plus des 220 points par main et du maillage du squelette, un nuage de points couvre toute ta silhouette (détourée par l’IA), avec un balayage lumineux. Le nombre exact s’affiche dans le compteur (Paramètres › compteur d’images) ; il dépend de la place que tu occupes dans l’image.
 - **Double pouvoir** (bouton deux mains) : un pouvoir dans chaque main ; joins les mains pour une **Fusion**.
 - **Gestes secrets** avec tous les pouvoirs : double applaudissement, mains au ciel, poing/main ouverte ×3 (final immédiat), tour de main, main immobile.
-- **Défis du jour et cristaux** 💎 : trois défis par jour (filmer avec un pouvoir, déclencher un final, une vidéo de 15 s, 3 pouvoirs en Mode libre…). Chaque défi réussi rapporte des cristaux, ainsi qu’un bonus quand tu reviens chaque jour. 300 cristaux offerts au départ.
-- **Boutique** : 27 pouvoirs sont gratuits ; les autres se débloquent avec les cristaux (100 💎 pour les pouvoirs des éléments, du cosmos, de la tech et fun, 150 💎 pour les Runes, 200 💎 pour les pouvoirs d’animé).
+- **Défis du jour** 🏆 : trois défis par jour (filmer avec un pouvoir, déclencher un final, une vidéo de 15 s, 3 pouvoirs en Mode libre…), et une série de jours d’affilée. Tous les pouvoirs sont gratuits.
 
 ## Interface holographique (style armure high-tech)
 
@@ -64,13 +63,16 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Pause / reprise** pendant l’enregistrement (bouton pause à la place de l’appareil photo) : plusieurs plans dans une seule vidéo, comme sur TikTok.
 - **Lumière d’appoint** et **grille de cadrage** (Paramètres) : à l’écran seulement, jamais dans les vidéos.
 - **Flou de mouvement** désactivable (coupé par défaut sur téléphone pour la fluidité). Avec une musique, les effets pulsent légèrement sur le rythme.
-- **Multiclonage** (signe V) : deux puis quatre copies de toi apparaissent de chaque côté et te suivent avec un petit retard. **Invisibilité** (claquement de doigts) : tu disparais dans le décor, il ne reste qu’un léger miroitement. **Taille (Ant-Man)** (claquement de doigts) : minuscule, géant, puis normal.
+- **Multiclonage** (techniques ninja : mains jointes index levés = clones, poings joints = clones d’ombre, paumes jointes = clones hologrammes ; claquement de doigts = ils disparaissent) : deux puis quatre copies de toi apparaissent de chaque côté et te suivent avec un petit retard. **Invisibilité** (claquement de doigts) : tu disparais dans le décor, il ne reste qu’un léger miroitement. **Taille (Ant-Man)** (claquement de doigts) : minuscule, géant, puis normal.
 - **Claquement de doigts** : détecté par la caméra (pouce sur le majeur, puis clac) et confirmé par le micro (le petit bruit sec du claquement).
 - **Miroir** : l’image suit la caméra réellement utilisée (avant = miroir, arrière = image normale ; une webcam d’ordinateur est en miroir).
 - **Pouvoirs de physique** (catégorie Physique) : **Télékinésie réelle** (pointe l’index vers un objet de la pièce et reste immobile : il est découpé de l’image et flotte au-dessus de ta main ; lance-le, il tombe et rebondit ; poing = il éclate en morceaux), **Onde de choc** (poing puis main ouverte, ou pousse la main vers la caméra : l’image se déforme sous l’onde), **Magnétisme** (de la limaille de fer suit le champ entre tes deux mains), **Arrêt du temps** (claque des doigts : le décor se fige en bleu, toi tu continues de bouger), **Gravité** (pince pour créer des balles qui rebondissent sur tes mains ; poing puis main ouverte : gravité inversée).
 - **Portail façon Doctor Strange** : fais des cercles avec la main ; le portail montre ton propre paysage vu d’ailleurs (sans toi dedans). Tourne encore dessus pour l’agrandir.
 - **Téléportation au claquement de doigts** (comme Thanos) : pouce et majeur collés, puis clac.
 - **Musique de fond** (bouton ♪ dans la caméra) : Épique, Mystère ou Électro, composées en direct par l’application (aucun fichier, aucun droit d’auteur) et mixées dans les vidéos.
+- **Vrai dézoom** : sous 1×, l’image filmée rétrécit au milieu de l’écran (jusqu’à 0,45) et les bords sont remplis d’un flou, comme les bandes floues des applis vidéo : on te voit plus petit, dans les vidéos aussi.
+- **Couleur de l’application** (Paramètres > Affichage) : Or, Violet, Cyan, Rose, Vert ou Rouge.
+- **Combo** (Mode libre) : trois pouvoirs différents en moins de 4 s déclenchent une explosion de toutes les couleurs.
 - **Zoom à ta main** : barre de zoom à gauche de l’écran (**+** pour zoomer, **−** pour dézoomer, ou glisse le curseur ; double-touche = 1×), pince l’écran avec deux doigts (ou molette sur ordinateur), ou touche le bouton « 1× » (dézoom maximal → 1× → 2×). Pour dézoomer, l’application utilise d’abord l’objectif grand-angle quand le navigateur y donne accès, puis montre toute l’image filmée au lieu de la recadrer. Pour zoomer, elle utilise le zoom de la caméra, puis un zoom numérique qui se retrouve aussi dans les vidéos.
 - **Filtres d’image** (bouton pellicule dans le studio) : Normal, Cinéma (bandes noires 2,39:1, teinte bleu-orangé), Néon, Vintage (sépia et grain) et Noir et blanc (grain). Le filtre s’applique à la scène filmée ; les pouvoirs gardent leurs couleurs, et il est enregistré dans les vidéos.
 

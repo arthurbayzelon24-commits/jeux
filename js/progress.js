@@ -10,7 +10,8 @@ const PACK_IDS =
     ' ',
   );
 export function priceOf(def) {
-  if (!def) return 0;
+  // Crystals are gone: every power is free. The prices stay here unused.
+  if (def || !def) return 0;
   if (def.cat === 'anime') return 200;
   if (def.id === 'runes') return 150;
   return PACK_IDS.includes(def.id) ? 100 : 0;
@@ -121,7 +122,7 @@ export class Progress {
       c.done = true;
       this.s.crystals += c.reward;
       this.s.done++;
-      this.queue.push({ icon: '💎', title: 'Défi réussi !', text: `+${c.reward} cristaux` });
+      this.queue.push({ icon: '🏆', title: 'Défi réussi !', text: 'Bravo ! Encore un défi de relevé.' });
       changed = true;
     }
     if (changed) this.#save();
@@ -135,14 +136,14 @@ export class Progress {
     st.count = st.last === yesterday() ? st.count + 1 : 1;
     st.last = today();
     if (first) {
-      this.queue.push({ icon: '💎', title: 'Bienvenue !', text: `${START_CRYSTALS} cristaux offerts pour acheter des pouvoirs` });
+      this.queue.push({ icon: '✨', title: 'Bienvenue !', text: 'Tous les pouvoirs sont à toi. Relève les défis du jour !' });
     } else {
       const bonus = 10 * Math.min(7, st.count);
       this.s.crystals += bonus;
       this.queue.push({
         icon: '🔥',
         title: st.count > 1 ? `${st.count} jours d’affilée !` : 'Bon retour !',
-        text: `Bonus du jour : +${bonus} cristaux`,
+        text: 'Trois nouveaux défis t’attendent',
       });
     }
     this.#save();
