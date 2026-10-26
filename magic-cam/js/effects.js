@@ -26,6 +26,7 @@ import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
 import { runesEffect } from './fx/runes.js';
 import { freeModeEffect } from './fx/free.js';
+import { rainEffect, snowfallEffect, electroEffect } from './fx/pack-weather.js';
 import { clonesEffect, invisibleEffect, sizeEffect } from './fx/pack-body.js';
 import { mindGrabEffect, shockwaveEffect, magnetEffect, chronoEffect, gravityEffect } from './fx/pack-physics.js';
 import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
@@ -121,6 +122,7 @@ export const EFFECTS = [
   { id: 'lava', cat: 'feu', make: lavaEffect, tint: '#ff5a14', gesture: 'Main ouverte', charge: 'open' },
   { id: 'sun', cat: 'feu', make: sunEffect, tint: '#ffc850', gesture: 'Main ouverte', charge: 'open' },
   { id: 'sonic', cat: 'energie', make: sonicEffect, tint: '#dcebff', gesture: 'Tapez dans vos mains' },
+  { id: 'electro', cat: 'energie', make: electroEffect, tint: '#6ebeff', gesture: 'Serrez les poings, puis ouvrez' },
   { id: 'shield', cat: 'heros', make: shieldEffect, tint: '#50beff', gesture: 'Paume face à la caméra', charge: 'open' },
   { id: 'lasereyes', cat: 'heros', make: laserEyesEffect, tint: '#ff2828', gesture: 'Regardez, visez avec l’index' },
   { id: 'web', cat: 'heros', make: webEffect, tint: '#e6e6f0', gesture: 'Pointez l’index pour tirer' },
@@ -138,6 +140,8 @@ export const EFFECTS = [
   { id: 'coins', cat: 'fun', make: coinsEffect, tint: '#ffc83c', gesture: 'Pincez les doigts' },
   { id: 'snow', cat: 'nature', make: snowEffect, tint: '#e6f4ff', gesture: 'Soufflez la neige avec la main' },
   { id: 'fireflies', cat: 'nature', make: firefliesEffect, tint: '#d2ff5a', gesture: 'Ouvrez les mains' },
+  { id: 'rain', cat: 'nature', make: rainEffect, tint: '#9fc4ff', gesture: 'Main ouverte au-dessus = parapluie' },
+  { id: 'snowfall', cat: 'nature', make: snowfallEffect, tint: '#f0f8ff', gesture: 'Restez immobile, la neige se pose' },
   { id: 'wisps', cat: 'fun', make: wispsEffect, tint: '#5ac8ff', gesture: 'Main ouverte' },
 ];
 

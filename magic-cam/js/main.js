@@ -231,7 +231,7 @@ const CAT_COLORS = {
   fun: '#ff5fd2',
 };
 // Powers shown with a "Nouveau" badge.
-const NEW_IDS = ['clones', 'invisible', 'size', 'mindgrab', 'shockwave', 'magnet', 'chrono', 'gravity'];
+const NEW_IDS = ['rain', 'snowfall', 'electro', 'clones', 'invisible', 'size', 'mindgrab', 'shockwave', 'magnet', 'chrono', 'gravity'];
 // Home: one shelf (a row that scrolls sideways) per category, favourites first.
 function shelfRow(cat) {
   const grid = $('powers');
