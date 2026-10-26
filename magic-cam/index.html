@@ -289,7 +289,7 @@
 
       <div class="studio-top">
         <button class="icon-btn" id="btn-back" aria-label="Choisir un autre pouvoir"><span data-icon="grid"></span></button>
-        <div class="power-pill" id="power-pill"></div>
+        <div class="power-pill" id="power-pill" role="button" tabindex="0" aria-label="Comment utiliser ce pouvoir"></div>
         <div class="rec-chip" id="rec-chip" hidden><i></i><span id="rec-time">00:00</span></div>
         <div class="fps" id="fps" hidden></div>
       </div>
@@ -313,6 +313,7 @@
 
       <button class="action-btn" id="btn-action" hidden></button>
       <div class="countdown" id="countdown" hidden></div>
+      <div class="howto" id="howto" hidden><b id="howto-title"></b><span id="howto-text"></span></div>
       <div class="format-guide" id="format-guide" hidden></div>
       <div class="frame-grid" id="frame-grid" hidden></div>
       <div class="fill-light" id="fill-light" hidden></div>
@@ -370,6 +371,7 @@
       <div class="modal-card ask-card news-card">
         <h2>Quoi de neuf ? ✨</h2>
         <ul class="news-list">
+          <li><b>❓ Aide des gestes</b> : chaque pouvoir explique son geste en arrivant ; touche son nom en haut pour la revoir.</li>
           <li>
             <b>🎨 Nouvelle interface</b> : pouvoirs rangés par rayons, gros bouton « Filmer », et <b>6 couleurs au choix</b> (Paramètres).
           </li>

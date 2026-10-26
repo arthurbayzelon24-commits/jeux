@@ -365,6 +365,23 @@ $('ask-yes').addEventListener('click', () => answerPoints(true));
 $('ask-no').addEventListener('click', () => answerPoints(false));
 
 // ---------- Camera view ----------
+// How to use the power: a bubble on screen (never in the videos), shown when
+// a power is chosen and again by touching its name at the top.
+let howtoTimer = 0;
+function showHowto(def = EFFECTS.find((d) => d.id === currentEffect), fx = getEffect(def.id)) {
+  if (recorder.recording) return;
+  $('howto-title').textContent = `✋ ${def.gesture}`;
+  $('howto-text').textContent = fx.hint || '';
+  $('howto').hidden = false;
+  $('howto').classList.remove('show');
+  void $('howto').offsetWidth;
+  $('howto').classList.add('show');
+  clearTimeout(howtoTimer);
+  howtoTimer = setTimeout(() => ($('howto').hidden = true), fx.hint ? 5000 : 2500);
+}
+$('power-pill').addEventListener('click', () => showHowto());
+$('howto').addEventListener('click', () => ($('howto').hidden = true));
+
 function selectEffect(id, fromUser = false) {
   currentEffect = id;
   try {
@@ -394,6 +411,7 @@ function selectEffect(id, fromUser = false) {
   $('power-pill').innerHTML =
     `<img class="pill-icon" src="${art(def.id)}" alt="">${dualSecond ? `${fx.name} + ${getEffect(dualSecond).name}` : fx.name}`;
   $('power-pill').style.setProperty('--tint', def.tint);
+  showHowto(def, fx);
   document.querySelectorAll('.fx-chip').forEach((c) => {
     const on = c.dataset.id === id;
     c.classList.toggle('active', on);
