@@ -69,6 +69,8 @@ const DEFAULTS = {
   points: true,
   look: 'normal',
   haptics: true,
+  handsFree: true,
+  transition: true,
   pointsAsked: false,
   eco: false,
 };
@@ -109,7 +111,8 @@ const screenSide = () => Math.round(Math.max(screen.width, screen.height) * Math
 // the best it has up to that; the image is then drawn at that resolution
 // (within the browser's canvas limits and the adaptive resolution).
 const SIDES = { 720: 1280, 1080: 1920, 2160: 3840, 4320: 7680, '16k': 15360, '32k': 30720 };
-const maxSideFor = (q) => SIDES[q] || Math.min(1920, Math.max(1280, screenSide()));
+// Smooth mode: 720p on phones (like phone video apps), up to 1080p on computers.
+const maxSideFor = (q) => SIDES[q] || (MOBILE ? 1280 : Math.min(1920, Math.max(1280, screenSide())));
 const cameraFps = () => Number(settings.fpsTarget) || 250;
 const PARTICLES = { ultra: 1.6, high: 1, eco: 0.5 };
 
@@ -132,6 +135,7 @@ let stream = null;
 let facing = 'user';
 let loopId = 0;
 let lastVideoTime = -1;
+let camFrameNo = 0;
 let lastCamFrame = 0;
 let camInterval = 0;
 const colorIndex = {};
@@ -371,7 +375,7 @@ async function startCamera() {
   if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error('unsupported'), { name: 'Unsupported' });
   const portrait = window.innerHeight > window.innerWidth;
   const smooth = settings.priority !== 'sharp';
-  const long = smooth || settings.quality === 'smooth' ? 1920 : maxSideFor(settings.quality);
+  const long = smooth || settings.quality === 'smooth' ? (MOBILE ? 1280 : 1920) : maxSideFor(settings.quality);
   const short = Math.round((long * 9) / 16);
   // "ideal" values: the camera gives its best resolution up to the chosen one.
   const videoC = {
@@ -411,7 +415,7 @@ async function boostFrameRate(track, portrait) {
   // not have made some phones stall, blur or flicker.
   if (!max || max <= (track.getSettings().frameRate || 0) + 5) return;
   const before = { ...track.getSettings() };
-  for (const long of [1920, 1280]) {
+  for (const long of MOBILE ? [1280] : [1920, 1280]) {
     const short = Math.round((long * 9) / 16);
     try {
       await track.applyConstraints({
@@ -516,7 +520,10 @@ function loop(now) {
   if (video.readyState < 2 || !video.videoWidth) return;
   const fx = engine.effect;
   // The body point cloud needs the silhouette too.
-  const wantSeg = !!fx?.needs?.seg || settings.points;
+  // A body power needs the silhouette every frame; the point cloud alone
+  // only every third camera frame (the segmentation is the heaviest model).
+  const needSeg = !!fx?.needs?.seg;
+  const wantSeg = needSeg || settings.points;
   // Each new camera frame goes to the detection worker; rendering never waits
   // for it, and the engine predicts the hands' motion in between.
   let newFrame = false;
@@ -525,7 +532,9 @@ function loop(now) {
     newFrame = true;
     if (lastCamFrame) camInterval = camInterval ? camInterval * 0.9 + (now - lastCamFrame) * 0.1 : now - lastCamFrame;
     lastCamFrame = now;
-    tracker.request(video, wantSeg, settings.points || !!fx?.needs?.pose);
+    camFrameNo++;
+    coverTransition(now);
+    tracker.request(video, needSeg || (settings.points && camFrameNo % 3 === 0), settings.points || !!fx?.needs?.pose);
   }
   const det = tracker.take(wantSeg);
   adaptResolution(now);
@@ -551,6 +560,8 @@ function loop(now) {
       camInterval,
       now,
     });
+    recorder.frame(now);
+    handsFree(engine.dt);
     // Experience for time spent doing magic (someone in view).
   } catch (err) {
     console.error(err);
@@ -616,6 +627,68 @@ async function countdown() {
   return true;
 }
 
+// ---------- Magic transition: cover the camera, uncover -> new power ----------
+// Like the TikTok transitions: the image goes dark (hand on the lens), then
+// comes back within 3 s with another power, a flash and a whoosh.
+const lumCanvas = document.createElement('canvas');
+lumCanvas.width = 16;
+lumCanvas.height = 9;
+const lumCtx = lumCanvas.getContext('2d', { willReadFrequently: true });
+let lumAvg = 0;
+let coveredAt = 0;
+function coverTransition(now) {
+  if (!settings.transition) return;
+  lumCtx.drawImage(video, 0, 0, 16, 9);
+  const d = lumCtx.getImageData(0, 0, 16, 9).data;
+  let sum = 0;
+  for (let i = 0; i < d.length; i += 4) sum += d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+  const lum = sum / (d.length / 4);
+  if (!coveredAt) {
+    // Sudden darkness compared with the usual brightness.
+    if (lumAvg > 40 && lum < lumAvg * 0.25) coveredAt = now;
+    else lumAvg = lumAvg ? lumAvg * 0.95 + lum * 0.05 : lum;
+  } else if (now - coveredAt > 3000) {
+    coveredAt = 0;
+    lumAvg = lum;
+  } else if (lum > lumAvg * 0.6 && now - coveredAt > 200) {
+    coveredAt = 0;
+    magicSwitch();
+  }
+}
+function magicSwitch() {
+  // Next favourite, or another power you own (not the free mode).
+  const owned = EFFECTS.filter((d) => progress.owns(d.id) && d.id !== 'free' && d.id !== currentEffect);
+  const favList = owned.filter((d) => favs.has(d.id));
+  const pool = favList.length ? favList : owned;
+  if (!pool.length) return;
+  const next = pool[(Math.random() * pool.length) | 0].id;
+  selectEffect(next);
+  engine.flash([255, 255, 255], 0.9, 2.5);
+  engine.punch(0.08);
+  audio.play('teleport', 0.9);
+}
+
+// ---------- Hands-free: show both palms, still, to start or stop ----------
+// Handy when the phone is propped up a few metres away.
+let handsFreeT = 0;
+let recStartedAt = 0;
+function handsFree(dt) {
+  const btn = $('btn-record');
+  if (!settings.handsFree) return;
+  const m = Math.min(engine.W, engine.H);
+  const hs = engine.hands.filter((h) => h.presence > 0.6 && h.open);
+  const still = hs.length >= 2 && hs.every((h) => h.speed < m * 0.18) && Math.abs(hs[0].palm.x - hs[1].palm.x) > m * 0.25;
+  const busy = btn.classList.contains('arming') || (recorder.recording && performance.now() - recStartedAt < 3000);
+  handsFreeT = still && !busy ? handsFreeT + dt : Math.min(0, handsFreeT + dt);
+  // The record button fills up while the palms are held.
+  btn.style.setProperty('--hf', handsFreeT > 0 ? String(Math.min(1, handsFreeT / 1.5)) : '0');
+  if (handsFreeT < 1.5) return;
+  handsFreeT = -2;
+  btn.style.setProperty('--hf', '0');
+  if (recorder.recording) stopRecording();
+  else startRecording();
+}
+
 async function startRecording() {
   if (!window.MediaRecorder || !stage.captureStream) return;
   const btn = $('btn-record');
@@ -623,6 +696,19 @@ async function startRecording() {
   const go = await countdown();
   btn.classList.remove('arming');
   if (!go || !studioOpen) return;
+  recStartedAt = performance.now();
+  // The size of the video cannot change while recording: if frames were
+  // being dropped, step the resolution down once before starting.
+  const recent = frameTimes.slice(-60);
+  if (recent.length > 30) {
+    const sorted = [...recent].sort((a, b) => a - b);
+    const usual = sorted[Math.floor(sorted.length * 0.25)];
+    const dropped = recent.filter((t) => t > usual * 1.6).length / recent.length;
+    if (dropped > 0.1 && engine.renderScale > 0.5) {
+      engine.renderScale = Math.max(0.5, engine.renderScale * 0.8);
+      await new Promise((r) => setTimeout(r, 150));
+    }
+  }
   try {
     recorder.start({ audioTracks: audio.recordTracks.slice(0, 1) });
   } catch (err) {

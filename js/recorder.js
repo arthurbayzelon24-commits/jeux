@@ -29,12 +29,24 @@ export class CanvasRecorder {
   start({ audioTracks = [], fps = 30 } = {}) {
     if (!this.canvas.captureStream || !window.MediaRecorder)
       throw new Error('L’enregistrement vidéo n’est pas pris en charge par ce navigateur.');
-    const stream = this.canvas.captureStream(fps);
+    // Frames are pushed by the app after each finished drawing (frame()), at
+    // most `fps` per second: every recorded frame is a complete, new image, so
+    // the video is as smooth as the screen, without doubled or torn frames.
+    let stream = this.canvas.captureStream(0);
+    this.track = stream.getVideoTracks()[0];
+    if (!this.track?.requestFrame) {
+      stream.getTracks().forEach((t) => t.stop());
+      stream = this.canvas.captureStream(fps);
+      this.track = null;
+    }
+    this.minGap = 1000 / fps - 2;
+    this.lastPush = 0;
     audioTracks.forEach((t) => stream.addTrack(t));
     const mimeType = pickMimeType();
     const pixels = this.canvas.width * this.canvas.height;
-    // Enough bits for sharp 4K/8K; browsers cap it to what their encoder supports.
-    const videoBitsPerSecond = pixels > 2e7 ? 80e6 : pixels > 8e6 ? 40e6 : pixels > 2e6 ? 16e6 : pixels > 9e5 ? 8e6 : 5e6;
+    // Like phone camera apps: enough for a sharp image without overloading
+    // the phone's video encoder (which makes recordings stutter).
+    const videoBitsPerSecond = pixels > 8e6 ? 30e6 : pixels > 2.2e6 ? 12e6 : pixels > 9e5 ? 6e6 : 4e6;
     const opts = { videoBitsPerSecond, audioBitsPerSecond: 160000 };
     if (mimeType) opts.mimeType = mimeType;
     this.chunks = [];
@@ -43,6 +55,13 @@ export class CanvasRecorder {
     this.startedAt = performance.now();
     this.recorder.start(250);
     this.stream = stream;
+  }
+
+  // Called after each drawn frame.
+  frame(now = performance.now()) {
+    if (!this.track || !this.recording || now - this.lastPush < this.minGap) return;
+    this.lastPush = now;
+    this.track.requestFrame();
   }
 
   stop() {
