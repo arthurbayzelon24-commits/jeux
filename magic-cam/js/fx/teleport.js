@@ -131,7 +131,7 @@ export function teleportEffect() {
         return true;
       }
       plateAge += e.dt;
-      if (!plate || plateAge > (state === 'idle' ? 0.25 : 0.1)) {
+      if (!plate || plateAge > (state === 'idle' ? 0.4 : 0.15)) {
         plate = e.backgroundPlate();
         plateAge = 0;
       }

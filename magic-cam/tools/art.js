@@ -460,28 +460,26 @@ export function renderHeader(W = 1400, H = 560) {
   return c.toDataURL('image/jpeg', 0.88);
 }
 
-// App icon: a camera whose lens is a glowing magic portal, with sparks of
-// magic around it, on a deep violet night. Drawn flat so it stays clear even
-// at 64 px. Full-bleed square: the phone rounds the corners itself.
+// App icon: a bold white video camera on a vivid magenta-to-violet-to-blue
+// gradient, with a magic wand crossing it and a burst of sparkles. Flat and
+// high-contrast so it reads at any size. Full-bleed: the phone rounds it.
 export function renderIcon(size = 1024) {
   const S = size;
   const c = makeCanvas(S, S);
   const g = c.getContext('2d');
   const u = S / 1024;
-  // Night sky: violet glow on the top right, near black at the bottom.
-  const bg = g.createRadialGradient(S * 0.7, S * 0.25, 0, S * 0.5, S * 0.5, S * 0.85);
-  bg.addColorStop(0, '#7b2ff7');
-  bg.addColorStop(0.45, '#3a0f8a');
-  bg.addColorStop(1, '#0c0420');
+  const bg = g.createLinearGradient(0, 0, S, S);
+  bg.addColorStop(0, '#ff4f7b');
+  bg.addColorStop(0.45, '#8a2cf2');
+  bg.addColorStop(1, '#1d6bff');
   g.fillStyle = bg;
   g.fillRect(0, 0, S, S);
-  for (let i = 0; i < 70; i++) {
-    g.fillStyle = `rgba(255,255,255,${0.2 + Math.random() * 0.6})`;
-    const r = (0.8 + Math.random() * 2.2) * u;
-    g.beginPath();
-    g.arc(Math.random() * S, Math.random() * S, r, 0, Math.PI * 2);
-    g.fill();
-  }
+  // Soft light in the top left and a darker corner, for depth.
+  const light = g.createRadialGradient(S * 0.2, S * 0.15, 0, S * 0.2, S * 0.15, S * 0.8);
+  light.addColorStop(0, 'rgba(255,255,255,0.35)');
+  light.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = light;
+  g.fillRect(0, 0, S, S);
   const round = (x, y, w, h, r) => {
     g.beginPath();
     g.moveTo(x + r, y);
@@ -491,116 +489,68 @@ export function renderIcon(size = 1024) {
     g.arcTo(x, y, x + w, y, r);
     g.closePath();
   };
-  // Camera body, with its top bump and a shadow under it.
-  const bx = S * 0.16;
-  const by = S * 0.33;
-  const bw = S * 0.68;
-  const bh = S * 0.48;
+  // White video camera: rounded body and the lens cone on the right.
   g.save();
-  g.shadowColor = 'rgba(0,0,0,0.55)';
-  g.shadowBlur = 50 * u;
-  g.shadowOffsetY = 18 * u;
-  const body = g.createLinearGradient(0, by, 0, by + bh);
-  body.addColorStop(0, '#ffffff');
-  body.addColorStop(1, '#d6ccff');
-  g.fillStyle = body;
-  round(S * 0.33, S * 0.25, S * 0.26, S * 0.12, 26 * u);
+  g.shadowColor = 'rgba(40,0,80,0.45)';
+  g.shadowBlur = 40 * u;
+  g.shadowOffsetY = 16 * u;
+  g.fillStyle = '#ffffff';
+  round(S * 0.17, S * 0.36, S * 0.46, S * 0.36, 70 * u);
   g.fill();
-  round(bx, by, bw, bh, 70 * u);
+  g.beginPath();
+  g.moveTo(S * 0.66, S * 0.48);
+  g.lineTo(S * 0.84, S * 0.38);
+  g.quadraticCurveTo(S * 0.87, S * 0.37, S * 0.87, S * 0.41);
+  g.lineTo(S * 0.87, S * 0.67);
+  g.quadraticCurveTo(S * 0.87, S * 0.71, S * 0.84, S * 0.7);
+  g.lineTo(S * 0.66, S * 0.6);
+  g.closePath();
   g.fill();
   g.restore();
-  // Record light.
-  const rec = g.createRadialGradient(S * 0.74, S * 0.4, 0, S * 0.74, S * 0.4, S * 0.04);
-  rec.addColorStop(0, '#ff8a8a');
-  rec.addColorStop(1, '#ff2d55');
+  // Record dot on the camera.
+  const rec = g.createRadialGradient(S * 0.3, S * 0.47, 0, S * 0.3, S * 0.47, S * 0.05);
+  rec.addColorStop(0, '#ff7a8f');
+  rec.addColorStop(1, '#ff1e4d');
   g.fillStyle = rec;
   g.beginPath();
-  g.arc(S * 0.74, S * 0.4, S * 0.032, 0, Math.PI * 2);
+  g.arc(S * 0.3, S * 0.47, S * 0.045, 0, Math.PI * 2);
   g.fill();
-  // The lens: a dark ring, then a swirling portal inside.
-  const cx = S * 0.5;
-  const cy = S * 0.57;
-  const R = S * 0.19;
-  g.fillStyle = '#1b0f3a';
-  g.beginPath();
-  g.arc(cx, cy, R * 1.22, 0, Math.PI * 2);
-  g.fill();
-  g.strokeStyle = '#8f7bd6';
-  g.lineWidth = 8 * u;
-  g.beginPath();
-  g.arc(cx, cy, R * 1.12, 0, Math.PI * 2);
-  g.stroke();
+  // Magic wand: a dark stick with a white tip, coming up to the top right.
   g.save();
-  g.beginPath();
-  g.arc(cx, cy, R, 0, Math.PI * 2);
-  g.clip();
-  const core = g.createRadialGradient(cx, cy, 0, cx, cy, R);
-  core.addColorStop(0, '#ffffff');
-  core.addColorStop(0.18, '#9ff3ff');
-  core.addColorStop(0.5, '#3d7bff');
-  core.addColorStop(0.8, '#a02bd8');
-  core.addColorStop(1, '#2a0a52');
-  g.fillStyle = core;
-  g.fillRect(cx - R, cy - R, R * 2, R * 2);
-  // Spiral arms of the portal.
-  g.globalCompositeOperation = 'lighter';
-  for (let arm = 0; arm < 4; arm++) {
-    g.strokeStyle = arm % 2 ? 'rgba(255,170,90,0.55)' : 'rgba(150,230,255,0.6)';
-    g.lineWidth = 10 * u;
-    g.beginPath();
-    for (let k = 0; k <= 60; k++) {
-      const t = k / 60;
-      const a = arm * (Math.PI / 2) + t * Math.PI * 2.2;
-      const r = R * (0.1 + t * 0.9);
-      const x = cx + Math.cos(a) * r;
-      const y = cy + Math.sin(a) * r;
-      k ? g.lineTo(x, y) : g.moveTo(x, y);
-    }
-    g.stroke();
-  }
+  g.translate(S * 0.5, S * 0.6);
+  g.rotate(-0.78);
+  g.fillStyle = '#1b1035';
+  round(-S * 0.03, -S * 0.02, S * 0.42, S * 0.06, 22 * u);
+  g.fill();
+  g.fillStyle = '#ffffff';
+  round(S * 0.3, -S * 0.02, S * 0.09, S * 0.06, 22 * u);
+  g.fill();
   g.restore();
-  // Ring of orange sparks around the lens, like a sorcerer's portal.
-  g.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < 220; i++) {
-    const a = Math.random() * Math.PI * 2;
-    const r = R * (1.2 + Math.random() * 0.12);
-    const x = cx + Math.cos(a) * r;
-    const y = cy + Math.sin(a) * r;
-    const len = (6 + Math.random() * 22) * u;
-    g.strokeStyle = `rgba(255,${150 + Math.random() * 80},60,${0.4 + Math.random() * 0.5})`;
-    g.lineWidth = (2 + Math.random() * 3) * u;
-    g.beginPath();
-    g.moveTo(x, y);
-    g.lineTo(x - Math.sin(a) * len, y + Math.cos(a) * len);
-    g.stroke();
-  }
-  const halo = g.createRadialGradient(cx, cy, R, cx, cy, R * 1.7);
-  halo.addColorStop(0, 'rgba(255,150,60,0.35)');
-  halo.addColorStop(1, 'rgba(255,150,60,0)');
-  g.fillStyle = halo;
+  // Burst of sparkles at the wand's tip.
+  const tipX = S * 0.5 + Math.cos(-0.78) * S * 0.39;
+  const tipY = S * 0.6 + Math.sin(-0.78) * S * 0.39;
+  const glow = g.createRadialGradient(tipX, tipY, 0, tipX, tipY, S * 0.22);
+  glow.addColorStop(0, 'rgba(255,240,170,0.95)');
+  glow.addColorStop(0.35, 'rgba(255,200,90,0.45)');
+  glow.addColorStop(1, 'rgba(255,200,90,0)');
+  g.fillStyle = glow;
   g.fillRect(0, 0, S, S);
-  // Magic sparkles: four-point stars.
-  const star = (x, y, r, col) => {
-    const glow = g.createRadialGradient(x, y, 0, x, y, r * 1.6);
-    glow.addColorStop(0, col.replace('A', '0.7'));
-    glow.addColorStop(1, col.replace('A', '0'));
-    g.fillStyle = glow;
-    g.fillRect(x - r * 1.6, y - r * 1.6, r * 3.2, r * 3.2);
-    g.fillStyle = '#fff';
+  const star = (x, y, r) => {
     g.beginPath();
     for (let k = 0; k < 8; k++) {
       const a = (k * Math.PI) / 4 - Math.PI / 2;
-      const rr = k % 2 ? r * 0.18 : r;
+      const rr = k % 2 ? r * 0.2 : r;
       g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
     }
     g.closePath();
     g.fill();
   };
-  star(S * 0.82, S * 0.17, S * 0.1, 'rgba(255,220,120,A)');
-  star(S * 0.67, S * 0.11, S * 0.045, 'rgba(160,220,255,A)');
-  star(S * 0.18, S * 0.2, S * 0.05, 'rgba(255,150,220,A)');
-  star(S * 0.88, S * 0.86, S * 0.04, 'rgba(255,220,120,A)');
-  g.globalCompositeOperation = 'source-over';
+  g.fillStyle = '#fffbe8';
+  star(tipX, tipY, S * 0.12);
+  star(tipX - S * 0.17, tipY - S * 0.04, S * 0.045);
+  star(tipX + S * 0.03, tipY + S * 0.16, S * 0.04);
+  star(S * 0.16, S * 0.2, S * 0.05);
+  star(S * 0.86, S * 0.86, S * 0.035);
   return c.toDataURL('image/png');
 }
 

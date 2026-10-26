@@ -1,9 +1,10 @@
 // Body pack: powers that change you yourself, using the silhouette found by
 // the AI and the learned background behind you.
-//   Multiclonage   V sign: copies of you appear on both sides, a little late
+//   Multiclonage   hand seals (ninja techniques): copies of you appear on
+//                  both sides, a little late; a snap dispels them
 //   Invisibilité   snap (or fist -> open): you vanish, only a shimmer is left
 //   Taille         snap (or fist -> open): mini you, giant you, back to normal
-import { Particles, rand, TAU, clamp, makeCanvas, noise1 } from './util.js';
+import { Particles, rand, TAU, clamp, makeCanvas, noise1, drawGlow } from './util.js';
 
 const live = (hands) => hands.filter((h) => h.presence > 0.5);
 const toggled = (hands) => live(hands).some((h) => h.events.snap || h.events.release);
@@ -42,7 +43,9 @@ export function clonesEffect() {
   let lastShot = 0;
   let cool = 0;
   const smoke = new Particles(300);
-  const lastGesture = new Map();
+  let sealKind = null;
+  let sealT = 0;
+  let seal = null;
   // Each clone: side offset (fraction of the width), delay in seconds, scale.
   const SLOTS = [
     [-0.27, 0.25, 0.92],
@@ -63,7 +66,7 @@ export function clonesEffect() {
   return {
     id: 'clones',
     name: 'Multiclonage',
-    hint: 'Fais le signe V : deux clones de toi apparaissent, puis quatre. Encore une fois pour les faire disparaître. Ils te suivent avec un petit retard.',
+    hint: 'Technique des clones : joins les deux mains, index levés comme un ninja, et tiens une demi-seconde (deux poings joints = clones d’ombre, paumes jointes = clones hologrammes). Recommence pour en avoir quatre. Claque des doigts pour les faire disparaître.',
     colors: COLORS,
     needs: { seg: true },
     action: { label: 'Clones', run: (e) => set(e, count >= 4 ? 0 : count + 2) },
@@ -82,13 +85,35 @@ export function clonesEffect() {
     update(dt, hands, e) {
       smoke.update(dt);
       cool -= dt;
-      // The V sign counts when it starts, not while it is held.
-      let v = false;
-      for (const h of live(hands)) {
-        if (h.gesture === 'peace' && lastGesture.get(h.id) !== 'peace') v = true;
-        lastGesture.set(h.id, h.gesture);
+      // Techniques: a hand seal made with both hands together, held a moment.
+      //   fingers up (crossed, like a ninja)  -> clones
+      //   both fists pressed together         -> shadow clones
+      //   palms joined                        -> hologram clones
+      //   a snap                              -> they all vanish (release)
+      const L = live(hands);
+      let kind = null;
+      if (L.length >= 2) {
+        const [a, b] = L;
+        const near = Math.hypot(a.palm.x - b.palm.x, a.palm.y - b.palm.y) < (a.size + b.size) * 1.1;
+        const up = (h) => h.point || h.gesture === 'peace' || (h.fingers.index && h.fingers.middle && !h.fingers.ring);
+        if (near && up(a) && up(b)) kind = 0;
+        else if (near && a.fist && b.fist) kind = 1;
+        else if (near && a.open && b.open) kind = 2;
+        if (kind !== null) seal = { x: (a.palm.x + b.palm.x) / 2, y: (a.palm.y + b.palm.y) / 2, r: (a.size + b.size) * 0.9 };
       }
-      if (cool <= 0 && (v || live(hands).some((h) => h.events.snap))) set(e, count >= 4 ? 0 : count + 2);
+      if (kind !== sealKind) {
+        sealKind = kind;
+        sealT = 0;
+      } else if (kind !== null && sealT >= 0) sealT += dt;
+      if (kind === null) seal = null;
+      if (kind !== null && sealT > 0.45 && cool <= 0) {
+        sealT = -1; // once per seal: separate the hands to do it again
+        scheme = COLORS[kind];
+        set(e, Math.min(4, count + 2));
+        e.flash([255, 255, 255], 0.25, 4);
+        e.shake(8);
+      }
+      if (cool <= 0 && count > 0 && L.some((h) => h.events.snap)) set(e, 0);
       shown += clamp(count - shown, -dt * 6, dt * 6);
       // Keep a copy of you every 1/20 s, for 0.7 s.
       if (e.segActive && e.seg?.present && e.t - lastShot > 0.05) {
@@ -130,8 +155,29 @@ export function clonesEffect() {
       }
       return false;
     },
-    draw(ctx) {
+    draw(ctx, e) {
       smoke.draw(ctx);
+      // The seal charging: chakra swirling around the joined hands.
+      if (seal && sealT > 0) {
+        const k = clamp(sealT / 0.45);
+        const col = [
+          [120, 200, 255],
+          [150, 90, 255],
+          [80, 240, 255],
+        ][sealKind];
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = `rgba(${col.join(',')},0.9)`;
+        ctx.lineWidth = 4 * e.unit;
+        ctx.beginPath();
+        ctx.arc(seal.x, seal.y, seal.r, -Math.PI / 2, -Math.PI / 2 + TAU * k);
+        ctx.stroke();
+        for (let i = 0; i < 3; i++) {
+          const a = e.t * 6 + (i * TAU) / 3;
+          drawGlow(ctx, col, seal.x + Math.cos(a) * seal.r * 0.8, seal.y + Math.sin(a) * seal.r * 0.8, seal.r * 0.25, 0.7 * k, 0.4);
+        }
+        drawGlow(ctx, col, seal.x, seal.y, seal.r * 1.3 * k, 0.4 * k, 0.1);
+        ctx.globalCompositeOperation = 'source-over';
+      }
     },
   };
 }
@@ -199,7 +245,7 @@ export function invisibleEffect() {
     drawBackground(ctx, e) {
       if (k <= 0 || !e.segActive) return false;
       plateAge += e.dt;
-      if (!plate || plateAge > 0.15) {
+      if (!plate || plateAge > 0.4) {
         plate = e.backgroundPlate();
         plateAge = 0;
       }
@@ -304,7 +350,7 @@ export function sizeEffect() {
     drawBackground(ctx, e) {
       if (Math.abs(k - 1) < 0.01 || !e.segActive) return false;
       plateAge += e.dt;
-      if (!plate || plateAge > 0.15) {
+      if (!plate || plateAge > 0.4) {
         plate = e.backgroundPlate();
         plateAge = 0;
       }

@@ -69,6 +69,7 @@ const DEFAULTS = {
   countdown: '3',
   mirror: true,
   mirrorFix: true,
+  theme: 'or',
   cinema: true,
   autosave: true,
   mic: true,
@@ -209,8 +210,28 @@ try {
 }
 let category = 'all';
 
-function buildPowers() {
+// Powers shown with a "Nouveau" badge.
+const NEW_IDS = ['clones', 'invisible', 'size', 'mindgrab', 'shockwave', 'magnet', 'chrono', 'gravity'];
+// Home: one shelf (a row that scrolls sideways) per category, favourites first.
+function shelfRow(cat) {
   const grid = $('powers');
+  let sec = grid.querySelector(`.shelf[data-cat="${cat}"]`);
+  if (!sec) {
+    sec = document.createElement('section');
+    sec.className = 'shelf';
+    sec.dataset.cat = cat;
+    const name = cat === 'fav' ? '★ Favoris' : CATEGORIES.find((c) => c.id === cat)?.name || cat;
+    sec.innerHTML = `<h2 class="shelf-title">${name}<small></small></h2><div class="shelf-row"></div>`;
+    if (cat === 'fav') grid.prepend(sec);
+    else grid.append(sec);
+  }
+  return sec.querySelector('.shelf-row');
+}
+const powerWraps = () => $('powers').querySelectorAll('.power-wrap');
+
+function buildPowers() {
+  shelfRow('fav');
+  for (const c of CATEGORIES) shelfRow(c.id);
   const carousel = $('carousel');
   for (const def of EFFECTS) {
     const fx = getEffect(def.id);
@@ -229,8 +250,14 @@ function buildPowers() {
     star.setAttribute('aria-label', `Favori : ${fx.name}`);
     star.textContent = '★';
     star.addEventListener('click', () => toggleFav(def.id));
+    if (NEW_IDS.includes(def.id)) {
+      const badge = document.createElement('span');
+      badge.className = 'new-badge';
+      badge.textContent = 'Nouveau';
+      card.querySelector('.power-art').append(badge);
+    }
     wrap.append(card, star);
-    grid.append(wrap);
+    shelfRow(def.cat).append(wrap);
 
     const chip = document.createElement('button');
     chip.className = 'fx-chip';
@@ -275,19 +302,22 @@ function toggleFav(id) {
 function filterPowers() {
   if (category === 'fav' && !favs.size) category = 'all';
   document.querySelectorAll('.cat').forEach((b) => b.classList.toggle('active', b.dataset.cat === category));
-  for (const parent of [$('powers'), $('carousel')]) {
-    const items = [...parent.children];
-    items.sort(
-      (a, b) =>
-        favs.has(b.dataset.id) - favs.has(a.dataset.id) ||
-        EFFECTS.findIndex((d) => d.id === a.dataset.id) - EFFECTS.findIndex((d) => d.id === b.dataset.id),
-    );
-    parent.append(...items);
+  const order = (a, b) => EFFECTS.findIndex((d) => d.id === a.dataset.id) - EFFECTS.findIndex((d) => d.id === b.dataset.id);
+  const carousel = $('carousel');
+  carousel.append(...[...carousel.children].sort((a, b) => favs.has(b.dataset.id) - favs.has(a.dataset.id) || order(a, b)));
+  // Favourites move to their own shelf at the top.
+  const single = category !== 'all';
+  for (const w of [...powerWraps()].sort(order)) {
+    const fav = favs.has(w.dataset.id);
+    w.classList.toggle('fav', fav);
+    // In one category, its favourites stay with it.
+    shelfRow(fav && (!single || category === 'fav') ? 'fav' : w.dataset.cat).append(w);
   }
-  for (const w of $('powers').children) {
-    const id = w.dataset.id;
-    w.classList.toggle('fav', favs.has(id));
-    w.hidden = !(category === 'all' || (category === 'fav' ? favs.has(id) : w.dataset.cat === category));
+  $('powers').classList.toggle('single', single);
+  for (const sec of $('powers').querySelectorAll('.shelf')) {
+    const n = sec.querySelector('.shelf-row').children.length;
+    sec.querySelector('small').textContent = n ? ` ${n}` : '';
+    sec.hidden = single ? sec.dataset.cat !== category : !n;
   }
   $('cats').querySelector('[data-cat="fav"]').hidden = !favs.size;
 }
@@ -319,7 +349,7 @@ document.querySelectorAll('.tab').forEach((t) =>
 // ---------- First launch: tracking points? ----------
 function askPoints() {
   if (settings.pointsAsked) return;
-  $('ask-visual').innerHTML = '<img src="assets/icon-192.png" alt="">';
+  $('ask-visual').innerHTML = '<img src="assets/icon2-192.png" alt="">';
   $('points-ask').hidden = false;
 }
 function answerPoints(yes) {
@@ -387,6 +417,7 @@ function updateToggles() {
   $('btn-sound').classList.toggle('off', !settings.sound);
   $('btn-sound').querySelector('[data-icon]').innerHTML = svg(settings.sound ? 'sound' : 'mute');
   $('btn-points').classList.toggle('on', settings.points);
+  document.documentElement.dataset.theme = settings.theme;
   $('btn-music').classList.toggle('on', settings.music !== 'off');
   $('vignette').hidden = !settings.cinema;
   $('fps').hidden = !settings.fps;
@@ -1327,6 +1358,7 @@ form.addEventListener('change', (e) => {
   updateToggles();
 });
 syncForm();
+document.documentElement.dataset.theme = settings.theme;
 quality.particles = PARTICLES[settings.fxQuality] || 1;
 
 // ---------- Zoom: pinch with two fingers, mouse wheel, or the 1× button ----------
@@ -1356,9 +1388,11 @@ function coverRatio() {
   const b = window.innerHeight / ch;
   return Math.max(a, b) / Math.min(a, b);
 }
+// Smallest size of you in the image when zoomed out all the way.
+const MIN_SHRINK = 0.45;
 function zoomRange() {
   const hwMin = Math.min(zoomCaps?.min ?? 1, 1);
-  return [Math.max(0.25, hwMin / coverRatio()), 5];
+  return [Math.max(0.2, hwMin * MIN_SHRINK), 5];
 }
 function applyZoom() {
   const [lo, hi] = zoomRange();
@@ -1377,12 +1411,13 @@ function applyZoom() {
       }, 120);
   }
   const rest = zoomZ / (zoomCaps ? hw : 1);
-  // In: digital zoom drawn by the engine (so it is in the videos too).
-  engine.userZoom = Math.max(1, rest);
-  // Out: less of the image is cropped by the screen (down to all of it).
-  const k = coverRatio();
+  // The screen always stays filled. In: digital zoom drawn by the engine.
+  // Out: the engine makes the filmed image smaller, the edges filled with a
+  // soft blur: you get smaller in the frame, in the videos too.
+  const c = coverRatio() * 1.04;
+  engine.userZoom = rest;
   stage.style.objectFit = 'contain';
-  stage.style.transform = `scale(${rest >= 1 ? k * 1.04 : Math.max(1, k * 1.04 * rest)})`;
+  stage.style.transform = `scale(${c})`;
   $('btn-zoom').textContent = `${String(Math.round(zoomZ * 10) / 10).replace('.', ',')}×`;
   $('btn-zoom').classList.toggle('on', Math.abs(zoomZ - 1) > 0.02);
   // The zoom bar: knob position on a log scale, plus a mark at 1×.
@@ -1524,13 +1559,13 @@ function challengeRows(list) {
   return list
     .map(
       (c) =>
-        `<div class="challenge${c.done ? ' done' : ''}" data-power="${c.power || ''}"><span class="ch-check">${c.done ? '✓' : '○'}</span><span class="ch-text">${c.text}${c.goal > 1 && !c.done && c.progress.length ? ` (${c.progress.length}/${c.goal})` : ''}</span><b>💎 ${c.reward}</b></div>`,
+        `<div class="challenge${c.done ? ' done' : ''}" data-power="${c.power || ''}"><span class="ch-check">${c.done ? '✓' : '○'}</span><span class="ch-text">${c.text}${c.goal > 1 && !c.done && c.progress.length ? ` (${c.progress.length}/${c.goal})` : ''}</span></div>`,
     )
     .join('');
 }
 // Locked powers on the cards and in the studio row.
 function renderLocks() {
-  for (const w of $('powers').children) {
+  for (const w of powerWraps()) {
     const id = w.dataset.id;
     const locked = !progress.owns(id);
     w.classList.toggle('locked', locked);
@@ -1547,12 +1582,13 @@ function renderLocks() {
 }
 function renderHub() {
   renderLocks();
-  $('wallet-num').textContent = progress.s.crystals;
-  $('wallet-streak').textContent = progress.streak > 1 ? `🔥 ${progress.streak} jours` : '';
+  $('wallet-num').textContent = progress.s.done || 0;
+  $('wallet-streak').textContent = progress.streak > 1 ? `🔥 ${progress.streak} jours d’affilée` : 'Reviens chaque jour pour ta série';
   const list = progress.challenges;
   $('hub-challenges').innerHTML = challengeRows(list);
   $('hub-done').textContent = `${list.filter((c) => c.done).length}/3`;
 }
+$('quick-film').addEventListener('click', () => openStudio('free'));
 $('hub-challenges').addEventListener('click', (ev) => {
   const row = ev.target.closest('.challenge');
   if (row && !row.classList.contains('done'))
@@ -1565,7 +1601,6 @@ $('wallet-card').addEventListener('click', () => {
 
 // Shop page: the challenges, then every power still to buy.
 function renderShop() {
-  $('shop-crystals').textContent = progress.s.crystals;
   $('shop-challenges').innerHTML = challengeRows(progress.challenges);
   $('free-moves').innerHTML = FREE_MOVES.map(
     ([id, how, what]) =>
@@ -1579,7 +1614,7 @@ function renderShop() {
           return `<button class="shop-item" data-id="${d.id}"><img src="${art(d.id)}" alt=""><span><strong>${getEffect(d.id).name}</strong><small>${d.gesture}</small></span><b class="${progress.s.crystals >= p ? '' : 'short'}">💎 ${p}</b></button>`;
         })
         .join('')
-    : '<p class="muted">Tu as tous les pouvoirs !</p>';
+    : '';
 }
 $('shop-list').addEventListener('click', (ev) => {
   const b = ev.target.closest('.shop-item');
@@ -1644,7 +1679,7 @@ function flushUnlocks() {
 }
 
 // "What's new" once per big update (after the first-launch question).
-const NEWS_KEY = 'magic-cam-news-6';
+const NEWS_KEY = 'magic-cam-news-7';
 function showNews() {
   try {
     if (localStorage.getItem(NEWS_KEY) || !settings.pointsAsked) return;

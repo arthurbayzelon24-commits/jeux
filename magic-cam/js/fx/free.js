@@ -20,6 +20,7 @@ import { neonEffect } from './pack-tech.js';
 import { fireworksEffect } from './fireworks.js';
 import { shadowEffect } from './shadow.js';
 import { fireballEffect } from './fireball.js';
+import { Particles, rand, TAU, drawGlow } from './util.js';
 
 export const FREE_MOVES = [
   ['circle', 'Main ouverte devant toi', 'Cercle magique'],
@@ -56,6 +57,44 @@ export function freeModeEffect() {
   let waveUntil = -1;
   let sweepUntil = -1;
   let throwBall = null;
+  // Combo: three different powers within 4 s set off a burst of every colour.
+  let recent = [];
+  let comboWave = null;
+  const burst = new Particles(500);
+  const COMBO_COLS = [
+    [255, 120, 60],
+    [120, 200, 255],
+    [200, 120, 255],
+    [255, 230, 120],
+  ];
+  const combo = (e) => {
+    recent = [];
+    const h = e.hands.find((x) => x.presence > 0.5);
+    const x = h?.palm.x ?? e.W / 2;
+    const y = h?.palm.y ?? e.H / 2;
+    comboWave = { x, y, t: 0 };
+    for (let i = 0; i < 220; i++) {
+      const a = rand(TAU);
+      const v = rand(300, 1500) * e.unit;
+      burst.add({
+        x,
+        y,
+        vx: Math.cos(a) * v,
+        vy: Math.sin(a) * v,
+        drag: 2.2,
+        life: rand(0.5, 1.3),
+        size: rand(3, 8) * e.unit,
+        rgb: COMBO_COLS[i % 4],
+        core: 0.4,
+      });
+    }
+    e.flash([255, 255, 255], 0.45, 3);
+    e.shake(30);
+    e.punch?.(0.06);
+    e.audio.play('combo', 1);
+    e.audio.play('boom', 0.8);
+    e.emit?.('ultimate', { id: 'free', combo: true });
+  };
 
   const pick = (hands, e) => {
     const live = hands.filter((h) => h.presence > 0.5);
@@ -122,6 +161,9 @@ export function freeModeEffect() {
         e.audio.stopLoops?.();
         current = want;
         e.emit?.('freePower', current);
+        recent = recent.filter((r) => e.t - r.t < 4 && r.id !== current);
+        recent.push({ id: current, t: e.t });
+        if (recent.length >= 3) combo(e);
         get(current).start?.(e);
         idle = 0;
       }
@@ -153,10 +195,32 @@ export function freeModeEffect() {
         throwBall = null;
       }
       if (current) get(current).update?.(dt, feed, e);
+      burst.update(dt);
+      if (comboWave && (comboWave.t += dt) > 0.8) comboWave = null;
     },
   };
   for (const hook of ['drawBackground', 'drawBehind', 'draw', 'drawOver'])
     effect[hook] = (ctx, e) => (current ? get(current)[hook]?.(ctx, e) : undefined);
+  // The combo burst goes over whatever power is on.
+  const drawPower = effect.draw;
+  effect.draw = (ctx, e) => {
+    const r = drawPower(ctx, e);
+    burst.draw(ctx);
+    if (comboWave) {
+      const t = comboWave.t / 0.8;
+      ctx.globalCompositeOperation = 'lighter';
+      COMBO_COLS.forEach((c, i) => {
+        ctx.strokeStyle = `rgba(${c.join(',')},${0.7 * (1 - t)})`;
+        ctx.lineWidth = (10 - i * 2) * e.unit * (1 - t) + 1;
+        ctx.beginPath();
+        ctx.arc(comboWave.x, comboWave.y, t * Math.max(e.W, e.H) * (0.5 + i * 0.12), 0, TAU);
+        ctx.stroke();
+      });
+      drawGlow(ctx, [255, 255, 255], comboWave.x, comboWave.y, Math.max(e.W, e.H) * 0.3 * (1 - t), 0.6 * (1 - t), 0.2);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    return r;
+  };
   effect.ultimate = (e, a) => current && get(current).ultimate?.(e, a);
   return effect;
 }

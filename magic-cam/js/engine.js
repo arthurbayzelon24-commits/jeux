@@ -49,8 +49,9 @@ export class Engine {
     try {
       return fn.apply(this.effect, args);
     } catch (err) {
-      if (!this.reported?.has(name)) {
-        (this.reported ||= new Set()).add(name);
+      const key = `${this.effect.id}:${name}`;
+      if (!this.reported?.has(key)) {
+        (this.reported ||= new Set()).add(key);
         console.error(`Effet « ${this.effect.id} » (${name}) :`, err);
       }
       return undefined;
@@ -493,6 +494,22 @@ export class Engine {
     const z = this.zoom * this.userZoom * (this.shakeAmp > 0.3 ? 1.02 : 1);
     const a = this.shakeAmp > 0.3 ? this.shakeAmp : 0;
     const m = [z, 0, 0, z, (W * (1 - z)) / 2 + (Math.random() * 2 - 1) * a, (H * (1 - z)) / 2 + (Math.random() * 2 - 1) * a];
+    // Zoomed out further than the camera sees: the image gets smaller in the
+    // middle, and the edges are filled with a soft blur of it (like the
+    // blurred bars of video apps), so the whole frame stays filled.
+    if (z < 0.999) {
+      const b = (this.zoomFill ||= makeCanvas(32, 18));
+      const bg = b.getContext('2d');
+      bg.save();
+      if (input.mirror) bg.setTransform(-1, 0, 0, 1, b.width, 0);
+      bg.drawImage(input.source, 0, 0, b.width, b.height);
+      bg.restore();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.imageSmoothingQuality = 'low';
+      ctx.drawImage(b, -W * 0.1, -H * 0.1, W * 1.2, H * 1.2);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0, 0, W, H);
+    }
     ctx.setTransform(...m);
     this.shakeAmp *= Math.exp(-dt * 8);
     this.zoom = 1 + (this.zoom - 1) * Math.exp(-dt * 5);
@@ -664,7 +681,6 @@ export class Engine {
     c.drawImage(s.canvas, 0, 0, W, H);
     c.globalCompositeOperation = 'source-over';
     ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = this.cloud.key === 'c' ? 0.42 : 0.55;
     ctx.drawImage(canvas, 0, 0);

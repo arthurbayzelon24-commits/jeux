@@ -15,7 +15,7 @@ const root = path.join(__dirname, '..');
   const save = (file, dataUrl) => fs.writeFileSync(path.join(root, file), Buffer.from(dataUrl.split(',')[1], 'base64'));
   for (const [id, url] of Object.entries(art.powers)) save(`assets/powers/${id}.jpg`, url);
   save('assets/header.jpg', art.header);
-  save('assets/icon-1024.png', art.icon);
+  save('assets/icon2-1024.png', art.icon);
   // Smaller icon sizes, resized by the browser.
   for (const s of [512, 192, 180, 64]) {
     const url = await page.evaluate(
@@ -34,7 +34,7 @@ const root = path.join(__dirname, '..');
         }),
       [art.icon, s],
     );
-    save(`assets/icon-${s}.png`, url);
+    save(`assets/icon2-${s}.png`, url);
   }
   console.log(`${Object.keys(art.powers).length} cartes, bannière et icônes générées.`);
   await browser.close();
