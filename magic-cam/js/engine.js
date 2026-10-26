@@ -124,6 +124,19 @@ export class Engine {
   }
   shake(amount) {
     this.shakeAmp = Math.max(this.shakeAmp, amount * this.unit);
+    // Big impacts are felt too (phones that can vibrate).
+    if (amount >= 15) this.buzz(Math.min(90, amount * 2));
+  }
+  buzz(ms) {
+    if (this.settings.haptics === false || !navigator.vibrate) return;
+    const now = performance.now();
+    if (now - (this.lastBuzz || 0) < 120) return;
+    this.lastBuzz = now;
+    try {
+      navigator.vibrate(ms);
+    } catch {
+      /* not allowed */
+    }
   }
   flash(rgb, alpha = 0.6, decay = 4) {
     this.flashes.push({ rgb, alpha, decay });

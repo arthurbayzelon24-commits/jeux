@@ -159,6 +159,10 @@
             ><input type="checkbox" name="bloom"
           /></label>
           <label class="row toggle"
+            ><span>Vibrations<small>Le téléphone vibre aux impacts, aux finals et aux cibles touchées</small></span
+            ><input type="checkbox" name="haptics"
+          /></label>
+          <label class="row toggle"
             ><span>Familier<small>Un compagnon magique qui suit ta main (dès le niveau 2) et t’aide dans l’Arène</small></span
             ><input type="checkbox" name="familiar"
           /></label>
@@ -294,6 +298,24 @@
     </section>
 
     <!-- First launch: tracking points? -->
+    <div class="modal" id="news" hidden>
+      <div class="modal-card ask-card news-card">
+        <h2>Quoi de neuf ? ✨</h2>
+        <ul class="news-list">
+          <li>
+            <b>🎯 Jeux</b> (bouton cible dans la caméra) : Arène en 3 modes avec boss et bonus, et Duel élémentaire Feu / Eau / Foudre.
+          </li>
+          <li><b>🪄 Runes magiques</b> : dessine une forme en l’air pour lancer un sort.</li>
+          <li><b>🤲 Double pouvoir</b> : un pouvoir différent dans chaque main.</li>
+          <li><b>🧙 Quête du Mage</b>, niveaux, succès, défi du jour et étoiles de maîtrise.</li>
+          <li><b>🐉 Familier</b> qui te suit et évolue avec ton niveau.</li>
+          <li><b>🗝️ 5 gestes secrets</b> à découvrir.</li>
+          <li><b>🍥 10 pouvoirs d’animé</b> et 61 pouvoirs en tout.</li>
+        </ul>
+        <button class="btn btn-gold" id="news-ok">C’est parti !</button>
+      </div>
+    </div>
+
     <div class="modal" id="points-ask" hidden>
       <div class="modal-card ask-card">
         <div class="ask-visual" id="ask-visual"></div>

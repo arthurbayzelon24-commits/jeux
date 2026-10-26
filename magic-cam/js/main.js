@@ -70,6 +70,7 @@ const DEFAULTS = {
   points: true,
   look: 'normal',
   familiar: true,
+  haptics: true,
   pointsAsked: false,
   eco: false,
 };
@@ -304,6 +305,7 @@ function answerPoints(yes) {
   syncForm();
   updateToggles();
   $('points-ask').hidden = true;
+  showNews();
 }
 $('ask-yes').addEventListener('click', () => answerPoints(true));
 $('ask-no').addEventListener('click', () => answerPoints(false));
@@ -1188,7 +1190,7 @@ progress.onChange(() => {
 // Achievements and level-ups are announced on the home screen, one by one.
 let unlockBusy = false;
 function flushUnlocks() {
-  if (unlockBusy || studioOpen) return;
+  if (unlockBusy || studioOpen || !$('news').hidden) return;
   const next = progress.takeQueue();
   if (!next.length) return;
   unlockBusy = true;
@@ -1214,10 +1216,31 @@ function flushUnlocks() {
   show(0);
 }
 
+// "What's new" once per big update (after the first-launch question).
+const NEWS_KEY = 'magic-cam-news-2';
+function showNews() {
+  try {
+    if (localStorage.getItem(NEWS_KEY) || !settings.pointsAsked) return;
+  } catch {
+    return;
+  }
+  $('news').hidden = false;
+}
+$('news-ok').addEventListener('click', () => {
+  $('news').hidden = true;
+  try {
+    localStorage.setItem(NEWS_KEY, '1');
+  } catch {
+    /* shown again next time */
+  }
+  flushUnlocks();
+});
+
 // ---------- Boot ----------
 buildPowers();
 renderHub();
 setTimeout(flushUnlocks, 1500);
+setTimeout(showNews, 600);
 updateToggles();
 refreshMiniThumb();
 askPoints();

@@ -75,7 +75,7 @@ export const EFFECTS = [
   { id: 'haki', cat: 'anime', make: hakiEffect, tint: '#ff2840', gesture: 'Serrez le poing', charge: 'fist' },
   { id: 'domain', cat: 'anime', make: domainEffect, tint: '#b4dcff', gesture: 'Signe V ou index levé, tenez 1 s' },
   { id: 'kamehameha', cat: 'energie', make: kamehamehaEffect, tint: '#4aa3ff', gesture: 'Mains jointes, puis poussez', charge: 'open' },
-  { id: 'runes', cat: 'fun', make: runesEffect, tint: '#ffc86e', gesture: 'Pincez, dessinez une forme, lâchez' },
+  { id: 'runes', cat: 'fun', make: runesEffect, tint: '#ffc86e', gesture: 'Pincez, dessinez ○ △ □ ⚡ ／ V, lâchez' },
   { id: 'hud', cat: 'heros', make: hudEffect, tint: '#50dcff', gesture: 'Tapez sur le clavier holographique' },
   { id: 'firebeam', cat: 'feu', make: fireBeamEffect, tint: '#ff7a1a', gesture: 'Pointez l’index', charge: 'point' },
   { id: 'saber', cat: 'energie', make: saberEffect, tint: '#ff3b3b', gesture: 'Fermez le poing', charge: 'fist' },
