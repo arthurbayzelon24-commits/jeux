@@ -32,6 +32,8 @@ export const ACHIEVEMENTS = [
   { id: 'dual', icon: '🤲', name: 'Ambidextre', text: 'Utiliser le double pouvoir', test: (s) => s.dual >= 1 },
   { id: 'time10', icon: '⏳', name: 'Passionné', text: '10 minutes de magie', test: (s) => s.seconds >= 600 },
   { id: 'daily3', icon: '📅', name: 'Régulier', text: 'Réussir 3 défis du jour', test: (s) => s.dailyDone >= 3 },
+  { id: 'secret1', icon: '🗝️', name: 'Curiosité', text: 'Découvrir un geste secret', test: (s) => s.secrets.length >= 1 },
+  { id: 'secretall', icon: '🐉', name: 'Gardien des secrets', text: 'Découvrir les 5 gestes secrets', test: (s) => s.secrets.length >= 5 },
   { id: 'lvl10', icon: '🌟', name: 'Niveau 10', text: 'Atteindre le niveau 10', test: (s, x) => x.level >= 10 },
 ];
 
@@ -66,6 +68,8 @@ export class Progress {
       dailyDone: 0,
       unlocked: [],
       daily: null,
+      secrets: [],
+      arenaTop: [],
     };
     try {
       this.s = { ...blank, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
@@ -194,9 +198,16 @@ export class Progress {
   }
   arena(result, effect) {
     this.s.arenaBest = Math.max(this.s.arenaBest, result.score);
+    // Top 5 rounds, with the power used.
+    this.s.arenaTop = [...this.s.arenaTop, { score: result.score, effect, date: Date.now() }].sort((a, b) => b.score - a.score).slice(0, 5);
     this.s.bestCombo = Math.max(this.s.bestCombo, result.maxCombo);
     this.addXp(Math.min(300, result.score / 8), 'Manche d’Arène');
     this.#dailyStep('arena', { effect, score: result.score });
+  }
+  secret(id) {
+    if (this.s.secrets.includes(id)) return this.addXp(5);
+    this.s.secrets.push(id);
+    this.addXp(60, 'Geste secret découvert');
   }
   usedDual() {
     this.s.dual++;
