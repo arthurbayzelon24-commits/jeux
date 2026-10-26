@@ -81,6 +81,7 @@ const DEFAULTS = {
   format: 'auto',
   fillLight: false,
   fades: true,
+  powerSize: '1',
   grid: false,
   // Two extra full-screen passes per frame: off by default on phones.
   motionBlur: !MOBILE,
@@ -932,6 +933,7 @@ async function showResult(item, fromGallery = false) {
   $('res-save').hidden = !!item.saved;
   $('res-slow').hidden = $('res-boom').hidden = $('res-trim').hidden = $('res-fast').hidden = item.kind === 'photo';
   $('trim-panel').hidden = true;
+  $('res-retake').hidden = !studioOpen;
   $('result').hidden = false;
 }
 
@@ -1027,6 +1029,12 @@ $('trim-ok').addEventListener('click', async () => {
 $('res-slow').addEventListener('click', () => remixResult('slow'));
 $('res-fast').addEventListener('click', () => remixResult('fast'));
 $('res-boom').addEventListener('click', () => remixResult('boomerang'));
+
+// Retake: straight back to the camera for a new take.
+$('res-retake').addEventListener('click', () => {
+  closeResult();
+  if (studioOpen) startRecording();
+});
 
 function closeResult() {
   $('result-media').querySelector('video')?.pause();
