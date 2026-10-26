@@ -9,6 +9,7 @@ import { MESH_POINTS } from './handmesh.js';
 import { Secrets } from './mech/secrets.js';
 import { FREE_MOVES } from './fx/free.js';
 import { Progress } from './progress.js';
+import { Music, TRACKS } from './music.js';
 import { makeDual } from './dual.js';
 import { SPELLS } from './fx/runes.js';
 
@@ -34,6 +35,7 @@ const ICONS = {
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 10.5v5l4-2.5z"/>',
   slow: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
   boomerang: '<path d="M4 12a5 5 0 0 1 8-4l4 3a5 5 0 1 1 0 2l-4 3a5 5 0 0 1-8-4z"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
   target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/>',
   hands: '<path d="M7 20v-6l-2-3 1-1 3 2V5.5a1 1 0 0 1 2 0V11M17 20v-6l2-3-1-1-3 2V5.5a1 1 0 0 0-2 0V11"/>',
@@ -71,6 +73,7 @@ const DEFAULTS = {
   haptics: true,
   handsFree: true,
   transition: true,
+  music: 'off',
   pointsAsked: false,
   eco: false,
 };
@@ -365,6 +368,7 @@ function updateToggles() {
   $('btn-sound').classList.toggle('off', !settings.sound);
   $('btn-sound').querySelector('[data-icon]').innerHTML = svg(settings.sound ? 'sound' : 'mute');
   $('btn-points').classList.toggle('on', settings.points);
+  $('btn-music').classList.toggle('on', settings.music !== 'off');
   $('vignette').hidden = !settings.cinema;
   $('fps').hidden = !settings.fps;
 }
@@ -475,6 +479,7 @@ async function openStudio(id) {
   // The loading screen only shows the first time, while the models download.
   $('loading').hidden = tracker.ready;
   audio.init();
+  music.play(settings.music);
   updateToggles();
   selectEffect(id || currentEffect);
   refreshMiniThumb();
@@ -508,6 +513,7 @@ async function closeStudio() {
   cancelAnimationFrame(loopId);
   stopCamera();
   audio.stopLoops();
+  music.stop();
   $('view-studio').hidden = true;
   document.body.classList.remove('in-studio');
   renderHub();
@@ -626,6 +632,18 @@ async function countdown() {
   if (n) audio.play('go', 0.6);
   return true;
 }
+
+// ---------- Background music (studio button ♪) ----------
+const music = new Music(audio);
+$('btn-music').addEventListener('click', () => {
+  audio.init();
+  const keys = Object.keys(TRACKS);
+  settings.music = keys[(keys.indexOf(settings.music) + 1) % keys.length];
+  saveSettings();
+  music.play(settings.music);
+  $('btn-music').classList.toggle('on', settings.music !== 'off');
+  showChip(`♪ ${TRACKS[settings.music].name}`);
+});
 
 // ---------- Magic transition: cover the camera, uncover -> new power ----------
 // Like the TikTok transitions: the image goes dark (hand on the lens), then
