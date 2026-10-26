@@ -1669,6 +1669,7 @@ function renderHub() {
   document.querySelector('.challenges-card').style.setProperty('--p', list.filter((c) => c.done).length / 3);
 }
 $('quick-film').addEventListener('click', () => openStudio('free'));
+$('empty-film').addEventListener('click', () => openStudio('free'));
 $('hub-challenges').addEventListener('click', (ev) => {
   const row = ev.target.closest('.challenge');
   if (row && !row.classList.contains('done'))
