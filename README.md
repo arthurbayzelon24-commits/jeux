@@ -70,8 +70,10 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Portail façon Doctor Strange** : fais des cercles avec la main ; le portail montre ton propre paysage vu d’ailleurs (sans toi dedans). Tourne encore dessus pour l’agrandir.
 - **Téléportation au claquement de doigts** (comme Thanos) : pouce et majeur collés, puis clac.
 - **Musique de fond** (bouton ♪ dans la caméra) : Épique, Mystère ou Électro, composées en direct par l’application (aucun fichier, aucun droit d’auteur) et mixées dans les vidéos.
-- **Vrai dézoom** : sous 1×, l’image filmée rétrécit au milieu de l’écran (jusqu’à 0,45) et les bords sont remplis d’un flou, comme les bandes floues des applis vidéo : on te voit plus petit, dans les vidéos aussi.
-- **Couleur de l’application** (Paramètres > Affichage) : Or, Violet, Cyan, Rose, Vert ou Rouge.
+- **Vrai dézoom** : sous 1×, l’image filmée rétrécit au milieu de l’écran (jusqu’à 0,22) et les bords sont remplis d’un flou, comme les bandes floues des applis vidéo : on te voit plus petit, dans les vidéos aussi.
+- **Couleur de l’application** (Paramètres > Affichage) : Couleurs (par défaut : orange de feu, rose, violet, bleu, avec une couleur par catégorie), Or, Violet, Cyan, Rose, Vert ou Rouge.
+- **Boule de feu instantanée** : la boule est dans la main tout de suite ; un geste rapide la lance dans cette direction, tendre la main vers la caméra l’envoie droit sur l’écran.
+- **Zoom jusqu’à 10×** pour bien voir le visage.
 - **Combo** (Mode libre) : trois pouvoirs différents en moins de 4 s déclenchent une explosion de toutes les couleurs.
 - **Zoom à ta main** : barre de zoom à gauche de l’écran (**+** pour zoomer, **−** pour dézoomer, ou glisse le curseur ; double-touche = 1×), pince l’écran avec deux doigts (ou molette sur ordinateur), ou touche le bouton « 1× » (dézoom maximal → 1× → 2×). Pour dézoomer, l’application utilise d’abord l’objectif grand-angle quand le navigateur y donne accès, puis montre toute l’image filmée au lieu de la recadrer. Pour zoomer, elle utilise le zoom de la caméra, puis un zoom numérique qui se retrouve aussi dans les vidéos.
 - **Filtres d’image** (bouton pellicule dans le studio) : Normal, Cinéma (bandes noires 2,39:1, teinte bleu-orangé), Néon, Vintage (sépia et grain) et Noir et blanc (grain). Le filtre s’applique à la scène filmée ; les pouvoirs gardent leurs couleurs, et il est enregistré dans les vidéos.

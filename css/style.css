@@ -1,14 +1,17 @@
 :root {
-  --bg: #0b0a0f;
-  --bg-2: #15131b;
-  --card: #1a1820;
-  --line: rgba(214, 170, 102, 0.35);
-  --line-strong: rgba(232, 186, 112, 0.75);
-  --gold-1: #fff1c9;
-  --gold-2: #f3c56b;
-  --gold-3: #d58b2a;
-  --acc-line: 201, 158, 96;
-  --acc-glow: 243, 197, 107;
+  --bg: #0c0a16;
+  --bg-2: #161229;
+  --card: #1b1630;
+  --line: rgba(255, 140, 80, 0.35);
+  --line-strong: rgba(255, 150, 90, 0.75);
+  --gold-1: #ffe3c2;
+  --gold-2: #ff9a3d;
+  --gold-3: #ff4f7b;
+  --acc-line: 255, 140, 80;
+  /* Main colourful gradient: orange of fire, pink, violet, blue */
+  --grad: linear-gradient(115deg, #ffb238 0%, #ff6a3d 28%, #ff3d8b 55%, #a43dff 80%, #4f7bff 100%);
+  --on-grad: #ffffff;
+  --acc-glow: 255, 150, 70;
   --text: #f5f1ea;
   --muted: #a49c90;
   --accent: #ff7a3d;
@@ -87,8 +90,8 @@ button {
   transform: scale(0.97);
 }
 .btn-gold {
-  color: #2a1704;
-  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+  color: var(--on-grad);
+  background: var(--grad);
   box-shadow:
     0 0 0 1px rgba(255, 230, 170, 0.5) inset,
     0 8px 30px rgba(243, 160, 60, 0.35);
@@ -376,7 +379,7 @@ button {
   padding: 1px 4px;
   border-radius: 9px;
   background: var(--gold-2);
-  color: #2a1704;
+  color: var(--on-grad);
   font-size: 0.65rem;
 }
 .icon-btn b:empty {
@@ -543,8 +546,8 @@ button {
   height: 50px;
   padding: 11px;
   border-radius: 50%;
-  color: #2a1704;
-  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+  color: var(--on-grad);
+  background: var(--grad);
   box-shadow: 0 6px 24px rgba(243, 160, 60, 0.45);
 }
 .rec-btn {
@@ -592,8 +595,8 @@ button {
   padding: 12px 22px;
   border-radius: 999px;
   font-weight: 700;
-  color: #2a1704;
-  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+  color: var(--on-grad);
+  background: var(--grad);
   box-shadow: 0 8px 30px rgba(243, 160, 60, 0.45);
 }
 .hint {
@@ -888,8 +891,8 @@ button {
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #2a1704;
-  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+  color: var(--on-grad);
+  background: var(--grad);
 }
 .install-btn [data-icon] {
   width: 16px;
@@ -1019,9 +1022,9 @@ button {
   background: #18161b;
 }
 .cat.active {
-  color: #2a1704;
+  color: var(--on-grad);
   border-color: transparent;
-  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+  background: var(--grad);
 }
 .cat[hidden],
 .power-wrap[hidden] {
@@ -1376,8 +1379,8 @@ body.in-studio {
   color: var(--muted);
 }
 .seg button.active {
-  color: #2a1704;
-  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+  color: var(--on-grad);
+  background: var(--grad);
 }
 #gallery-sort {
   padding: 7px 12px;
@@ -1505,8 +1508,8 @@ body.in-studio {
   border-radius: 50%;
   font-weight: 900;
   font-size: 1.1rem;
-  color: #2a1704;
-  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+  color: var(--on-grad);
+  background: var(--grad);
   box-shadow: 0 0 18px rgba(243, 180, 80, 0.45);
 }
 .lvl-info {
@@ -2181,8 +2184,8 @@ body.is-recording .zoom-bar {
   border-radius: 999px;
   font-weight: 800;
   font-size: 1rem;
-  color: #2a1704;
-  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+  color: var(--on-grad);
+  background: var(--grad);
   box-shadow:
     0 8px 30px rgba(243, 160, 60, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -2211,6 +2214,7 @@ body.is-recording .zoom-bar {
 
 /* Colour themes (Paramètres > Couleur de l’application) */
 :root[data-theme='violet'] {
+  --grad: linear-gradient(115deg, #e6b8ff, #a45bff 50%, #6a2be0);
   --gold-1: #f1e4ff;
   --gold-2: #b98cff;
   --gold-3: #7b3fe0;
@@ -2221,6 +2225,7 @@ body.is-recording .zoom-bar {
   --accent: #b46bff;
 }
 :root[data-theme='cyan'] {
+  --grad: linear-gradient(115deg, #b8f6ff, #3fd0ff 50%, #1f6bd6);
   --gold-1: #e2fbff;
   --gold-2: #6fe0ff;
   --gold-3: #1f8fd6;
@@ -2231,6 +2236,7 @@ body.is-recording .zoom-bar {
   --accent: #3fd0ff;
 }
 :root[data-theme='rose'] {
+  --grad: linear-gradient(115deg, #ffd0e6, #ff5fa8 50%, #c42b7a);
   --gold-1: #ffe6f1;
   --gold-2: #ff8fc0;
   --gold-3: #d63f86;
@@ -2241,6 +2247,7 @@ body.is-recording .zoom-bar {
   --accent: #ff5fa8;
 }
 :root[data-theme='vert'] {
+  --grad: linear-gradient(115deg, #d8ffd9, #3fe08a 50%, #12935a);
   --gold-1: #e8ffe9;
   --gold-2: #7ff0a0;
   --gold-3: #21a35a;
@@ -2251,6 +2258,7 @@ body.is-recording .zoom-bar {
   --accent: #3fe08a;
 }
 :root[data-theme='rouge'] {
+  --grad: linear-gradient(115deg, #ffd2c4, #ff4a3d 50%, #b8201a);
   --gold-1: #ffe5e0;
   --gold-2: #ff8a70;
   --gold-3: #d6362a;
@@ -2259,20 +2267,6 @@ body.is-recording .zoom-bar {
   --line: rgba(220, 100, 80, 0.35);
   --line-strong: rgba(220, 100, 80, 0.75);
   --accent: #ff4a3d;
-}
-
-/* The banner glow follows the chosen colour */
-.banner::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(60% 70% at 50% 60%, rgba(var(--acc-glow), 0.25), transparent 70%);
-  mix-blend-mode: color;
-}
-:root:not([data-theme]) .banner::after,
-:root[data-theme='or'] .banner::after {
-  display: none;
 }
 
 /* Studio: the side buttons sit in one glass column */
@@ -2380,4 +2374,87 @@ body.in-studio .home {
 body.in-studio .quick-film,
 body.in-studio .shelf {
   animation: none;
+}
+:root[data-theme='or'] {
+  --gold-1: #fff1c9;
+  --gold-2: #f3c56b;
+  --gold-3: #d58b2a;
+  --acc-line: 201, 158, 96;
+  --acc-glow: 243, 197, 107;
+  --line: rgba(214, 170, 102, 0.35);
+  --line-strong: rgba(232, 186, 112, 0.75);
+  --on-grad: #2a1704;
+}
+
+/* ---------- Colourful look ---------- */
+body {
+  background:
+    radial-gradient(60vmax 50vmax at 0% 0%, rgba(255, 106, 61, 0.14), transparent 60%),
+    radial-gradient(60vmax 50vmax at 100% 30%, rgba(164, 61, 255, 0.14), transparent 60%),
+    radial-gradient(60vmax 50vmax at 30% 100%, rgba(79, 123, 255, 0.12), transparent 60%), var(--bg);
+  background-attachment: fixed;
+}
+/* The banner's hands take the colours of the gradient (gold in the Or theme) */
+.banner {
+  background-image: var(--grad), url('../assets/header.jpg');
+  background-size: cover, cover;
+  background-position:
+    center,
+    center bottom;
+  background-blend-mode: color, normal;
+}
+:root[data-theme='or'] .banner {
+  background-image: url('../assets/header.jpg');
+}
+.banner .title {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 4px 18px rgba(255, 90, 120, 0.45));
+}
+/* Each category has its own colour */
+.cat {
+  border-color: color-mix(in srgb, var(--c, var(--gold-2)) 55%, transparent);
+  color: color-mix(in srgb, var(--c, var(--gold-2)) 70%, white);
+}
+.cat.active {
+  color: #fff;
+  background: var(--c, var(--grad));
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--c, #ff6a3d) 55%, transparent);
+}
+.cat[data-cat='all'].active {
+  background: var(--grad);
+}
+.shelf-title::before {
+  content: '';
+  width: 6px;
+  height: 1.05em;
+  align-self: center;
+  border-radius: 3px;
+  background: var(--c, var(--grad));
+  box-shadow: 0 0 10px var(--c, #ff6a3d);
+}
+/* Cards glow in their power's colour */
+.power {
+  border-color: color-mix(in srgb, var(--tint, #ff9a3d) 55%, transparent);
+  background:
+    radial-gradient(120% 60% at 50% 100%, color-mix(in srgb, var(--tint, #ff9a3d) 22%, transparent), transparent 65%),
+    linear-gradient(180deg, #1d1830, #130f22);
+}
+.power-name {
+  color: color-mix(in srgb, var(--tint, #fff) 25%, white);
+}
+.tab.active {
+  color: var(--gold-2);
+}
+.tab.active [data-icon] {
+  filter: drop-shadow(0 0 8px rgba(var(--acc-glow), 0.8));
+}
+.tabbar {
+  border-top: 1px solid transparent;
+  border-image: var(--grad) 1;
+}
+.wallet-card,
+.challenges-card {
+  background: linear-gradient(160deg, rgba(255, 106, 61, 0.1), rgba(164, 61, 255, 0.08) 50%, rgba(79, 123, 255, 0.08)), var(--bg-2);
 }

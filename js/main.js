@@ -70,7 +70,8 @@ const DEFAULTS = {
   countdown: '3',
   mirror: true,
   mirrorFix: true,
-  theme: 'or',
+  theme: 'couleurs',
+  themeFix: true,
   cinema: true,
   autosave: true,
   mic: true,
@@ -98,6 +99,8 @@ const settings = (() => {
       const s = { ...DEFAULTS, ...JSON.parse(saved) };
       // Once: the mirror back on (left and right were swapped while filming).
       if (!s.mirrorFix) Object.assign(s, { mirror: true, mirrorFix: true });
+      // Once: the old gold default becomes the new colourful look.
+      if (!s.themeFix) Object.assign(s, { theme: s.theme === 'or' ? 'couleurs' : s.theme, themeFix: true });
       return s;
     }
     // Keep the earlier answers, but switch to the new smooth default.
@@ -211,6 +214,19 @@ try {
 }
 let category = 'all';
 
+// Colour of each category (chips and shelves).
+const CAT_COLORS = {
+  fav: '#ffd23d',
+  libre: '#ff9a3d',
+  anime: '#ff4f7b',
+  physique: '#3fd0ff',
+  feu: '#ff6a2d',
+  energie: '#ffe14a',
+  cosmos: '#a45bff',
+  nature: '#3fe08a',
+  heros: '#4f7bff',
+  fun: '#ff5fd2',
+};
 // Powers shown with a "Nouveau" badge.
 const NEW_IDS = ['clones', 'invisible', 'size', 'mindgrab', 'shockwave', 'magnet', 'chrono', 'gravity'];
 // Home: one shelf (a row that scrolls sideways) per category, favourites first.
@@ -221,6 +237,7 @@ function shelfRow(cat) {
     sec = document.createElement('section');
     sec.className = 'shelf';
     sec.dataset.cat = cat;
+    if (CAT_COLORS[cat]) sec.style.setProperty('--c', CAT_COLORS[cat]);
     const name = cat === 'fav' ? '★ Favoris' : CATEGORIES.find((c) => c.id === cat)?.name || cat;
     sec.innerHTML = `<h2 class="shelf-title">${name}<small></small></h2><div class="shelf-row"></div>`;
     if (cat === 'fav') grid.prepend(sec);
@@ -275,6 +292,7 @@ function buildPowers() {
     const b = document.createElement('button');
     b.className = 'cat';
     b.dataset.cat = c.id;
+    if (CAT_COLORS[c.id]) b.style.setProperty('--c', CAT_COLORS[c.id]);
     b.textContent = c.name;
     b.addEventListener('click', () => {
       category = c.id;
@@ -350,7 +368,7 @@ document.querySelectorAll('.tab').forEach((t) =>
 // ---------- First launch: tracking points? ----------
 function askPoints() {
   if (settings.pointsAsked) return;
-  $('ask-visual').innerHTML = '<img src="assets/icon2-192.png" alt="">';
+  $('ask-visual').innerHTML = '<img src="assets/icon3-192.png" alt="">';
   $('points-ask').hidden = false;
 }
 function answerPoints(yes) {
@@ -1380,7 +1398,15 @@ syncForm();
 // App colour: on the page and on the phone's status bar.
 function applyTheme() {
   document.documentElement.dataset.theme = settings.theme;
-  const bar = { or: '#1a1206', violet: '#160a2a', cyan: '#061a24', rose: '#240a18', vert: '#06200f', rouge: '#240806' }[settings.theme];
+  const bar = {
+    couleurs: '#1a0c1c',
+    or: '#1a1206',
+    violet: '#160a2a',
+    cyan: '#061a24',
+    rose: '#240a18',
+    vert: '#06200f',
+    rouge: '#240806',
+  }[settings.theme];
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bar || '#0b0a0f');
 }
 applyTheme();
@@ -1414,10 +1440,10 @@ function coverRatio() {
   return Math.max(a, b) / Math.min(a, b);
 }
 // Smallest size of you in the image when zoomed out all the way.
-const MIN_SHRINK = 0.45;
+const MIN_SHRINK = 0.22;
 function zoomRange() {
   const hwMin = Math.min(zoomCaps?.min ?? 1, 1);
-  return [Math.max(0.2, hwMin * MIN_SHRINK), 5];
+  return [Math.max(0.1, hwMin * MIN_SHRINK), 10];
 }
 function applyZoom() {
   const [lo, hi] = zoomRange();
@@ -1705,7 +1731,7 @@ function flushUnlocks() {
 }
 
 // "What's new" once per big update (after the first-launch question).
-const NEWS_KEY = 'magic-cam-news-7';
+const NEWS_KEY = 'magic-cam-news-8';
 function showNews() {
   try {
     if (localStorage.getItem(NEWS_KEY) || !settings.pointsAsked) return;
