@@ -153,7 +153,8 @@ export function tornadoEffect() {
       const h = mainHand(hands);
       this.h = h;
       g = clamp(g + (h && (h.open || h.gesture === 'relaxed') ? dt * 1.2 : -dt * 2));
-      const spin = 5 + g * 4;
+      this.boost = Math.max(0, (this.boost || 0) - dt / 3);
+      const spin = 5 + g * 4 + this.boost * 10;
       for (const b of bits) {
         b.a += dt * spin * (1.4 - b.h * 0.6) * b.s;
         b.h += dt * 0.25 * b.s;
@@ -163,13 +164,20 @@ export function tornadoEffect() {
       e.audio.loop('wind', g);
       if (h && g > 0.2) e.light(h.palm.x, h.palm.y - h.size * 2, h.size * 5, rgb, 0.1 * g);
     },
+    ultimate(e) {
+      this.boost = 1;
+      g = 1;
+      e.audio.play('roar', 1);
+    },
     draw(ctx, e) {
       const h = this.h;
       if (!h || g < 0.02) return;
       const base = { x: h.palm.x, y: h.palm.y - h.size * 0.4 };
-      const H = h.size * 4.2 * g;
-      const r0 = h.size * 0.2;
-      const r1 = h.size * 1.8 * g;
+      // Bigger with the charge, and huge for a few seconds after the final blast.
+      const k = (e.charge?.scale || 1) * (1 + 2.5 * (this.boost || 0));
+      const H = h.size * 4.2 * g * k;
+      const r0 = h.size * 0.2 * k;
+      const r1 = h.size * 1.8 * g * k;
       const at = (b) => {
         const rad = r0 + (r1 - r0) * b.h * b.h;
         const sway = noise1(e.t * 2 + b.h * 3) * h.size * 0.4 * b.h;
@@ -180,7 +188,7 @@ export function tornadoEffect() {
       for (let k = 0; k < 10; k++) {
         const v = k / 9;
         const rad = r0 + (r1 - r0) * v * v;
-        ctx.strokeStyle = `rgba(${rgb.join(',')},${0.12 + 0.08 * Math.sin(e.t * 8 + k)})`;
+        ctx.strokeStyle = `rgba(${rgb.join(',')},${(0.12 + 0.08 * Math.sin(e.t * 8 + k)) * (1 + 2 * (this.boost || 0))})`;
         ctx.lineWidth = 3 * e.unit;
         ctx.beginPath();
         ctx.ellipse(base.x + noise1(e.t * 2 + v * 3) * h.size * 0.4 * v, base.y - v * H, rad, rad * 0.25, 0, 0, TAU);
@@ -246,7 +254,7 @@ export function meteorEffect() {
       const h = mainHand(hands);
       const raised = h && h.palm.y < e.H * 0.55;
       if (timer <= 0) {
-        timer = raised ? rand(0.12, 0.3) : rand(0.8, 1.6);
+        timer = (raised ? rand(0.12, 0.3) : rand(0.8, 1.6)) / (e.charge?.scale || 1) ** 2;
         const tx = h ? h.palm.x + rand(-0.3, 0.3) * e.W : rand(0.1, 0.9) * e.W;
         const x0 = tx + e.W * rand(0.3, 0.6);
         const ty = e.H * rand(0.75, 0.95);
@@ -304,6 +312,26 @@ export function meteorEffect() {
         }
       }
       rocks = rocks.filter((r) => !r.dead);
+    },
+    ultimate(e, a) {
+      // Barrage: thirty meteors at once, and a giant one onto the hand.
+      for (let k = 0; k < 31; k++) {
+        const big = k === 30;
+        const tx = big ? a.x : rand(0.05, 0.95) * e.W;
+        const ty = big ? a.y : e.H * rand(0.6, 0.95);
+        const x0 = tx + e.W * rand(0.3, 0.6);
+        const time = big ? 0.9 : rand(0.4, 1.4);
+        rocks.push({
+          x: x0,
+          y: -40 - rand(200),
+          vx: (tx - x0) / time,
+          vy: (ty + 40) / time,
+          ty,
+          s: (big ? 70 : rand(12, 26)) * e.unit,
+          mesh: rockMesh(),
+          rot: rand(TAU),
+        });
+      }
     },
     draw(ctx, e) {
       trail.draw(ctx);
@@ -363,7 +391,7 @@ export function lavaEffect() {
       this.h = h;
       g = clamp(g + (h && (h.open || h.gesture === 'relaxed') ? dt * 1.5 : -dt * 2));
       if (h && g > 0.1) {
-        const R = h.size * 0.55 * g;
+        const R = h.size * 0.55 * g * (e.charge?.scale || 1);
         this.c = { x: h.palm.x, y: h.palm.y - h.size * 0.8, R };
         if (Math.random() < 0.25)
           drips.add({
@@ -391,6 +419,37 @@ export function lavaEffect() {
         e.light(this.c.x, this.c.y, R * 7, rgb, 0.22 * g);
         e.audio.loop('fire', 0.4 * g);
       } else e.audio.loop('fire', 0);
+    },
+    ultimate(e, a) {
+      // Eruption: a fountain of lava blobs shot into the air.
+      const c = this.c || a;
+      for (let k = 0; k < 160; k++) {
+        const ang = -Math.PI / 2 + rand(-0.9, 0.9);
+        const v = rand(700, 1900) * e.unit;
+        drips.add({
+          x: c.x,
+          y: c.y,
+          vx: Math.cos(ang) * v,
+          vy: Math.sin(ang) * v,
+          g: 1500 * e.unit,
+          life: 3,
+          size: rand(5, 14) * e.unit,
+          rgb,
+          core: 0.35,
+          alpha: 0.95,
+        });
+      }
+      for (let k = 0; k < 20; k++)
+        smoke.add({
+          x: c.x + rand(-60, 60),
+          y: c.y,
+          vx: rand(-80, 80),
+          vy: -rand(100, 300),
+          life: rand(1.5, 3),
+          size: rand(40, 90) * e.unit,
+          rot: rand(TAU),
+        });
+      e.audio.play('sizzle', 1);
     },
     draw(ctx, e) {
       for (const p of smoke.list) {
@@ -466,12 +525,33 @@ export function sunEffect() {
       this.h = h;
       g = clamp(g + (h && (h.open || h.gesture === 'relaxed') ? dt * 1.2 : -dt * 2));
       if (h) {
-        this.c = { x: h.palm.x, y: h.palm.y - h.size * 1.0, R: h.size * 0.5 * g };
+        this.c = { x: h.palm.x, y: h.palm.y - h.size * 1.0, R: h.size * 0.5 * g * (e.charge?.scale || 1) };
         e.light(this.c.x, this.c.y, Math.max(e.W, e.H) * 0.6, rgb, 0.18 * g);
       }
       e.audio.loop('fire', 0.3 * g);
+      if (this.nova) this.nova.t += dt;
+      if (this.nova?.t > 1.6) this.nova = null;
+    },
+    ultimate(e, a) {
+      // Supernova: an expanding ring of fire that crosses the whole screen.
+      const c = this.c || a;
+      this.nova = { x: c.x, y: c.y, t: 0 };
     },
     draw(ctx, e) {
+      if (this.nova) {
+        const { x, y, t } = this.nova;
+        const R = t * Math.hypot(e.W, e.H) * 0.8;
+        ctx.globalCompositeOperation = 'lighter';
+        for (let k = 0; k < 3; k++) {
+          ctx.strokeStyle = `rgba(${k === 2 ? '255,255,240' : rgb.join(',')},${(1 - t / 1.6) * (0.5 + k * 0.2)})`;
+          ctx.lineWidth = (60 - k * 22) * e.unit * (1 - t / 1.6) + 2;
+          ctx.beginPath();
+          ctx.arc(x, y, R, 0, TAU);
+          ctx.stroke();
+        }
+        drawGlow(ctx, rgb, x, y, R * 0.6, 0.5 * (1 - t / 1.6), 0.1);
+        ctx.globalCompositeOperation = 'source-over';
+      }
       if (!this.c || g < 0.02) return;
       const { x, y, R } = this.c;
       ctx.globalCompositeOperation = 'lighter';

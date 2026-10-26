@@ -38,6 +38,7 @@ export function shieldEffect() {
       this.h = h;
       g = clamp(g + (h && (h.open || h.gesture === 'relaxed') ? dt * 2.5 : -dt * 3));
       hit = Math.max(0, hit - dt * 2);
+      this.dome = Math.max(0, (this.dome || 0) - dt / 4);
       if (h && h.speed > Math.min(e.W, e.H) * 1.5 && g > 0.5 && hit < 0.3) {
         hit = 1;
         e.audio.play('ring', 0.6);
@@ -45,11 +46,17 @@ export function shieldEffect() {
       if (h && g > 0.1) e.light(h.palm.x, h.palm.y, h.size * 5, rgb, 0.15 * g);
       e.audio.loop('hum', g * 0.3);
     },
+    ultimate() {
+      this.dome = 1;
+      hit = 1;
+      g = 1;
+    },
     draw(ctx, e) {
       const h = this.h;
       if (!h || g < 0.02) return;
       ctx.globalCompositeOperation = 'lighter';
-      const s = g;
+      // Bigger with the charge; after the final blast, a dome around you for 4 s.
+      const s = g * (e.charge?.scale || 1) * (1 + 3 * Math.min(1, (this.dome || 0) * 3));
       // Each hexagon is projected in the palm plane, so the shield tilts with the hand.
       for (const c of cells) {
         const d = Math.hypot(c.x, c.y);
@@ -62,7 +69,7 @@ export function shieldEffect() {
           if (k) ctx.lineTo(p.x, p.y);
           else ctx.moveTo(p.x, p.y);
         }
-        ctx.fillStyle = `rgba(${rgb.join(',')},${a * 0.5})`;
+        ctx.fillStyle = `rgba(${rgb.join(',')},${a * 0.5 * (1 - 0.8 * Math.min(1, (this.dome || 0) * 3))})`;
         ctx.fill();
         ctx.strokeStyle = `rgba(${rgb.map((v) => (v + 255) >> 1).join(',')},${a + 0.15 * s})`;
         ctx.lineWidth = 1.5 * e.unit;
