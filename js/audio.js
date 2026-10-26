@@ -52,8 +52,28 @@ export class SoundFx {
     this.snapAnalyser.fftSize = 1024;
     this.micSource.connect(hp).connect(this.snapAnalyser);
     this.snapBuf = new Float32Array(this.snapAnalyser.fftSize);
+    // Overall loudness of the voice.
+    this.levelAnalyser = this.ctx.createAnalyser();
+    this.levelAnalyser.fftSize = 1024;
+    this.micSource.connect(this.levelAnalyser);
+    this.levelBuf = new Float32Array(this.levelAnalyser.fftSize);
+    this.voice = 0;
     this.snapLevel = 0.01;
     this.snapCool = 0;
+  }
+
+  // How loud you are, 0 (quiet) to 1 (shouting), smoothed.
+  micLevel() {
+    const a = this.levelAnalyser;
+    if (!a) return 0;
+    a.getFloatTimeDomainData(this.levelBuf);
+    let sum = 0;
+    for (const v of this.levelBuf) sum += v * v;
+    const rms = Math.sqrt(sum / this.levelBuf.length);
+    // Normal talking stays low; a real shout reaches 1.
+    const target = Math.min(1, Math.max(0, (rms - 0.06) / 0.18));
+    this.voice += (target - this.voice) * (target > this.voice ? 0.5 : 0.08);
+    return this.voice;
   }
 
   // True once for each snap-like click heard since the last call.
