@@ -59,6 +59,8 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Format de la vidéo** (Paramètres) : comme la caméra, 9:16 vertical (TikTok, Reels, Shorts), 1:1 carré ou 16:9. Un cadre montre à l’écran la partie enregistrée ; les photos suivent le même format.
 - **Fondu au noir** (activé par défaut) : chaque vidéo s’ouvre et se termine par un fondu, comme au cinéma.
 - **Cadence stable** : si le téléphone ne suit pas son écran 90/120 Hz, l’image se cale à 60 i/s réguliers avant de baisser la résolution.
+- **Taille des pouvoirs** (Paramètres) : Petite, Normale, Grande ou Énorme.
+- **Refaire** sur l’écran de résultat : relance aussitôt une nouvelle prise.
 - **Pause / reprise** pendant l’enregistrement (bouton pause à la place de l’appareil photo) : plusieurs plans dans une seule vidéo, comme sur TikTok.
 - **Lumière d’appoint** et **grille de cadrage** (Paramètres) : à l’écran seulement, jamais dans les vidéos.
 - **Flou de mouvement** désactivable (coupé par défaut sur téléphone pour la fluidité). Avec une musique, les effets pulsent légèrement sur le rythme.

@@ -477,8 +477,9 @@ export class Engine {
     // Charging makes the power bigger: effects see the hands scaled up.
     const realHands = this.hands;
     this.charge.update(dt, this, effect, realHands);
-    const k = this.charge.scale;
-    this.hands = k > 1.01 ? realHands.map((h) => Object.create(h, { size: { value: h.size * k } })) : realHands;
+    // Charge and the chosen power size (Paramètres) make the powers bigger.
+    const k = this.charge.scale * (Number(this.settings.powerSize) || 1);
+    this.hands = Math.abs(k - 1) > 0.01 ? realHands.map((h) => Object.create(h, { size: { value: h.size * k } })) : realHands;
     this.#safe('update', dt, this.hands, this);
     this.#runMechanics('update', dt, realHands, this);
 
