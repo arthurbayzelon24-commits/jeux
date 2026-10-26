@@ -35,6 +35,8 @@ const ICONS = {
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 10.5v5l4-2.5z"/>',
   slow: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
   boomerang: '<path d="M4 12a5 5 0 0 1 8-4l4 3a5 5 0 1 1 0 2l-4 3a5 5 0 0 1-8-4z"/>',
+  pause: '<path d="M8 5v14M16 5v14"/>',
+  play: '<path d="M7 5l12 7-12 7z"/>',
   music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
   target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/>',
@@ -75,6 +77,8 @@ const DEFAULTS = {
   transition: true,
   music: 'off',
   format: 'auto',
+  fillLight: false,
+  grid: false,
   // Two extra full-screen passes per frame: off by default on phones.
   motionBlur: !MOBILE,
   pointsAsked: false,
@@ -374,6 +378,8 @@ function updateToggles() {
   $('btn-music').classList.toggle('on', settings.music !== 'off');
   $('vignette').hidden = !settings.cinema;
   $('fps').hidden = !settings.fps;
+  $('fill-light').hidden = !settings.fillLight;
+  $('frame-grid').hidden = !settings.grid;
 }
 
 async function startCamera() {
@@ -715,6 +721,25 @@ function magicSwitch() {
   audio.play('teleport', 0.9);
 }
 
+// ---------- Pause / resume while recording (several takes, one video) ----------
+function setPaused(on) {
+  document.body.classList.toggle('rec-paused', on);
+  $('btn-pause').querySelector('[data-icon]').innerHTML = svg(on ? 'play' : 'pause');
+  $('btn-pause').setAttribute('aria-label', on ? 'Reprendre' : 'Pause');
+}
+$('btn-pause').addEventListener('click', () => {
+  if (!recorder.recording) return;
+  if (recorder.paused) {
+    recorder.resume();
+    setPaused(false);
+    audio.play('tick', 0.5);
+  } else {
+    recorder.pause();
+    setPaused(true);
+    audio.play('tick', 0.5);
+  }
+});
+
 // ---------- Hands-free: show both palms, still, to start or stop ----------
 // Handy when the phone is propped up a few metres away.
 let handsFreeT = 0;
@@ -767,9 +792,9 @@ async function startRecording() {
   $('rec-chip').hidden = false;
   const max = Number(settings.maxDuration) || 60;
   const ring = $('rec-progress');
-  const t0 = performance.now();
+  document.body.classList.add('is-recording');
   const tick = () => {
-    const s = (performance.now() - t0) / 1000;
+    const s = recorder.elapsed;
     $('rec-time').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
     ring.style.strokeDashoffset = String(289 * (1 - Math.min(1, s / max)));
     if (s >= max) stopRecording();
@@ -780,6 +805,8 @@ async function startRecording() {
 
 async function stopRecording(show = true) {
   cancelAnimationFrame(recTimer);
+  setPaused(false);
+  document.body.classList.remove('is-recording');
   const btn = $('btn-record');
   btn.classList.remove('recording');
   btn.setAttribute('aria-label', 'Enregistrer');

@@ -1912,3 +1912,70 @@ body.in-studio {
 .studio-bottom {
   z-index: 3;
 }
+
+/* Pause / resume while recording */
+#btn-pause {
+  display: none;
+}
+body.is-recording #btn-photo {
+  display: none;
+}
+body.is-recording #btn-pause {
+  display: grid;
+}
+body.rec-paused .rec-chip {
+  animation: rec-blink 1s steps(2) infinite;
+}
+body.rec-paused #btn-pause {
+  border-color: var(--gold-2);
+  color: var(--gold-1);
+}
+@keyframes rec-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Fill light (front camera in the dark) and rule-of-thirds grid: on screen only */
+.fill-light {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 clamp(28px, 7vmin, 70px) #fff,
+    inset 0 0 60px clamp(28px, 7vmin, 70px) rgba(255, 250, 240, 0.9);
+}
+.frame-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      transparent calc(33.33% - 0.5px),
+      rgba(255, 255, 255, 0.35) calc(33.33% - 0.5px),
+      rgba(255, 255, 255, 0.35) calc(33.33% + 0.5px),
+      transparent calc(33.33% + 0.5px),
+      transparent calc(66.66% - 0.5px),
+      rgba(255, 255, 255, 0.35) calc(66.66% - 0.5px),
+      rgba(255, 255, 255, 0.35) calc(66.66% + 0.5px),
+      transparent calc(66.66% + 0.5px)
+    ),
+    linear-gradient(
+      180deg,
+      transparent calc(33.33% - 0.5px),
+      rgba(255, 255, 255, 0.35) calc(33.33% - 0.5px),
+      rgba(255, 255, 255, 0.35) calc(33.33% + 0.5px),
+      transparent calc(33.33% + 0.5px),
+      transparent calc(66.66% - 0.5px),
+      rgba(255, 255, 255, 0.35) calc(66.66% - 0.5px),
+      rgba(255, 255, 255, 0.35) calc(66.66% + 0.5px),
+      transparent calc(66.66% + 0.5px)
+    );
+}
+.fill-light[hidden],
+.frame-grid[hidden] {
+  display: none;
+}
