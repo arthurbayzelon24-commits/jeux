@@ -2458,3 +2458,52 @@ body {
 .challenges-card {
   background: linear-gradient(160deg, rgba(255, 106, 61, 0.1), rgba(164, 61, 255, 0.08) 50%, rgba(79, 123, 255, 0.08)), var(--bg-2);
 }
+
+/* ---------- Colourful studio ---------- */
+/* Record button: a turning ring of the app's colours behind the white ring */
+.rec-btn::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #ffb238, #ff6a3d, #ff3d8b, #a43dff, #4f7bff, #ffb238);
+  filter: blur(1px);
+  opacity: 0.9;
+  animation: rec-spin 6s linear infinite;
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%);
+  mask: radial-gradient(circle, transparent 58%, #000 60%);
+}
+:root[data-theme]:not([data-theme='couleurs']) .rec-btn::before {
+  background: conic-gradient(from 0deg, var(--gold-1), var(--gold-2), var(--gold-3), var(--gold-1));
+}
+@keyframes rec-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+body.is-recording .rec-btn::before {
+  animation-duration: 1.5s;
+}
+/* Chosen power in the row: ring in the app's colours */
+.fx-chip.active .thumb {
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 6px var(--gold-2),
+    0 0 22px rgba(var(--acc-glow), 0.7);
+}
+/* Zoom bar filled with the gradient */
+.zoom-track i {
+  background: linear-gradient(0deg, #ffb238, #ff3d8b, #a43dff);
+}
+.zoom-track b {
+  box-shadow: 0 0 12px rgba(255, 90, 140, 0.9);
+}
+.power-pill {
+  background: linear-gradient(90deg, rgba(255, 106, 61, 0.25), rgba(164, 61, 255, 0.25)), rgba(12, 10, 18, 0.55);
+}
+.studio-side {
+  border-color: rgba(var(--acc-glow), 0.25);
+}
+.howto {
+  background: linear-gradient(160deg, rgba(255, 106, 61, 0.18), rgba(164, 61, 255, 0.16)), rgba(14, 12, 20, 0.85);
+}

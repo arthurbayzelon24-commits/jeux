@@ -40,6 +40,7 @@ const ICONS = {
   scissors: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1 20 20M8.1 15.9 20 4"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   play: '<path d="M7 5l12 7-12 7z"/>',
+  slow: '<path d="M7 3h10M7 21h10M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9"/>',
   music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
   target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/>',
@@ -82,6 +83,8 @@ const DEFAULTS = {
   handsFree: true,
   transition: true,
   music: 'off',
+  voiceBoost: true,
+  cineSlow: true,
   format: 'auto',
   fillLight: false,
   fades: true,
@@ -664,6 +667,7 @@ function loop(now) {
       mirror: settings.mirror && camFacing === 'user',
       raw: det.raw,
       micSnap: audio.heardSnap?.(now),
+      voice: settings.voiceBoost && settings.mic ? audio.micLevel?.() : 0,
       mask: det.mask,
       maskFresh: det.maskFresh,
       pose: det.pose,
@@ -1282,6 +1286,20 @@ $('btn-record').addEventListener('click', () => {
   else if ($('btn-record').classList.contains('arming')) cancelCountdown();
   else startRecording();
 });
+// Magic slow motion: the powers slow down for a few seconds (you do not).
+let slowTimer = 0;
+$('btn-slowmo').addEventListener('click', () => {
+  const on = engine.slowTarget === 1;
+  engine.slowTarget = on ? 0.3 : 1;
+  $('btn-slowmo').classList.toggle('on', on);
+  audio.play(on ? 'teleport' : 'whoosh', 0.5);
+  clearTimeout(slowTimer);
+  if (on)
+    slowTimer = setTimeout(() => {
+      engine.slowTarget = 1;
+      $('btn-slowmo').classList.remove('on');
+    }, 6000);
+});
 $('btn-photo').addEventListener('click', takePhoto);
 $('btn-gallery').addEventListener('click', () => showPage('gallery'));
 $('btn-flip').addEventListener('click', async () => {
@@ -1600,6 +1618,14 @@ function showChip(text, ms = 1100) {
 const progress = new Progress(EFFECTS);
 progress.effectName = (id) => getEffect(id)?.name;
 engine.on('ultimate', () => progress.ultimate(currentEffect));
+// Cinema slow motion: every final blast plays in slow motion for a moment.
+engine.on('ultimate', () => {
+  if (!settings.cineSlow || engine.slowTarget !== 1) return;
+  engine.slowTarget = 0.35;
+  setTimeout(() => {
+    if (!$('btn-slowmo').classList.contains('on')) engine.slowTarget = 1;
+  }, 1300);
+});
 engine.on('freePower', (id) => progress.freePower(id));
 // Secret moves work with every power.
 const secrets = new Secrets();

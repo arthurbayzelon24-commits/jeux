@@ -34,6 +34,11 @@ export class Engine {
     this.lights = [];
     this.mechanics = [];
     this.userZoom = 1;
+    // Magic slow motion: the powers move slower (you do not). 1 = normal.
+    this.timeScale = 1;
+    this.slowTarget = 1;
+    // Loudness of your voice (0..1): shouting makes the powers bigger.
+    this.voice = 0;
     // Fade to black (start / end of a recording): current and target opacity.
     this.fadeAlpha = 0;
     this.fadeTarget = 0;
@@ -435,8 +440,12 @@ export class Engine {
     const now = input.now;
     const dt = this.last ? clamp((now - this.last) / 1000, 1 / 240, 0.1) : 1 / 60;
     this.last = now;
-    this.t += dt;
-    this.dt = dt;
+    this.timeScale += (this.slowTarget - this.timeScale) * (1 - Math.exp(-dt * 6));
+    // The powers live in their own time (slowed in magic slow motion).
+    const fdt = dt * this.timeScale;
+    this.voice = input.voice || 0;
+    this.t += fdt;
+    this.dt = fdt;
     this.#resize(input.sw, input.sh);
     const { ctx, W, H } = this;
     const effect = this.effect;
@@ -480,12 +489,18 @@ export class Engine {
     this.lights.length = 0;
     // Charging makes the power bigger: effects see the hands scaled up.
     const realHands = this.hands;
-    this.charge.update(dt, this, effect, realHands);
-    // Charge and the chosen power size (Paramètres) make the powers bigger.
-    const k = this.charge.scale * (Number(this.settings.powerSize) || 1);
+    this.charge.update(fdt, this, effect, realHands);
+    // Charge, your voice and the chosen power size (Paramètres) make the
+    // powers bigger.
+    const k = this.charge.scale * (Number(this.settings.powerSize) || 1) * (1 + 0.6 * this.voice);
     this.hands = Math.abs(k - 1) > 0.01 ? realHands.map((h) => Object.create(h, { size: { value: h.size * k } })) : realHands;
-    this.#safe('update', dt, this.hands, this);
-    this.#runMechanics('update', dt, realHands, this);
+    this.#safe('update', fdt, this.hands, this);
+    this.#runMechanics('update', fdt, realHands, this);
+    if (this.voice > 0.75) this.shakeAmp = Math.max(this.shakeAmp, 4 * this.voice);
+    // Shouting: the hands glow with power.
+    if (this.voice > 0.25)
+      for (const h of realHands)
+        if (h.presence > 0.5) this.light(h.palm.x, h.palm.y, h.size * (3 + 4 * this.voice), [255, 150, 60], 0.35 * this.voice);
 
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
