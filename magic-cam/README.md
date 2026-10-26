@@ -4,7 +4,7 @@ Site web gratuit qui utilise la caméra du téléphone ou du PC pour se filmer a
 
 ## Principe
 
-1. L’accueil montre uniquement les **60 pouvoirs**, en cartes dorées illustrées (rendues avec les vrais effets, voir `tools/`), triés par catégories (Animé, Feu, Énergie, Cosmos, Nature, Héros, Fun). L’étoile ★ d’une carte la met en favori : les favoris passent en tête, à l’accueil comme dans la rangée du studio.
+1. L’accueil montre uniquement les **61 pouvoirs**, en cartes dorées illustrées (rendues avec les vrais effets, voir `tools/`), triés par catégories (Animé, Feu, Énergie, Cosmos, Nature, Héros, Fun). L’étoile ★ d’une carte la met en favori : les favoris passent en tête, à l’accueil comme dans la rangée du studio.
 2. On touche un pouvoir : la caméra s’ouvre, en plein écran, avec ce pouvoir. La rangée d’icônes en bas permet d’en changer.
 3. **Pouvoirs à charge** (**Interface holographique**, Kamehameha, Rayon de feu, Sabre laser, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Magie des ombres, Glace, Tornade, Pluie de météorites, Orbe de lave, Mini soleil, Bouclier d’énergie) : tant qu’on garde leur geste, une grande jauge circulaire se remplit autour de la main, l’effet grossit, l’écran s’illumine et vibre, puis au bout d’environ 6 secondes un **déclenchement final** se produit (flash, ondes de choc, rayons et éclairs). Certains ont leur propre final : tornade géante, barrage de météorites, éruption de lave, supernova, dôme de protection autour de soi.
 4. L’écran de chargement n’apparaît qu’à la toute première ouverture (téléchargement des modèles).
@@ -17,6 +17,14 @@ Aucun message pendant le tournage. Au premier lancement, une seule question : «
 ## Pouvoirs
 
 Kamehameha, Rayon de feu, Sabre laser, Portail magique, Cercle magique, Orbe de plasma, Éclairs, Foudre du ciel, Boule de feu, Sphère spirale, Trou noir, Galaxie spirale, Cœur d’amour, Pétales de sakura, Papillons, Bassin de koïs, Feu d’artifice, Pouvoir de glace, Maîtrise de l’eau, Magie des ombres, Aura magique, Ailes d’ange, Téléportation, Télékinésie, Objets flottants, Dragon de feu, Tornade, Pluie de météorites, Orbe de lave, Mini soleil, Clap sonique, Bouclier d’énergie, Yeux laser, Lance-toile, Dessin néon, Pluie de code, Auréole d’ange, Planète, Boule de cristal, Aurore boréale, Étoiles filantes, Doigts comètes, Arc-en-ciel, Bulles de savon, Confettis, Pluie de pièces, Neige magique, Lucioles, Feux follets. **Animé** : Chidori, Genkidama, Getsuga Tenshō, Violet creux (bleu dans une main, rouge dans l’autre, rapprochez-les), Sharingan, Super Saiyan, Souffle de l’eau, Poing ardent, Haki des rois, Extension du territoire (signe V tenu une seconde). Le geste de chaque pouvoir est écrit sous sa carte ; chaque pouvoir a plusieurs couleurs (bouton rond à droite).
+
+## Mécaniques de jeu
+
+- **Mode Arène** (bouton cible dans la caméra) : une manche de 60 secondes. Des cibles apparaissent ; ton pouvoir les détruit partout où il les touche (rayon, boule de feu, éclairs… l’application lit où l’effet brille à l’écran), tout comme un coup de main rapide. Orbes (+10), étoiles d’or mobiles (+50), cristaux à 3 coups (+30), bombes à éviter (−40), horloges (+3 s, trois au plus), et un **boss** à mi-manche avec sa barre de vie (+500). Les cibles touchées à moins de 2 s d’intervalle font monter le **combo** (jusqu’à x5) ; un final de pouvoir ou une rune balaie l’écran. Record et 5 meilleurs scores enregistrés.
+- **Runes magiques** (pouvoir) : pince les doigts, dessine une forme en l’air, lâche. Cercle = Bouclier, Triangle = Explosion, Carré = Prison de glace, Zigzag = Foudre, Ligne = Lame, V = Météore. Les runes touchent aussi les cibles de l’Arène.
+- **Double pouvoir** (bouton deux mains) : choisis un second pouvoir ; la main à droite de l’écran garde le premier, celle de gauche prend le second.
+- **Gestes secrets**, avec tous les pouvoirs : 5 gestes cachés à découvrir (indices dans la page Succès), dont un qui déclenche immédiatement le final du pouvoir.
+- **Progression** : expérience (temps de magie, nouveaux pouvoirs, finals, vidéos, runes, Arène), niveaux, 22 succès, défi du jour (+150 XP) sur l’accueil. Les annonces s’affichent sur l’accueil, jamais pendant le tournage.
 
 ## Interface holographique (style armure high-tech)
 

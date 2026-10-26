@@ -12,11 +12,13 @@ const TYPES = {
   crystal: { pts: 30, hp: 3, r: 0.065, rgb: [190, 120, 255], life: 8, weight: 1.6 },
   bomb: { pts: -40, hp: 1, r: 0.05, rgb: [255, 50, 50], life: 5, weight: 1.3, bomb: true },
   clock: { pts: 0, hp: 1, r: 0.04, rgb: [80, 255, 140], life: 4, weight: 0.5, clock: true },
+  // Halfway through the round: a boss with a health bar.
+  boss: { pts: 500, hp: 12, r: 0.11, rgb: [255, 90, 200], life: 20, weight: 0, boss: true },
 };
 const BEST_KEY = 'magic-cam-arena-best';
 
-function pickType(elapsed) {
-  const entries = Object.entries(TYPES).filter(([k]) => elapsed > 8 || (k !== 'bomb' && k !== 'clock'));
+function pickType(elapsed, clocks) {
+  const entries = Object.entries(TYPES).filter(([k]) => (elapsed > 8 || (k !== 'bomb' && k !== 'clock')) && (k !== 'clock' || clocks < 3));
   let n = Math.random() * entries.reduce((a, [, t]) => a + t.weight, 0);
   for (const [k, t] of entries) if ((n -= t.weight) <= 0) return k;
   return 'orb';
@@ -50,6 +52,8 @@ export class Arena {
     this.spawnT = 0;
     this.elapsed = 0;
     this.hits = 0;
+    this.bossDone = false;
+    this.clocks = 0;
     this.time = ROUND;
     this.popups = [];
     this.burst.clear();
@@ -75,7 +79,8 @@ export class Arena {
   }
 
   #spawn(e) {
-    const kind = pickType(this.elapsed);
+    const kind = pickType(this.elapsed, this.clocks);
+    if (kind === 'clock') this.clocks++;
     const T = TYPES[kind];
     const R = T.r * Math.min(e.W, e.H) * (e.W < e.H ? 1.4 : 1);
     // Away from the edges, the top bar and the bottom controls.
@@ -137,9 +142,9 @@ export class Arena {
       return;
     }
     if (T.clock) {
-      this.time += 5;
+      this.time += 3;
       this.#explode(e, t, T.rgb);
-      this.#pop('+5 s', t.x, t.y, T.rgb, true);
+      this.#pop('+3 s', t.x, t.y, T.rgb, true);
       e.audio.play('chime', 0.8);
       return;
     }
@@ -152,6 +157,14 @@ export class Arena {
     this.#explode(e, t, T.rgb);
     this.#pop(`+${pts}`, t.x, t.y, T.rgb, t.kind === 'gold');
     if (this.combo > 0 && this.combo % 5 === 0) this.#pop(`COMBO x${this.multiplier}`, e.W / 2, e.H * 0.3, [255, 230, 120], true);
+    if (T.boss) {
+      e.flash([255, 200, 240], 0.7, 1.5);
+      e.shake(40);
+      e.punch(0.08);
+      e.audio.play('boom', 1);
+      this.#pop('BOSS VAINCU !', e.W / 2, e.H * 0.35, [255, 120, 220], true);
+      for (let i = 0; i < 3; i++) this.#explode(e, t, T.rgb);
+    }
     e.audio.play(t.kind === 'gold' ? 'coin' : 'pop', 0.7);
     e.emit('hit', { kind: t.kind, combo: this.combo });
   }
@@ -160,6 +173,10 @@ export class Arena {
     if (this.state !== 'play') return;
     for (const t of this.targets) {
       if (t.dead || TYPES[t.kind].bomb) continue;
+      if (TYPES[t.kind].boss) {
+        t.heat += 4;
+        continue;
+      }
       if (spell?.line) {
         // A blade: everything close to the (extended) line.
         const [p, q] = spell.line;
@@ -198,6 +215,27 @@ export class Arena {
     if (this.state !== 'play') return;
     this.elapsed += dt;
     this.time -= dt;
+    if (!this.bossDone && this.elapsed > 28) {
+      this.bossDone = true;
+      const R = TYPES.boss.r * Math.min(e.W, e.H) * (e.W < e.H ? 1.4 : 1);
+      this.targets.push({
+        kind: 'boss',
+        x: e.W / 2,
+        y: e.H * 0.42,
+        r: R,
+        hp: TYPES.boss.hp,
+        heat: 0,
+        age: 0,
+        life: TYPES.boss.life,
+        cool: 0,
+        vx: e.W * 0.12,
+        vy: e.H * 0.05,
+        ph: 0,
+      });
+      this.#pop('BOSS !', e.W / 2, e.H * 0.28, [255, 90, 200], true);
+      e.audio.play('thunder', 0.8);
+      e.shake(20);
+    }
     if (this.time <= 0) return this.#finish(e);
     // Faster and faster.
     this.spawnT -= dt;
@@ -215,7 +253,7 @@ export class Arena {
       if (t.y <= t.r || t.y >= e.H - t.r) t.vy *= -1;
       // The power touching it.
       const heat = e.heatAt(t.x, t.y);
-      if (heat > 0.3) t.heat += dt * 3 * heat;
+      if (heat > 0.3) t.heat += dt * 3 * heat * (t.kind === 'boss' ? 0.6 : 1);
       // A fast hand strike through it.
       if (t.cool <= 0)
         for (const h of hands) {
@@ -336,7 +374,31 @@ export class Arena {
     ctx.globalCompositeOperation = 'lighter';
     drawGlow(ctx, T.rgb, t.x, t.y, r * 2.2, 0.5, 0.1);
     ctx.globalCompositeOperation = 'source-over';
-    if (t.kind === 'crystal') {
+    if (t.kind === 'boss') {
+      // A big spiky core with its health bar.
+      ctx.save();
+      ctx.translate(t.x, t.y);
+      ctx.rotate(e.t * 0.6);
+      ctx.fillStyle = `rgba(${T.rgb.join(',')},0.85)`;
+      ctx.beginPath();
+      for (let k = 0; k <= 16; k++) {
+        const a = (k / 16) * TAU;
+        const rr = r * (k % 2 ? 0.7 : 1.05);
+        if (k) ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        else ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+      }
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.35, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+      const bw = r * 2.4;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(t.x - bw / 2, t.y - r * 1.6, bw, 8 * e.unit);
+      ctx.fillStyle = `rgb(${T.rgb.join(',')})`;
+      ctx.fillRect(t.x - bw / 2, t.y - r * 1.6, (bw * t.hp) / T.hp, 8 * e.unit);
+    } else if (t.kind === 'crystal') {
       ctx.save();
       ctx.translate(t.x, t.y);
       ctx.rotate(e.t * 0.8 + t.ph);
@@ -384,7 +446,7 @@ export class Arena {
           ctx.stroke();
         }
         ctx.fillText('!', t.x, t.y);
-      } else if (T.clock) ctx.fillText('+5', t.x, t.y);
+      } else if (T.clock) ctx.fillText('+3', t.x, t.y);
       else if (t.kind === 'gold') ctx.fillText('★', t.x, t.y);
     }
     // Ring showing the time left before it vanishes.

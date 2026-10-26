@@ -7,6 +7,7 @@ import { gallery, videoThumbnail } from './gallery.js';
 import { quality } from './fx/util.js';
 import { MESH_POINTS } from './handmesh.js';
 import { Arena } from './mech/arena.js';
+import { Secrets, SECRETS } from './mech/secrets.js';
 import { Progress, ACHIEVEMENTS } from './progress.js';
 import { makeDual } from './dual.js';
 
@@ -1053,6 +1054,10 @@ const progress = new Progress(EFFECTS);
 progress.effectName = (id) => getEffect(id)?.name;
 engine.on('ultimate', () => progress.ultimate(currentEffect));
 engine.on('spell', (s) => s.main && progress.spell(s.kind));
+// Secret moves work with every power.
+const secrets = new Secrets();
+secrets.onFound = (id) => progress.secret(id);
+engine.addMechanic(secrets);
 
 function renderHub() {
   const { level, into, need } = progress.levelProgress;
@@ -1087,8 +1092,22 @@ function renderProgress() {
     ['Combo max', `x${s.bestCombo}`],
     ['Temps de magie', `${min} min`],
     ['Défis réussis', s.dailyDone],
+    ['Secrets', `${s.secrets.length}/${SECRETS.length}`],
   ];
   $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><strong>${v}</strong><small>${k}</small></div>`).join('');
+  const top = s.arenaTop || [];
+  $('arena-top').innerHTML = top.length
+    ? top
+        .map(
+          (r, i) =>
+            `<div class="top-row"><b>${['🥇', '🥈', '🥉', '4', '5'][i]}</b><img src="${art(r.effect)}" alt=""><span>${getEffect(r.effect)?.name || ''}<small>${new Date(r.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</small></span><strong>${r.score}</strong></div>`,
+        )
+        .join('')
+    : '<p class="muted">Lance une manche avec le bouton cible dans la caméra.</p>';
+  $('secret-list').innerHTML = SECRETS.map((x) => {
+    const on = s.secrets.includes(x.id);
+    return `<div class="ach${on ? ' on' : ''}"><span class="ach-icon">${on ? '🗝️' : '❔'}</span><span><strong>${on ? x.name : '???'}</strong><small>${x.hint}</small></span></div>`;
+  }).join('');
   $('ach-list').innerHTML = ACHIEVEMENTS.map((a) => {
     const on = s.unlocked.includes(a.id);
     return `<div class="ach${on ? ' on' : ''}"><span class="ach-icon">${on ? a.icon : '🔒'}</span><span><strong>${a.name}</strong><small>${a.text}</small></span></div>`;
