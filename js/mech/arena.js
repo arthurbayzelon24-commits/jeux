@@ -99,6 +99,25 @@ export class Arena {
     }
   }
 
+  // For helpers (the familiar): the closest target worth hitting.
+  nearestTarget(x, y) {
+    let best = null;
+    let bd = Infinity;
+    for (const t of this.targets || []) {
+      const T = TYPES[t.kind];
+      if (t.dead || T.bomb || t.age < 0.3) continue;
+      const d = Math.hypot(t.x - x, t.y - y);
+      if (d < bd) {
+        bd = d;
+        best = t;
+      }
+    }
+    return best;
+  }
+  hitNear(x, y, r) {
+    for (const t of this.targets || []) if (!t.dead && !TYPES[t.kind].bomb && Math.hypot(t.x - x, t.y - y) < r + t.r) t.heat += 1;
+  }
+
   // Leaving: a zen session is scored, an unfinished timed round is not.
   quit(e) {
     if (this.state === 'play' && this.mode === 'zen') this.#finish(e);
