@@ -2568,3 +2568,9 @@ body.is-recording .rec-btn::before {
   background: rgba(10, 6, 24, 0.45);
   backdrop-filter: blur(6px);
 }
+
+/* Studio row: each power's chip outlined in its own colour */
+.fx-chip .thumb {
+  border: 2px solid color-mix(in srgb, var(--tint, #fff) 70%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tint, #fff) 35%, transparent);
+}
