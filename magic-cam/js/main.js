@@ -1313,13 +1313,44 @@ $('btn-flip').addEventListener('click', async () => {
     startCamera().catch(showError);
   }
 });
+// Colour button: each colour of the power in turn, then "Arc-en-ciel" where
+// the colours change by themselves every second and a half.
+let rainbowTimer = 0;
+const stopRainbow = () => {
+  clearInterval(rainbowTimer);
+  rainbowTimer = 0;
+  $('btn-color').classList.remove('rainbow');
+};
 $('btn-color').addEventListener('click', () => {
   const fx = getEffect(currentEffect);
   if (!fx.colors) return;
-  const i = ((colorIndex[currentEffect] ?? 0) + 1) % fx.colors.length;
-  colorIndex[currentEffect] = i;
-  fx.setColor(i);
+  if (rainbowTimer) {
+    stopRainbow();
+    colorIndex[currentEffect] = 0;
+    fx.setColor(0);
+    updateSwatch();
+    showChip(fx.colors[0].name || 'Couleur');
+    return;
+  }
+  const i = (colorIndex[currentEffect] ?? 0) + 1;
+  if (i >= fx.colors.length && fx.colors.length > 1) {
+    const id = currentEffect;
+    rainbowTimer = setInterval(() => {
+      const f = getEffect(id);
+      if (currentEffect !== id) return stopRainbow();
+      colorIndex[id] = ((colorIndex[id] ?? 0) + 1) % f.colors.length;
+      f.setColor(colorIndex[id]);
+      updateSwatch();
+      $('btn-color').classList.add('rainbow');
+    }, 1500);
+    $('btn-color').classList.add('rainbow');
+    showChip('🌈 Arc-en-ciel');
+    return;
+  }
+  colorIndex[currentEffect] = i % fx.colors.length;
+  fx.setColor(colorIndex[currentEffect]);
   updateSwatch();
+  if (fx.colors[colorIndex[currentEffect]].name) showChip(fx.colors[colorIndex[currentEffect]].name);
 });
 // Image looks (colour grade of the scene, the powers keep their colours).
 const LOOKS = [
