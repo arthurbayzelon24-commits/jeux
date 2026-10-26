@@ -22,7 +22,7 @@ Kamehameha, Rayon de feu, Sabre laser, Portail magique, Cercle magique, Orbe de 
 
 Magic Cam est une application pour **filmer des vidéos où l’on semble avoir de vrais pouvoirs** : rien à l’écran ne ressemble à un jeu pendant le tournage.
 
-- **Mode libre** (premier pouvoir) : peu importe ce que tu fais, ça fait un pouvoir. Main ouverte devant toi = cercle magique ; les deux mains en boule = trou noir entre tes mains ; agiter la main = éclairs ; les deux mains vers le ciel = foudre ; poing = sabre laser ; index = rayon de feu ; pincement = dessin néon ; signe V = feu d’artifice.
+- **Mode libre** (premier pouvoir) : peu importe ce que tu fais, ça fait un pouvoir. Main ouverte devant toi = cercle magique ; les deux mains en boule = trou noir entre tes mains ; agiter la main = éclairs ; les deux mains vers le ciel = foudre ; poing = sabre laser ; index = rayon de feu ; pincement = dessin néon ; signe V = feu d’artifice ; les deux poings = magie des ombres ; un grand geste rapide = pétales de sakura.
 - **Plus de 100 000 points sur le corps** (option « Points de suivi ») : en plus des 220 points par main et du maillage du squelette, un nuage de points couvre toute ta silhouette (détourée par l’IA), avec un balayage lumineux. Le nombre exact s’affiche dans le compteur (Paramètres › compteur d’images) ; il dépend de la place que tu occupes dans l’image.
 - **Double pouvoir** (bouton deux mains) : un pouvoir dans chaque main ; joins les mains pour une **Fusion**.
 - **Gestes secrets** avec tous les pouvoirs : double applaudissement, mains au ciel, poing/main ouverte ×3 (final immédiat), tour de main, main immobile.

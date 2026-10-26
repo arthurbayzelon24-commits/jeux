@@ -8,6 +8,8 @@
 //   closed fist                  -> laser sword
 //   pinch                        -> neon drawing
 //   V sign                       -> fireworks
+//   both fists closed            -> shadow magic
+//   one big sweep of the hand    -> sakura petals
 import { magicCircleEffect } from './magiccircle.js';
 import { blackholeEffect } from './blackhole.js';
 import { lightningEffect } from './lightning.js';
@@ -16,6 +18,8 @@ import { fireBeamEffect } from './firebeam.js';
 import { saberEffect } from './saber.js';
 import { neonEffect } from './pack-tech.js';
 import { fireworksEffect } from './fireworks.js';
+import { shadowEffect } from './shadow.js';
+import { sakuraEffect } from './sakura.js';
 
 export const FREE_MOVES = [
   ['circle', 'Main ouverte devant toi', 'Cercle magique'],
@@ -26,6 +30,8 @@ export const FREE_MOVES = [
   ['saber', 'Ferme le poing', 'Sabre laser'],
   ['neon', 'Pince les doigts', 'Dessin néon'],
   ['fireworks', 'Signe V', 'Feu d’artifice'],
+  ['shadow', 'Les deux poings fermés', 'Magie des ombres'],
+  ['sakura', 'Un grand geste de la main', 'Pétales de sakura'],
 ];
 
 export function freeModeEffect() {
@@ -38,6 +44,8 @@ export function freeModeEffect() {
     saber: saberEffect,
     neon: neonEffect,
     fireworks: fireworksEffect,
+    shadow: shadowEffect,
+    sakura: sakuraEffect,
   };
   const fx = {};
   let current = null;
@@ -46,6 +54,7 @@ export function freeModeEffect() {
   let idle = 0;
   const waves = new Map();
   let waveUntil = -1;
+  let sweepUntil = -1;
 
   const pick = (hands, e) => {
     const live = hands.filter((h) => h.presence > 0.5);
@@ -56,6 +65,7 @@ export function freeModeEffect() {
       const d = Math.hypot(a.palm.x - b.palm.x, a.palm.y - b.palm.y);
       if (d < (a.size + b.size) * 1.3 && !a.fist && !b.fist) return 'blackhole';
       if (a.palm.y < e.H * 0.35 && b.palm.y < e.H * 0.35 && a.openness > 0.6 && b.openness > 0.6) return 'thunder';
+      if (a.fist && b.fist) return 'shadow';
     }
     // Waving: the hand changes direction sideways several times, fast.
     for (const h of live) {
@@ -70,6 +80,9 @@ export function freeModeEffect() {
       if (w.flips.length >= 3) waveUntil = e.t + 0.8;
     }
     if (e.t < waveUntil) return 'lightning';
+    // A big fast sweep (no back-and-forth): petals follow it for a moment.
+    if (live.some((h) => h.speed > Math.max(e.W, e.H) * 1.6 && h.open)) sweepUntil = e.t + 1.2;
+    if (e.t < sweepUntil) return 'sakura';
     const h = live.sort((a, b) => b.size - a.size)[0];
     if (h.fist) return 'saber';
     if (h.point) return 'firebeam';
@@ -99,7 +112,7 @@ export function freeModeEffect() {
         since = 0;
       } else since += dt;
       // A new gesture must hold a moment; waving and the ball switch at once.
-      const quick = want === 'lightning' || want === 'blackhole' || want === 'thunder';
+      const quick = want === 'lightning' || want === 'blackhole' || want === 'thunder' || want === 'sakura';
       if (want && want !== current && (since > 0.25 || quick)) {
         e.audio.stopLoops();
         current = want;
