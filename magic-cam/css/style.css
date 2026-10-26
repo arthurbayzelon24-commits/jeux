@@ -1116,7 +1116,8 @@ button {
   display: flex;
   justify-content: space-around;
   padding: 8px 8px calc(10px + var(--safe-b));
-  background: #2a2a2e;
+  background: rgba(16, 12, 30, 0.88);
+  backdrop-filter: blur(16px);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 body.in-studio .tabbar {
@@ -2506,4 +2507,15 @@ body.is-recording .rec-btn::before {
 }
 .howto {
   background: linear-gradient(160deg, rgba(255, 106, 61, 0.18), rgba(164, 61, 255, 0.16)), rgba(14, 12, 20, 0.85);
+}
+
+.page-title {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  width: fit-content;
+}
+.sub-title {
+  color: var(--gold-1);
 }
