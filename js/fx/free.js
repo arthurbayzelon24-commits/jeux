@@ -114,7 +114,7 @@ export function freeModeEffect() {
       // A new gesture must hold a moment; waving and the ball switch at once.
       const quick = want === 'lightning' || want === 'blackhole' || want === 'thunder' || want === 'sakura';
       if (want && want !== current && (since > 0.25 || quick)) {
-        e.audio.stopLoops();
+        e.audio.stopLoops?.();
         current = want;
         e.emit?.('freePower', current);
         get(current).start?.(e);
@@ -124,7 +124,7 @@ export function freeModeEffect() {
       if (!want) idle += dt;
       else idle = 0;
       if (current && idle > 1.2) {
-        e.audio.stopLoops();
+        e.audio.stopLoops?.();
         current = null;
       }
       // The ball: one black hole between both hands, not one per hand.
