@@ -2519,3 +2519,15 @@ body.is-recording .rec-btn::before {
 .sub-title {
   color: var(--gold-1);
 }
+
+/* Colour button in rainbow mode */
+#btn-color.rainbow .swatch {
+  background: conic-gradient(#ff3d3d, #ffb238, #ffe14a, #3fe08a, #3fd0ff, #a43dff, #ff3d8b, #ff3d3d) !important;
+  animation: rec-spin 2s linear infinite;
+}
+.settings legend {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
