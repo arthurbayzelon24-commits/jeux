@@ -220,6 +220,32 @@ export function portalEffect() {
           ctx.arc(portal.x, portal.y, R, 0, TAU);
           ctx.stroke();
         }
+        // Sorcerer's sigils: two rings of runes turning opposite ways.
+        ctx.save();
+        ctx.translate(portal.x, portal.y);
+        for (const [rr, dir, n] of [
+          [1.1, 1, 24],
+          [1.2, -1, 36],
+        ]) {
+          ctx.rotate(portal.spin * 0.25 * dir);
+          ctx.strokeStyle = `rgba(${scheme.rgb.join(',')},${0.55 * portal.open})`;
+          ctx.lineWidth = 1.5 * e.unit;
+          ctx.beginPath();
+          ctx.arc(0, 0, R * rr, 0, TAU);
+          ctx.stroke();
+          ctx.beginPath();
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * TAU;
+            const c = Math.cos(a);
+            const sn = Math.sin(a);
+            const r0 = R * (rr - 0.03);
+            const r1 = R * (rr + (i % 3 ? 0.03 : 0.06));
+            ctx.moveTo(c * r0, sn * r0);
+            ctx.lineTo(c * r1, sn * r1);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
         ctx.globalCompositeOperation = 'source-over';
       }
       // The circle being drawn fills up with sparks, so you see it coming.
