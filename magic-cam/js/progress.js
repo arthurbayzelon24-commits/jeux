@@ -35,6 +35,8 @@ export const ACHIEVEMENTS = [
   { id: 'secret1', icon: '🗝️', name: 'Curiosité', text: 'Découvrir un geste secret', test: (s) => s.secrets.length >= 1 },
   { id: 'secretall', icon: '🐉', name: 'Gardien des secrets', text: 'Découvrir les 5 gestes secrets', test: (s) => s.secrets.length >= 5 },
   { id: 'duel', icon: '⚔️', name: 'Duelliste', text: 'Gagner un duel élémentaire', test: (s) => s.duelWins >= 1 },
+  { id: 'master1', icon: '🌠', name: 'Maîtrise', text: 'Obtenir 3 étoiles sur un pouvoir', test: (s, x) => x.mastered >= 1 },
+  { id: 'master5', icon: '🏯', name: 'Légende', text: 'Obtenir 3 étoiles sur 5 pouvoirs', test: (s, x) => x.mastered >= 5 },
   { id: 'lvl10', icon: '🌟', name: 'Niveau 10', text: 'Atteindre le niveau 10', test: (s, x) => x.level >= 10 },
 ];
 
@@ -118,6 +120,7 @@ export class Progress {
 
   #checkAchievements() {
     const extra = {
+      mastered: this.mastered,
       total: this.effects.length,
       level: this.level,
       animeIds: this.effects.filter((d) => d.cat === 'anime').map((d) => d.id),
@@ -170,16 +173,54 @@ export class Progress {
     }
   }
   // Seconds of filming with a hand or a body in view.
-  tick(dt) {
+  tick(dt, effect) {
     this.s.seconds += dt;
+    if (effect) this.#mastery(effect).sec += dt;
     this.acc = (this.acc || 0) + dt;
     if (this.acc >= 10) {
       this.acc = 0;
+      this.#checkStars(effect);
       this.addXp(5);
     }
   }
+
+  // ---------- Mastery: up to 3 stars per power ----------
+  #mastery(id) {
+    this.s.mastery ||= {};
+    return (this.s.mastery[id] ||= { sec: 0, ult: 0, stars: 0 });
+  }
+  // 1 star: 30 s with it. 2: 3 min and a final. 3: 10 min and 5 finals
+  // (powers without a final only need the time).
+  stars(id) {
+    const m = this.s.mastery?.[id];
+    if (!m) return 0;
+    const charge = this.effects.find((d) => d.id === id)?.charge;
+    if (m.sec >= 600 && (!charge || m.ult >= 5)) return 3;
+    if (m.sec >= 180 && (!charge || m.ult >= 1)) return 2;
+    return m.sec >= 30 ? 1 : 0;
+  }
+  #checkStars(id) {
+    if (!id) return;
+    const m = this.#mastery(id);
+    const n = this.stars(id);
+    if (n <= m.stars) return;
+    m.stars = n;
+    const name = this.effectName?.(id) || id;
+    this.queue.push({
+      icon: '★'.repeat(n),
+      title: `Maîtrise : ${name}`,
+      text: `${n} étoile${n > 1 ? 's' : ''} · +${[0, 20, 40, 80][n]} XP`,
+    });
+    this.s.xp += [0, 20, 40, 80][n];
+  }
+  get mastered() {
+    return Object.keys(this.s.mastery || {}).filter((id) => this.stars(id) >= 3).length;
+  }
+
   ultimate(effect) {
     this.s.ultimates++;
+    if (effect) this.#mastery(effect).ult++;
+    this.#checkStars(effect);
     this.addXp(25, 'Final déclenché');
     this.#dailyStep('ultimate', { effect });
   }
