@@ -125,6 +125,7 @@ export class PowerCharge {
     e.audio.play('thunder', 1);
     e.audio.play('whoosh', 1);
     effect?.ultimate?.(e, a);
+    e.emit?.('ultimate', { x: a.x, y: a.y, effect: effect?.id });
   }
 
   draw(ctx, e) {

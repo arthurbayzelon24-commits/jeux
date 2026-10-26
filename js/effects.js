@@ -24,6 +24,7 @@ import { blackholeEffect } from './fx/blackhole.js';
 import { wingsEffect } from './fx/wings.js';
 import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
+import { runesEffect } from './fx/runes.js';
 import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
 import { planetEffect, crystalBallEffect, auroraEffect, starsEffect, cometEffect, rainbowEffect } from './fx/pack-cosmic.js';
 import { bubblesEffect, confettiEffect, coinsEffect, snowEffect, firefliesEffect, wispsEffect } from './fx/pack-fun.js';
@@ -74,6 +75,7 @@ export const EFFECTS = [
   { id: 'haki', cat: 'anime', make: hakiEffect, tint: '#ff2840', gesture: 'Serrez le poing', charge: 'fist' },
   { id: 'domain', cat: 'anime', make: domainEffect, tint: '#b4dcff', gesture: 'Signe V ou index levé, tenez 1 s' },
   { id: 'kamehameha', cat: 'energie', make: kamehamehaEffect, tint: '#4aa3ff', gesture: 'Mains jointes, puis poussez', charge: 'open' },
+  { id: 'runes', cat: 'fun', make: runesEffect, tint: '#ffc86e', gesture: 'Pincez, dessinez une forme, lâchez' },
   { id: 'hud', cat: 'heros', make: hudEffect, tint: '#50dcff', gesture: 'Tapez sur le clavier holographique' },
   { id: 'firebeam', cat: 'feu', make: fireBeamEffect, tint: '#ff7a1a', gesture: 'Pointez l’index', charge: 'point' },
   { id: 'saber', cat: 'energie', make: saberEffect, tint: '#ff3b3b', gesture: 'Fermez le poing', charge: 'fist' },
