@@ -37,7 +37,25 @@ export const ACHIEVEMENTS = [
   { id: 'duel', icon: '⚔️', name: 'Duelliste', text: 'Gagner un duel élémentaire', test: (s) => s.duelWins >= 1 },
   { id: 'master1', icon: '🌠', name: 'Maîtrise', text: 'Obtenir 3 étoiles sur un pouvoir', test: (s, x) => x.mastered >= 1 },
   { id: 'master5', icon: '🏯', name: 'Légende', text: 'Obtenir 3 étoiles sur 5 pouvoirs', test: (s, x) => x.mastered >= 5 },
+  { id: 'quest', icon: '🧙', name: 'Grand Mage', text: 'Finir la Quête du Mage', test: (s) => s.quest >= 12 },
   { id: 'lvl10', icon: '🌟', name: 'Niveau 10', text: 'Atteindre le niveau 10', test: (s, x) => x.level >= 10 },
+];
+
+// The Mage's quest: twelve steps, in order, that walk through every system.
+// check(type, data, state) -> true when the step is done.
+export const QUESTS = [
+  { text: 'Ouvre un pouvoir et montre ta main', check: (t) => t === 'tick' },
+  { text: 'Essaie 5 pouvoirs différents', check: (t, d, s) => s.tried.length >= 5 },
+  { text: 'Déclenche un final (garde le geste 6 s)', check: (t) => t === 'ultimate' },
+  { text: 'Enregistre ta première vidéo', check: (t) => t === 'recorded' },
+  { text: 'Dessine une rune avec « Runes magiques »', check: (t) => t === 'spell', power: 'runes' },
+  { text: 'Termine une manche d’Arène', check: (t) => t === 'arena' },
+  { text: 'Utilise le double pouvoir', check: (t) => t === 'dual' },
+  { text: 'Découvre un geste secret', check: (t) => t === 'secret' },
+  { text: 'Gagne un duel élémentaire', check: (t, d) => t === 'duel' && d.won },
+  { text: 'Fais 800 points dans l’Arène classique', check: (t, d) => t === 'arena' && d.mode === 'classic' && d.score >= 800 },
+  { text: 'Lance les 6 runes', check: (t, d, s) => s.spellKinds.length >= 6, power: 'runes' },
+  { text: 'Obtiens 3 étoiles sur un pouvoir', check: (t, d, s, x) => x.mastered >= 1 },
 ];
 
 // Daily challenge kinds; the power is chosen from the day's date.
@@ -74,6 +92,7 @@ export class Progress {
       secrets: [],
       arenaTop: [],
       duelWins: 0,
+      quest: 0,
     };
     try {
       this.s = { ...blank, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
@@ -171,6 +190,7 @@ export class Progress {
       this.s.tried.push(id);
       this.addXp(10, 'Nouveau pouvoir essayé');
     }
+    this.#quest('tried');
   }
   // Seconds of filming with a hand or a body in view.
   tick(dt, effect) {
@@ -182,6 +202,22 @@ export class Progress {
       this.#checkStars(effect);
       this.addXp(5);
     }
+    this.#quest('tick');
+  }
+
+  // ---------- Quest ----------
+  get quest() {
+    const i = this.s.quest || 0;
+    return i < QUESTS.length
+      ? { index: i, total: QUESTS.length, text: QUESTS[i].text, power: QUESTS[i].power, reward: 100 + i * 25 }
+      : null;
+  }
+  #quest(type, data = {}) {
+    const q = this.quest;
+    if (!q || !QUESTS[q.index].check(type, data, this.s, { mastered: this.mastered })) return;
+    this.s.quest = q.index + 1;
+    this.queue.push({ icon: '🧙', title: `Quête ${q.index + 1}/${q.total} réussie !`, text: `${q.text} · +${q.reward} XP` });
+    this.addXp(q.reward);
   }
 
   // ---------- Mastery: up to 3 stars per power ----------
@@ -223,17 +259,20 @@ export class Progress {
     this.#checkStars(effect);
     this.addXp(25, 'Final déclenché');
     this.#dailyStep('ultimate', { effect });
+    this.#quest('ultimate', { effect });
   }
   spell(kind) {
     this.s.spells++;
     if (!this.s.spellKinds.includes(kind)) this.s.spellKinds.push(kind);
     this.addXp(8);
     this.#dailyStep('spell', { kind });
+    this.#quest('spell', { kind });
   }
   recorded(effect) {
     this.s.videos++;
     this.addXp(30, 'Vidéo enregistrée');
     this.#dailyStep('record', { effect });
+    this.#quest('recorded', { effect });
   }
   photo() {
     this.s.photos++;
@@ -246,19 +285,23 @@ export class Progress {
     this.s.bestCombo = Math.max(this.s.bestCombo, result.maxCombo);
     this.addXp(Math.min(300, result.score / 8), 'Manche d’Arène');
     this.#dailyStep('arena', { effect, score: result.score });
+    this.#quest('arena', result);
   }
   secret(id) {
     if (this.s.secrets.includes(id)) return this.addXp(5);
     this.s.secrets.push(id);
     this.addXp(60, 'Geste secret découvert');
+    this.#quest('secret');
   }
   duel(result) {
     if (result.won) this.s.duelWins = (this.s.duelWins || 0) + 1;
     this.addXp(result.won ? 40 : 15, 'Duel terminé');
+    this.#quest('duel', result);
   }
   usedDual() {
     this.s.dual++;
     this.addXp(10);
+    this.#quest('dual');
   }
 
   // Unlocks waiting to be announced (home screen).

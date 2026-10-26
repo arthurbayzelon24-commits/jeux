@@ -1685,3 +1685,27 @@ body.in-studio {
 .stars[hidden] {
   display: none;
 }
+
+/* Quest card */
+.quest-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 1.6rem;
+  background: rgba(150, 110, 255, 0.15);
+  border: 1px solid rgba(170, 130, 255, 0.4);
+}
+.quest-card {
+  border-color: rgba(170, 130, 255, 0.55);
+}
+.quest-card .lvl-bar i {
+  background: linear-gradient(90deg, #7d5bff, #c9a8ff);
+}
+@media (min-width: 760px) {
+  .hub {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
