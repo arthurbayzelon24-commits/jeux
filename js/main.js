@@ -10,6 +10,7 @@ import { Secrets } from './mech/secrets.js';
 import { FREE_MOVES } from './fx/free.js';
 import { Progress } from './progress.js';
 import { Music, TRACKS } from './music.js';
+import { BACKDROPS } from './backdrops.js';
 import { makeDual } from './dual.js';
 import { SPELLS } from './fx/runes.js';
 
@@ -37,6 +38,7 @@ const ICONS = {
   slow: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
   boomerang: '<path d="M4 12a5 5 0 0 1 8-4l4 3a5 5 0 1 1 0 2l-4 3a5 5 0 0 1-8-4z"/>',
   scissors: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1 20 20M8.1 15.9 20 4"/>',
+  mountain: '<path d="M3 20l6-10 4 6 3-4 5 8z"/><circle cx="17" cy="6" r="2"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   play: '<path d="M7 5l12 7-12 7z"/>',
   music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
@@ -82,6 +84,7 @@ const DEFAULTS = {
   fillLight: false,
   fades: true,
   powerSize: '1',
+  backdrop: 'off',
   grid: false,
   // Two extra full-screen passes per frame: off by default on phones.
   motionBlur: !MOBILE,
@@ -383,6 +386,7 @@ function updateToggles() {
   $('vignette').hidden = !settings.cinema;
   $('fps').hidden = !settings.fps;
   $('fill-light').hidden = !settings.fillLight;
+  $('btn-backdrop').classList.toggle('on', settings.backdrop !== 'off');
   $('frame-grid').hidden = !settings.grid;
 }
 
@@ -545,7 +549,7 @@ function loop(now) {
   const fx = engine.effect;
   // A body power needs the silhouette every frame; the point cloud alone
   // only every third camera frame (the segmentation is the heaviest model).
-  const needSeg = !!fx?.needs?.seg;
+  const needSeg = !!fx?.needs?.seg || engine.backdrop.on;
   const wantSeg = needSeg || settings.points;
   // Each new camera frame goes to the detection worker; rendering never waits
   // for it, and the engine predicts the hands' motion in between.
@@ -678,6 +682,17 @@ function updateFormatGuide() {
   g.style.left = `${W / 2 - (stage.width / 2 - r.x) * scale}px`;
   g.style.top = `${H / 2 - (stage.height / 2 - r.y) * scale}px`;
 }
+
+// ---------- Magic backdrop (studio button): the scene behind you ----------
+engine.backdrop.set(settings.backdrop);
+$('btn-backdrop').addEventListener('click', () => {
+  const keys = Object.keys(BACKDROPS);
+  settings.backdrop = keys[(keys.indexOf(settings.backdrop) + 1) % keys.length];
+  saveSettings();
+  engine.backdrop.set(settings.backdrop);
+  $('btn-backdrop').classList.toggle('on', engine.backdrop.on);
+  showChip(BACKDROPS[settings.backdrop].name);
+});
 
 // ---------- Background music (studio button ♪) ----------
 const music = new Music(audio);
