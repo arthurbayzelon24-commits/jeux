@@ -11,7 +11,9 @@ export class Engine {
   constructor(canvas, options = {}) {
     this.canvas = canvas;
     // desynchronized: lower latency between drawing and the screen.
-    this.ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+    // Not 'desynchronized': that low-latency mode can freeze or tear the
+    // frames captured for the recording on some phones.
+    this.ctx = canvas.getContext('2d', { alpha: false });
     // Adaptive resolution factor (lowered when the device cannot keep up).
     this.renderScale = 1;
     this.tracker = new HandTracker();

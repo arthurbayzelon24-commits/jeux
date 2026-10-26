@@ -1887,3 +1887,10 @@ body.in-studio {
   font-size: 0.8rem;
   font-weight: 800;
 }
+
+/* Hands-free: the record button fills with light while both palms are held */
+.rec-btn {
+  --hf: 0;
+  box-shadow: 0 0 calc(var(--hf) * 40px) calc(var(--hf) * 10px) rgba(255, 215, 120, calc(var(--hf) * 0.8));
+  transition: box-shadow 0.1s;
+}
