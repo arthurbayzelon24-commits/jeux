@@ -2531,3 +2531,26 @@ body.is-recording .rec-btn::before {
   background-clip: text;
   color: transparent;
 }
+
+/* Colour choice: round swatches */
+.theme-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.theme-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  transition: transform 0.15s;
+}
+.theme-swatch.on {
+  border-color: #fff;
+  transform: scale(1.15);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+}
+.theme-select {
+  display: none;
+}

@@ -1479,6 +1479,37 @@ function applyTheme() {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bar || '#0b0a0f');
 }
 applyTheme();
+// Colour choice as round swatches (the select stays for keyboards).
+{
+  const sel = form.elements.theme;
+  const SW = {
+    couleurs: 'linear-gradient(135deg, #ffb238, #ff3d8b, #a43dff, #4f7bff)',
+    or: 'linear-gradient(135deg, #fff1c9, #f3c56b, #d58b2a)',
+    violet: 'linear-gradient(135deg, #e6b8ff, #a45bff, #6a2be0)',
+    cyan: 'linear-gradient(135deg, #b8f6ff, #3fd0ff, #1f6bd6)',
+    rose: 'linear-gradient(135deg, #ffd0e6, #ff5fa8, #c42b7a)',
+    vert: 'linear-gradient(135deg, #d8ffd9, #3fe08a, #12935a)',
+    rouge: 'linear-gradient(135deg, #ffd2c4, #ff4a3d, #b8201a)',
+  };
+  const box = $('theme-swatches');
+  for (const o of sel.options) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'theme-swatch';
+    b.dataset.theme = o.value;
+    b.title = o.textContent;
+    b.setAttribute('aria-label', o.textContent);
+    b.style.background = SW[o.value];
+    b.addEventListener('click', () => {
+      sel.value = o.value;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    box.append(b);
+  }
+  const mark = () => box.querySelectorAll('.theme-swatch').forEach((b) => b.classList.toggle('on', b.dataset.theme === settings.theme));
+  sel.addEventListener('change', () => setTimeout(mark));
+  mark();
+}
 quality.particles = PARTICLES[settings.fxQuality] || 1;
 
 // ---------- Zoom: pinch with two fingers, mouse wheel, or the 1× button ----------
