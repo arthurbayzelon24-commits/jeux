@@ -468,7 +468,7 @@ export class Arena {
     }
     ctx.globalAlpha = 1;
     const cx = e.W / 2;
-    const top = e.H * 0.1;
+    const top = e.H * (e.H > e.W ? 0.15 : 0.13); // below the top bar in portrait
     const text = (s, x, y, size, color = '#fff') => {
       ctx.font = `900 ${Math.round(size * u)}px system-ui, sans-serif`;
       ctx.lineWidth = 6 * u;
