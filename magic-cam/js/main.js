@@ -1606,6 +1606,7 @@ function renderHub() {
   const list = progress.challenges;
   $('hub-challenges').innerHTML = challengeRows(list);
   $('hub-done').textContent = `${list.filter((c) => c.done).length}/3`;
+  document.querySelector('.challenges-card').style.setProperty('--p', list.filter((c) => c.done).length / 3);
 }
 $('quick-film').addEventListener('click', () => openStudio('free'));
 $('hub-challenges').addEventListener('click', (ev) => {
