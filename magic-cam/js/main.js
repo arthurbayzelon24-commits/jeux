@@ -27,6 +27,8 @@ const ICONS = {
   sparkle:
     '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8zM5 2l.6 1.4L7 4l-1.4.6L5 6l-.6-1.4L3 4l1.4-.6z"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 10.5v5l4-2.5z"/>',
+  slow: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
+  boomerang: '<path d="M4 12a5 5 0 0 1 8-4l4 3a5 5 0 1 1 0 2l-4 3a5 5 0 0 1-8-4z"/>',
   film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
 };
@@ -657,8 +659,40 @@ async function showResult(item, fromGallery = false) {
     media.append(v);
   }
   $('res-save').hidden = !!item.saved;
+  $('res-slow').hidden = $('res-boom').hidden = item.kind === 'photo';
   $('result').hidden = false;
 }
+
+// Slow motion / boomerang made from the video shown in the result screen.
+let remixing = false;
+async function remixResult(mode) {
+  const src = lastResult;
+  if (remixing || !src || src.kind === 'photo') return;
+  remixing = true;
+  const btn = $(mode === 'slow' ? 'res-slow' : 'res-boom');
+  const lbl = btn.querySelector('.lbl');
+  const label = lbl.textContent;
+  $('res-slow').disabled = $('res-boom').disabled = true;
+  try {
+    const { remix } = await import('./remix.js');
+    const res = await remix(src.blob, mode, src.duration || 0, (p) => (lbl.textContent = `${Math.round(p * 100)} %`));
+    if (!res?.blob.size) throw new Error('empty');
+    const thumb = await videoThumbnail(res.blob);
+    $('result-media').querySelector('video')?.pause();
+    if (src.url) URL.revokeObjectURL(src.url);
+    await showResult({ kind: 'video', blob: res.blob, type: res.type, duration: res.duration, thumb, effect: src.effect });
+  } catch (err) {
+    console.warn(err);
+    lbl.textContent = 'Impossible';
+    await new Promise((r) => setTimeout(r, 1500));
+  } finally {
+    lbl.textContent = label;
+    $('res-slow').disabled = $('res-boom').disabled = false;
+    remixing = false;
+  }
+}
+$('res-slow').addEventListener('click', () => remixResult('slow'));
+$('res-boom').addEventListener('click', () => remixResult('boomerang'));
 
 function closeResult() {
   $('result-media').querySelector('video')?.pause();
