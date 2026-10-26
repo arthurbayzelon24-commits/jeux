@@ -34,6 +34,10 @@ export class Engine {
     this.lights = [];
     this.mechanics = [];
     this.userZoom = 1;
+    // Fade to black (start / end of a recording): current and target opacity.
+    this.fadeAlpha = 0;
+    this.fadeTarget = 0;
+    this.fadeSpeed = 2;
     this.seg = null;
     this.maskInverted = 0;
   }
@@ -118,6 +122,12 @@ export class Engine {
     const i = (py * w + px) * 4;
     // Brightness weighted by coverage.
     return ((data[i] + data[i + 1] + data[i + 2]) / 765) * (data[i + 3] / 255);
+  }
+
+  // Fade the picture to black (1) or back (0) over `seconds`.
+  fade(to, seconds = 0.5) {
+    this.fadeTarget = to;
+    this.fadeSpeed = 1 / Math.max(0.05, seconds);
   }
 
   // Effects call these to make the scene react.
@@ -584,6 +594,17 @@ export class Engine {
     this.flashes = this.flashes.filter((fl) => fl.alpha > 0.01);
     ctx.globalCompositeOperation = 'source-over';
     this.#lookOverlay(ctx, W, H);
+    if (this.fadeAlpha !== this.fadeTarget) {
+      const step = this.fadeSpeed * dt;
+      this.fadeAlpha =
+        this.fadeAlpha < this.fadeTarget
+          ? Math.min(this.fadeTarget, this.fadeAlpha + step)
+          : Math.max(this.fadeTarget, this.fadeAlpha - step);
+    }
+    if (this.fadeAlpha > 0.003) {
+      ctx.fillStyle = `rgba(0,0,0,${this.fadeAlpha})`;
+      ctx.fillRect(0, 0, W, H);
+    }
   }
 
   // Body point cloud: a dense grid of points over the whole silhouette (from
