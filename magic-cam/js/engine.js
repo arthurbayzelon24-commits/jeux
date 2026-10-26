@@ -4,6 +4,7 @@ import { HandTracker, drawHandSkeleton } from './hands.js';
 import { BodyTracker } from './body.js';
 import { PowerCharge } from './charge.js';
 import { makeCanvas, clamp, smoothstep, drawGlow } from './fx/util.js';
+import { Backdrop } from './backdrops.js';
 
 const NOOP_AUDIO = { play() {}, loop() {} };
 
@@ -34,6 +35,8 @@ export class Engine {
     this.lights = [];
     this.mechanics = [];
     this.userZoom = 1;
+    // Magic backdrop behind the person (green-screen style).
+    this.backdrop = new Backdrop();
     // Fade to black (start / end of a recording): current and target opacity.
     this.fadeAlpha = 0;
     this.fadeTarget = 0;
@@ -451,7 +454,7 @@ export class Engine {
     if (input.pose !== undefined) this.body.update(input.pose, { width: W, height: H, mirror: input.mirror, dt });
     else this.body.advance(dt);
 
-    this.segActive = !!(effect?.needs?.seg && input.mask);
+    this.segActive = !!((effect?.needs?.seg || this.backdrop.on) && input.mask);
     // Points mode without a body power: the silhouette is still needed for
     // the point cloud.
     if (!this.segActive && this.settings.points && input.mask && input.maskFresh !== false)
@@ -463,14 +466,14 @@ export class Engine {
       f.setTransform(input.mirror ? -1 : 1, 0, 0, 1, input.mirror ? W : 0, 0);
       f.drawImage(input.source, 0, 0, W, H);
       f.setTransform(1, 0, 0, 1, 0, 0);
-      if (input.maskFresh !== false || !this.seg) this.#processMask(input.mask, input.mirror, !!effect.needs.plate);
+      if (input.maskFresh !== false || !this.seg) this.#processMask(input.mask, input.mirror, !!effect?.needs?.plate);
       const p = L.person.getContext('2d');
       p.globalCompositeOperation = 'copy';
       p.drawImage(L.frame, 0, 0);
       p.globalCompositeOperation = 'destination-in';
       p.drawImage(this.seg.canvas, 0, 0, W, H);
       p.globalCompositeOperation = 'source-over';
-      if (effect.needs.plate) this.#updatePlate();
+      if (effect?.needs?.plate) this.#updatePlate();
     }
 
     this.lights.length = 0;
@@ -495,7 +498,11 @@ export class Engine {
     this.zoom = 1 + (this.zoom - 1) * Math.exp(-dt * 5);
 
     const handled = this.#safe('drawBackground', ctx, this);
-    if (!handled && this.segActive) ctx.drawImage(this.layers.frame, 0, 0);
+    if (!handled && this.segActive && this.backdrop.on && this.seg?.present) {
+      // The scene behind, then you in front of it.
+      this.backdrop.draw(ctx, W, H, this.t, dt, this.unit);
+      ctx.drawImage(this.layers.person, 0, 0);
+    } else if (!handled && this.segActive) ctx.drawImage(this.layers.frame, 0, 0);
     else if (!handled) {
       // No body effect: draw the camera straight in, without a copy.
       ctx.save();
