@@ -25,6 +25,7 @@ export const MODES = {
   classic: { name: 'Classique', text: '60 secondes, boss à mi-manche' },
   survival: { name: 'Survie', text: '3 vies, de plus en plus vite' },
   zen: { name: 'Zen', text: 'Sans bombes ni chrono' },
+  duel: { name: 'Duel élémentaire', text: 'Feu, Eau, Foudre : à deux ou contre l’ordi', game: true },
 };
 const BEST_KEY = 'magic-cam-arena-best';
 const bestKey = (mode) => (mode === 'classic' ? BEST_KEY : `${BEST_KEY}-${mode}`);
