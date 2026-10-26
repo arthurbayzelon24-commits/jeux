@@ -7,6 +7,7 @@ import { gallery, videoThumbnail } from './gallery.js';
 import { quality } from './fx/util.js';
 import { MESH_POINTS } from './handmesh.js';
 import { Secrets } from './mech/secrets.js';
+import { FREE_MOVES } from './fx/free.js';
 import { Progress } from './progress.js';
 import { makeDual } from './dual.js';
 import { SPELLS } from './fx/runes.js';
@@ -1117,6 +1118,10 @@ $('wallet-card').addEventListener('click', () => {
 function renderShop() {
   $('shop-crystals').textContent = progress.s.crystals;
   $('shop-challenges').innerHTML = challengeRows(progress.challenges);
+  $('free-moves').innerHTML = FREE_MOVES.map(
+    ([id, how, what]) =>
+      `<div class="ach on"><img class="move-img" src="${art(id)}" alt=""><span><strong>${what}</strong><small>${how}</small></span></div>`,
+  ).join('');
   const locked = EFFECTS.filter((d) => !progress.owns(d.id));
   $('shop-list').innerHTML = locked.length
     ? locked

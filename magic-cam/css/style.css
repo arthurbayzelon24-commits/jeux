@@ -1877,3 +1877,9 @@ body.in-studio {
   border-radius: 18px;
   object-fit: cover;
 }
+.move-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+}
