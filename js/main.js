@@ -75,6 +75,8 @@ const DEFAULTS = {
   transition: true,
   music: 'off',
   format: 'auto',
+  // Two extra full-screen passes per frame: off by default on phones.
+  motionBlur: !MOBILE,
   pointsAsked: false,
   eco: false,
 };
@@ -660,6 +662,8 @@ function updateFormatGuide() {
 
 // ---------- Background music (studio button ♪) ----------
 const music = new Music(audio);
+// Powers pulse on the beat: a tiny zoom on each kick drum.
+music.onBeat = (strength) => studioOpen && engine.punch(0.012 * strength);
 $('btn-music').addEventListener('click', () => {
   audio.init();
   const keys = Object.keys(TRACKS);

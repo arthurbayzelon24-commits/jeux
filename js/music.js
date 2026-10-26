@@ -31,7 +31,7 @@ export class Music {
     if (!ctx) return;
     this.out = ctx.createGain();
     this.out.gain.value = 0;
-    this.out.gain.setTargetAtTime(0.32, ctx.currentTime, 0.5);
+    this.out.gain.setTargetAtTime(this.track === 'electro' ? 0.55 : 0.32, ctx.currentTime, 0.5);
     this.out.connect(ctx.destination);
     if (this.sfx.recordDest) this.out.connect(this.sfx.recordDest);
     this.step = 0;
@@ -138,6 +138,9 @@ export class Music {
   // Kick / taiko: a falling sine.
   #drum(t, f0, peak) {
     const ctx = this.sfx.ctx;
+    // Tell the app when the beat is actually heard.
+    const delay = (t - ctx.currentTime) * 1000;
+    setTimeout(() => this.out && this.onBeat?.(peak), Math.max(0, delay));
     const o = ctx.createOscillator();
     o.type = 'sine';
     o.frequency.setValueAtTime(f0 * 2.5, t);
