@@ -2,7 +2,7 @@ import { EFFECTS, CATEGORIES, getEffect } from './effects.js';
 import { Engine } from './engine.js';
 import { Tracker } from './tracker.js';
 import { SoundFx } from './audio.js';
-import { CanvasRecorder, extensionFor } from './recorder.js';
+import { CanvasRecorder, extensionFor, cropRect } from './recorder.js';
 import { gallery, videoThumbnail } from './gallery.js';
 import { quality } from './fx/util.js';
 import { MESH_POINTS } from './handmesh.js';
@@ -74,6 +74,7 @@ const DEFAULTS = {
   handsFree: true,
   transition: true,
   music: 'off',
+  format: 'auto',
   pointsAsked: false,
   eco: false,
 };
@@ -633,6 +634,30 @@ async function countdown() {
   return true;
 }
 
+// ---------- Video format: auto, 9:16, 1:1, 16:9 ----------
+const FORMATS = { auto: null, '9:16': 9 / 16, '1:1': 1, '16:9': 16 / 9 };
+const formatAspect = () => {
+  const a = FORMATS[settings.format];
+  // Already that shape: nothing to crop.
+  return a && Math.abs(stage.width / stage.height - a) > 0.02 ? a : null;
+};
+// Frame on screen around what will be recorded; outside it is dimmed.
+function updateFormatGuide() {
+  const g = $('format-guide');
+  const a = formatAspect();
+  if (!a || !stage.width) return (g.hidden = true);
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const contain = Math.min(W / stage.width, H / stage.height);
+  const scale = contain * (parseFloat(/scale\(([\d.]+)\)/.exec(stage.style.transform)?.[1]) || 1);
+  const r = cropRect(stage.width, stage.height, a);
+  g.hidden = false;
+  g.style.width = `${r.w * scale}px`;
+  g.style.height = `${r.h * scale}px`;
+  g.style.left = `${W / 2 - (stage.width / 2 - r.x) * scale}px`;
+  g.style.top = `${H / 2 - (stage.height / 2 - r.y) * scale}px`;
+}
+
 // ---------- Background music (studio button ♪) ----------
 const music = new Music(audio);
 $('btn-music').addEventListener('click', () => {
@@ -728,7 +753,7 @@ async function startRecording() {
     }
   }
   try {
-    recorder.start({ audioTracks: audio.recordTracks.slice(0, 1) });
+    recorder.start({ audioTracks: audio.recordTracks.slice(0, 1), aspect: formatAspect() });
   } catch (err) {
     console.warn(err);
     return;
@@ -793,7 +818,17 @@ async function takePhoto() {
   void flash.offsetWidth;
   flash.classList.add('go');
   audio.play('shutter', 0.8);
-  const blob = await new Promise((r) => stage.toBlob(r, 'image/jpeg', 0.92));
+  // Photo in the chosen format too.
+  let shot = stage;
+  const aspect = formatAspect();
+  if (aspect) {
+    const r = cropRect(stage.width, stage.height, aspect);
+    shot = document.createElement('canvas');
+    shot.width = r.w;
+    shot.height = r.h;
+    shot.getContext('2d').drawImage(stage, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+  }
+  const blob = await new Promise((r) => shot.toBlob(r, 'image/jpeg', 0.92));
   if (!blob) return;
   const c = document.createElement('canvas');
   const k = 320 / Math.max(stage.width, stage.height);
@@ -1138,6 +1173,7 @@ form.addEventListener('change', (e) => {
   const el = e.target;
   settings[el.name] = el.type === 'checkbox' ? el.checked : el.value;
   if (el.name === 'points') settings.pointsAsked = true;
+  if (el.name === 'format') updateFormatGuide();
   saveSettings();
   audio.setEnabled(settings.sound);
   quality.particles = PARTICLES[settings.fxQuality] || 1;
@@ -1203,6 +1239,7 @@ function applyZoom() {
   stage.style.transform = `scale(${rest >= 1 ? k * 1.04 : Math.max(1, k * 1.04 * rest)})`;
   $('btn-zoom').textContent = `${String(Math.round(zoomZ * 10) / 10).replace('.', ',')}×`;
   $('btn-zoom').classList.toggle('on', Math.abs(zoomZ - 1) > 0.02);
+  updateFormatGuide();
 }
 // Two-finger pinch anywhere on the camera image.
 let pinch0 = null;
