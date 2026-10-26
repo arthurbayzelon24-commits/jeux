@@ -37,8 +37,27 @@
       <header class="page-head">
         <button class="btn btn-ghost back-cam" data-back><span data-icon="back"></span>Retour</button>
         <h1 class="page-title">Mes vidéos</h1>
+        <button class="btn btn-ghost" id="gallery-select">Sélectionner</button>
       </header>
+      <div class="gallery-bar">
+        <div class="seg" id="gallery-kind">
+          <button data-kind="all" class="active">Tout</button><button data-kind="video">Vidéos</button
+          ><button data-kind="photo">Photos</button>
+        </div>
+        <select id="gallery-sort" aria-label="Trier">
+          <option value="new">Plus récentes</option>
+          <option value="old">Plus anciennes</option>
+          <option value="long">Plus longues</option>
+          <option value="power">Par pouvoir</option>
+        </select>
+      </div>
+      <p class="gallery-usage" id="gallery-usage"></p>
       <div class="grid media-grid" id="gallery-grid"></div>
+      <div class="select-bar" id="select-bar" hidden>
+        <span id="select-count">0 sélectionnée</span>
+        <button class="btn btn-ghost" id="select-all">Tout</button>
+        <button class="btn btn-danger" id="select-delete"><span data-icon="trash"></span>Supprimer</button>
+      </div>
       <div class="empty" id="gallery-empty" hidden>
         <span data-icon="video"></span>
         <p>Aucune vidéo pour l’instant.</p>

@@ -1245,3 +1245,132 @@ body.in-studio {
     transform: translate(-50%, -50%) scale(0.9);
   }
 }
+
+/* Gallery tools: filter, sort, selection */
+#view-gallery .page-head {
+  position: relative;
+}
+#gallery-select {
+  position: absolute;
+  right: 16px;
+  top: calc(16px + var(--safe-t));
+  padding: 0.6em 1em;
+}
+.gallery-bar {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.seg button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.seg button.active {
+  color: #2a1704;
+  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+}
+#gallery-sort {
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.gallery-usage {
+  max-width: 1100px;
+  margin: 10px auto 0;
+  padding: 0 16px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.media-item .dur {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.6);
+}
+.media-item .check {
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  border: 3px solid transparent;
+}
+.selecting .media-item .check {
+  display: block;
+}
+.selecting .media-item .check::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: rgba(0, 0, 0, 0.4);
+}
+.selecting .media-item .kind {
+  display: none;
+}
+.media-item.selected .check {
+  border-color: var(--gold-2);
+}
+.media-item.selected .check::after {
+  border-color: var(--gold-2);
+  background: var(--gold-2)
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" fill="none" stroke="%232a1704" stroke-width="3"/></svg>')
+    center/16px no-repeat;
+}
+.select-bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(84px + var(--safe-b));
+  z-index: 50;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 18px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: rgba(24, 22, 27, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(201, 158, 96, 0.5);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.select-bar[hidden] {
+  display: none;
+}
+.btn-danger {
+  color: #fff;
+  background: #d8343f;
+}
+.btn-danger:disabled {
+  opacity: 0.4;
+}
+.btn-danger [data-icon] {
+  width: 18px;
+  height: 18px;
+}

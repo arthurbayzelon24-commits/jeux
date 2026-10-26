@@ -708,22 +708,92 @@ $('res-delete').addEventListener('click', async () => {
 });
 
 // ---------- Gallery ----------
+// Gallery: filter (all / videos / photos), sort, and a selection mode to
+// delete several items at once.
+const galleryView = { kind: 'all', sort: 'new', selecting: false, selected: new Set() };
+const fmtDuration = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const fmtSize = (b) => (b > 1e9 ? `${(b / 1e9).toFixed(1)} Go` : `${Math.max(0.1, b / 1e6).toFixed(1)} Mo`);
+
 async function renderGallery() {
-  const items = await gallery.list();
+  const all = await gallery.list();
   const grid = $('gallery-grid');
   grid.innerHTML = '';
+  let items = all.filter((it) => galleryView.kind === 'all' || (galleryView.kind === 'photo') === (it.kind === 'photo'));
+  const sorts = {
+    new: (a, b) => b.created - a.created,
+    old: (a, b) => a.created - b.created,
+    long: (a, b) => (b.duration || 0) - (a.duration || 0),
+    power: (a, b) => (getEffect(a.effect)?.name || '').localeCompare(getEffect(b.effect)?.name || '', 'fr') || b.created - a.created,
+  };
+  items = items.sort(sorts[galleryView.sort]);
   $('gallery-empty').hidden = items.length > 0;
+  const bytes = all.reduce((n, it) => n + (it.blob?.size || 0), 0);
+  $('gallery-usage').textContent = all.length ? `${all.length} élément${all.length > 1 ? 's' : ''} · ${fmtSize(bytes)}` : '';
   for (const item of items) {
     const el = document.createElement('button');
     el.className = 'media-item';
+    el.classList.toggle('selected', galleryView.selected.has(item.id));
     const fx = getEffect(item.effect);
     const date = new Date(item.created).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    el.innerHTML = `${item.thumb ? `<img alt="" src="${item.thumb}">` : ''}<span class="kind" data-icon="${item.kind === 'photo' ? 'image' : 'video'}"></span><div class="meta"><strong>${fx?.name || ''}</strong><br>${date}${item.kind === 'photo' ? '' : ` · ${Math.round(item.duration || 0)} s`}</div>`;
-    el.addEventListener('click', () => showResult({ ...item, saved: true }, true));
+    const dur = item.kind === 'photo' ? '' : `<span class="dur">${fmtDuration(item.duration || 0)}</span>`;
+    el.innerHTML = `${item.thumb ? `<img alt="" src="${item.thumb}">` : ''}<span class="kind" data-icon="${item.kind === 'photo' ? 'image' : 'video'}"></span>${dur}<span class="check"></span><div class="meta"><strong>${fx?.name || ''}</strong><br>${date}</div>`;
+    el.addEventListener('click', () => {
+      if (!galleryView.selecting) return showResult({ ...item, saved: true }, true);
+      if (galleryView.selected.has(item.id)) galleryView.selected.delete(item.id);
+      else galleryView.selected.add(item.id);
+      el.classList.toggle('selected');
+      updateSelectBar();
+    });
     grid.append(el);
   }
+  grid.classList.toggle('selecting', galleryView.selecting);
+  updateSelectBar();
   paintIcons(grid);
 }
+
+function updateSelectBar() {
+  const n = galleryView.selected.size;
+  $('select-bar').hidden = !galleryView.selecting;
+  $('select-count').textContent = `${n} sélectionné${n > 1 ? 's' : ''}`;
+  $('select-delete').disabled = !n;
+  $('gallery-select').textContent = galleryView.selecting ? 'Terminé' : 'Sélectionner';
+}
+
+$('gallery-kind').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button');
+  if (!b) return;
+  galleryView.kind = b.dataset.kind;
+  $('gallery-kind')
+    .querySelectorAll('button')
+    .forEach((x) => x.classList.toggle('active', x === b));
+  renderGallery();
+});
+$('gallery-sort').addEventListener('change', (ev) => {
+  galleryView.sort = ev.target.value;
+  renderGallery();
+});
+$('gallery-select').addEventListener('click', () => {
+  galleryView.selecting = !galleryView.selecting;
+  galleryView.selected.clear();
+  renderGallery();
+});
+$('select-all').addEventListener('click', async () => {
+  const items = (await gallery.list()).filter(
+    (it) => galleryView.kind === 'all' || (galleryView.kind === 'photo') === (it.kind === 'photo'),
+  );
+  const all = items.every((it) => galleryView.selected.has(it.id));
+  galleryView.selected = new Set(all ? [] : items.map((it) => it.id));
+  renderGallery();
+});
+$('select-delete').addEventListener('click', async () => {
+  const n = galleryView.selected.size;
+  if (!n || !confirm(`Supprimer ${n} élément${n > 1 ? 's' : ''} ?`)) return;
+  for (const id of galleryView.selected) await gallery.remove(id);
+  galleryView.selected.clear();
+  galleryView.selecting = false;
+  renderGallery();
+  refreshMiniThumb();
+});
 
 async function refreshMiniThumb() {
   const [last] = await gallery.list();
