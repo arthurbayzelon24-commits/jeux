@@ -1472,6 +1472,8 @@ body.in-studio {
 
 /* ---------- Hub: level and daily challenge ---------- */
 .hub {
+  position: relative;
+  z-index: 1;
   max-width: 1100px;
   margin: -14px auto 10px;
   padding: 0 16px;
@@ -2338,4 +2340,44 @@ body.is-recording .howto {
 }
 .power-pill {
   cursor: pointer;
+}
+
+/* Daily challenges: a bar that fills as they are done */
+.hub .challenges-card {
+  position: relative;
+  overflow: hidden;
+}
+.hub .challenges-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 3px;
+  width: calc(var(--p, 0) * 100%);
+  background: linear-gradient(90deg, var(--gold-2), var(--gold-1));
+  box-shadow: 0 0 12px rgba(var(--acc-glow), 0.8);
+  transition: width 0.6s ease;
+}
+/* Cards light up in the app colour when touched or hovered */
+@media (hover: hover) {
+  .power:hover {
+    transform: translateY(-3px);
+    border-color: var(--gold-2);
+    box-shadow:
+      0 10px 30px rgba(var(--acc-glow), 0.25),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+  }
+}
+.power:focus-visible {
+  outline: 2px solid var(--gold-2);
+  outline-offset: 2px;
+}
+
+/* Fluidity: while filming, the home screen behind is not drawn or animated */
+body.in-studio .home {
+  content-visibility: hidden;
+}
+body.in-studio .quick-film,
+body.in-studio .shelf {
+  animation: none;
 }
