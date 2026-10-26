@@ -12,6 +12,7 @@ import { Familiar, formFor } from './mech/familiar.js';
 import { Duel } from './mech/duel.js';
 import { Progress, ACHIEVEMENTS } from './progress.js';
 import { makeDual } from './dual.js';
+import { SPELLS } from './fx/runes.js';
 
 // ---------- Interface icons ----------
 const ICONS = {
@@ -1180,6 +1181,14 @@ function renderProgress() {
         )
         .join('')
     : '<p class="muted">Lance une manche avec le bouton cible dans la caméra.</p>';
+  // Rune book: shape -> spell, with the ones already cast.
+  const SHAPES = { circle: '○', triangle: '△', square: '□', zigzag: '⚡', line: '／', v: 'V' };
+  $('rune-list').innerHTML = Object.entries(SPELLS)
+    .map(([k, sp]) => {
+      const on = s.spellKinds.includes(k);
+      return `<div class="ach${on ? ' on' : ''}"><span class="ach-icon rune-shape" style="color:rgb(${sp.rgb.join(',')})">${SHAPES[k]}</span><span><strong>${sp.name}</strong><small>${on ? 'Déjà lancée' : 'Pas encore lancée'}</small></span></div>`;
+    })
+    .join('');
   $('secret-list').innerHTML = SECRETS.map((x) => {
     const on = s.secrets.includes(x.id);
     return `<div class="ach${on ? ' on' : ''}"><span class="ach-icon">${on ? '🗝️' : '❔'}</span><span><strong>${on ? x.name : '???'}</strong><small>${x.hint}</small></span></div>`;
