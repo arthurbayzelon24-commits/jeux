@@ -1,3 +1,4 @@
+import { HINTS } from './hints.js';
 import { EFFECTS, CATEGORIES, getEffect } from './effects.js';
 import { Engine } from './engine.js';
 import { Tracker } from './tracker.js';
@@ -371,13 +372,13 @@ let howtoTimer = 0;
 function showHowto(def = EFFECTS.find((d) => d.id === currentEffect), fx = getEffect(def.id)) {
   if (recorder.recording) return;
   $('howto-title').textContent = `✋ ${def.gesture}`;
-  $('howto-text').textContent = fx.hint || '';
+  $('howto-text').textContent = fx.hint || HINTS[def.id] || '';
   $('howto').hidden = false;
   $('howto').classList.remove('show');
   void $('howto').offsetWidth;
   $('howto').classList.add('show');
   clearTimeout(howtoTimer);
-  howtoTimer = setTimeout(() => ($('howto').hidden = true), fx.hint ? 5000 : 2500);
+  howtoTimer = setTimeout(() => ($('howto').hidden = true), fx.hint || HINTS[def.id] ? 5000 : 2500);
 }
 $('power-pill').addEventListener('click', () => showHowto());
 $('howto').addEventListener('click', () => ($('howto').hidden = true));
