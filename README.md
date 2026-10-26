@@ -63,6 +63,9 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Pause / reprise** pendant l’enregistrement (bouton pause à la place de l’appareil photo) : plusieurs plans dans une seule vidéo, comme sur TikTok.
 - **Lumière d’appoint** et **grille de cadrage** (Paramètres) : à l’écran seulement, jamais dans les vidéos.
 - **Flou de mouvement** désactivable (coupé par défaut sur téléphone pour la fluidité). Avec une musique, les effets pulsent légèrement sur le rythme.
+- **Météo magique** : **Pluie magique** (elle rebondit sur ta silhouette ; une main ouverte au-dessus de la tête sert de parapluie ; poing = tonnerre), **Neige qui tombe** (elle se pose sur ta tête et tes épaules, et tombe quand tu bouges vite), **Corps électrifié** (des arcs électriques courent sur ton contour ; poings serrés = charge, mains ouvertes d’un coup = décharge).
+- **Ralenti magique** (bouton sablier du studio) : les pouvoirs ralentissent pendant 6 s, toi non. **Ralenti cinéma** (Paramètres) : chaque coup final passe un instant au ralenti.
+- **Cri de pouvoir** (Paramètres, micro) : plus tu cries fort, plus les pouvoirs sont gros, tes mains brillent et l’image tremble.
 - **Multiclonage** (techniques ninja : mains jointes index levés = clones, poings joints = clones d’ombre, paumes jointes = clones hologrammes ; claquement de doigts = ils disparaissent) : deux puis quatre copies de toi apparaissent de chaque côté et te suivent avec un petit retard. **Invisibilité** (claquement de doigts) : tu disparais dans le décor, il ne reste qu’un léger miroitement. **Taille (Ant-Man)** (claquement de doigts) : minuscule, géant, puis normal.
 - **Claquement de doigts** : détecté par la caméra (pouce sur le majeur, puis clac) et confirmé par le micro (le petit bruit sec du claquement).
 - **Miroir** : l’image suit la caméra réellement utilisée (avant = miroir, arrière = image normale ; une webcam d’ordinateur est en miroir).
