@@ -6,6 +6,9 @@ import { CanvasRecorder, extensionFor } from './recorder.js';
 import { gallery, videoThumbnail } from './gallery.js';
 import { quality } from './fx/util.js';
 import { MESH_POINTS } from './handmesh.js';
+import { Arena } from './mech/arena.js';
+import { Progress, ACHIEVEMENTS } from './progress.js';
+import { makeDual } from './dual.js';
 
 // ---------- Interface icons ----------
 const ICONS = {
@@ -30,6 +33,9 @@ const ICONS = {
   slow: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
   boomerang: '<path d="M4 12a5 5 0 0 1 8-4l4 3a5 5 0 1 1 0 2l-4 3a5 5 0 0 1-8-4z"/>',
   film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/>',
+  hands: '<path d="M7 20v-6l-2-3 1-1 3 2V5.5a1 1 0 0 1 2 0V11M17 20v-6l2-3-1-1-3 2V5.5a1 1 0 0 0-2 0V11"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
 };
 const svg = (name) =>
@@ -264,6 +270,7 @@ async function showPage(name) {
   if (studioOpen) await closeStudio();
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`));
   if (name === 'gallery') renderGallery();
+  if (name === 'progress') renderProgress();
 }
 function closePage() {
   document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
@@ -306,12 +313,24 @@ function selectEffect(id, fromUser = false) {
     /* ignore */
   }
   const def = EFFECTS.find((d) => d.id === id) || EFFECTS[0];
+  // Double power: picking a power while choosing the second one.
+  if (dualPicking && id !== dualMain) {
+    dualPicking = false;
+    dualSecond = id;
+    id = dualMain;
+    currentEffect = id;
+    progress.usedDual();
+    showChip(`Main gauche : ${getEffect(dualSecond).name}`);
+  }
   const fx = getEffect(id);
   audio.stopLoops(); // the previous power's continuous sounds
-  engine.setEffect(fx);
+  engine.setEffect(dualSecond && dualSecond !== id ? makeDual(fx, getEffect(dualSecond)) : fx);
+  $('btn-dual').classList.toggle('on', !!dualSecond || dualPicking);
+  if (studioOpen || fromUser) progress.tried(id);
   if (fx.colors && colorIndex[id] !== undefined) fx.setColor(colorIndex[id]);
   updateSwatch();
-  $('power-pill').innerHTML = `<img class="pill-icon" src="${art(def.id)}" alt="">${fx.name}`;
+  $('power-pill').innerHTML =
+    `<img class="pill-icon" src="${art(def.id)}" alt="">${dualSecond ? `${fx.name} + ${getEffect(dualSecond).name}` : fx.name}`;
   $('power-pill').style.setProperty('--tint', def.tint);
   document.querySelectorAll('.fx-chip').forEach((c) => {
     const on = c.dataset.id === id;
@@ -472,6 +491,7 @@ async function openStudio(id) {
 
 async function closeStudio() {
   cancelCountdown();
+  stopArena();
   if (recorder.recording) await stopRecording(false);
   studioOpen = false;
   cancelAnimationFrame(loopId);
@@ -479,6 +499,8 @@ async function closeStudio() {
   audio.stopLoops();
   $('view-studio').hidden = true;
   document.body.classList.remove('in-studio');
+  renderHub();
+  flushUnlocks();
 }
 
 function loop(now) {
@@ -515,6 +537,8 @@ function loop(now) {
       camInterval,
       now,
     });
+    // Experience for time spent doing magic (someone in view).
+    if (engine.hands.length || engine.body.presence > 0.3) progress.tick(engine.dt);
   } catch (err) {
     console.error(err);
   }
@@ -619,6 +643,7 @@ async function stopRecording(show = true) {
   if (!res || !res.blob.size) return;
   const thumb = await videoThumbnail(res.blob);
   const item = { kind: 'video', blob: res.blob, type: res.type, duration: res.duration, thumb, effect: currentEffect };
+  progress.recorded(currentEffect);
   if (show) showResult(item);
   else if (settings.autosave) await gallery.add(item);
 }
@@ -636,6 +661,7 @@ async function takePhoto() {
   c.width = stage.width * k;
   c.height = stage.height * k;
   c.getContext('2d').drawImage(stage, 0, 0, c.width, c.height);
+  progress.photo();
   showResult({ kind: 'photo', blob, type: 'image/jpeg', thumb: c.toDataURL('image/jpeg', 0.75), effect: currentEffect });
 }
 
@@ -982,8 +1008,129 @@ form.addEventListener('change', (e) => {
 syncForm();
 quality.particles = PARTICLES[settings.fxQuality] || 1;
 
+// ---------- Mechanics: arena, double power ----------
+const arena = new Arena();
+arena.onEnd = (r) => progress.arena(r, currentEffect);
+function stopArena() {
+  arena.stop();
+  engine.removeMechanic(arena);
+  $('btn-arena').classList.remove('on');
+}
+$('btn-arena').addEventListener('click', () => {
+  audio.init();
+  if (arena.active) return stopArena();
+  engine.addMechanic(arena);
+  arena.start(engine);
+  $('btn-arena').classList.add('on');
+});
+
+let dualMain = null;
+let dualSecond = null;
+let dualPicking = false;
+$('btn-dual').addEventListener('click', () => {
+  if (dualSecond || dualPicking) {
+    dualSecond = null;
+    dualPicking = false;
+    selectEffect(currentEffect);
+    return;
+  }
+  dualPicking = true;
+  dualMain = currentEffect;
+  $('btn-dual').classList.add('on');
+  showChip('Choisis le pouvoir de la main gauche', 1800);
+});
+// Short label in the middle of the studio (same chip as the image looks).
+function showChip(text, ms = 1100) {
+  const chip = $('look-chip');
+  chip.textContent = text;
+  chip.hidden = false;
+  clearTimeout(lookTimer);
+  lookTimer = setTimeout(() => (chip.hidden = true), ms);
+}
+
+// ---------- Progression: level, daily challenge, achievements ----------
+const progress = new Progress(EFFECTS);
+progress.effectName = (id) => getEffect(id)?.name;
+engine.on('ultimate', () => progress.ultimate(currentEffect));
+engine.on('spell', (s) => s.main && progress.spell(s.kind));
+
+function renderHub() {
+  const { level, into, need } = progress.levelProgress;
+  $('lvl-num').textContent = level;
+  $('lvl-title').textContent = `Niveau ${level}`;
+  $('lvl-fill').style.width = `${Math.round((into / need) * 100)}%`;
+  $('lvl-xp').textContent = `${into} / ${need} XP`;
+  $('lvl-ach').textContent = `🏅 ${progress.s.unlocked.length}/${ACHIEVEMENTS.length}`;
+  const d = progress.daily;
+  $('daily-img').src = art(d.power);
+  $('daily-text').textContent = d.text;
+  $('daily-state').textContent = d.done ? '✓' : '›';
+  $('daily-card').classList.toggle('done', d.done);
+}
+$('daily-card').addEventListener('click', () => openStudio(progress.daily.power));
+$('level-card').addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === 'progress'));
+  showPage('progress');
+});
+
+function renderProgress() {
+  const s = progress.s;
+  const min = Math.floor(s.seconds / 60);
+  const stats = [
+    ['Niveau', progress.level],
+    ['XP total', s.xp],
+    ['Pouvoirs essayés', `${s.tried.length}/${EFFECTS.length}`],
+    ['Finals', s.ultimates],
+    ['Vidéos', s.videos],
+    ['Runes lancées', s.spells],
+    ['Record Arène', s.arenaBest],
+    ['Combo max', `x${s.bestCombo}`],
+    ['Temps de magie', `${min} min`],
+    ['Défis réussis', s.dailyDone],
+  ];
+  $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><strong>${v}</strong><small>${k}</small></div>`).join('');
+  $('ach-list').innerHTML = ACHIEVEMENTS.map((a) => {
+    const on = s.unlocked.includes(a.id);
+    return `<div class="ach${on ? ' on' : ''}"><span class="ach-icon">${on ? a.icon : '🔒'}</span><span><strong>${a.name}</strong><small>${a.text}</small></span></div>`;
+  }).join('');
+}
+progress.onChange(() => {
+  if (!studioOpen) renderHub();
+});
+
+// Achievements and level-ups are announced on the home screen, one by one.
+let unlockBusy = false;
+function flushUnlocks() {
+  if (unlockBusy || studioOpen) return;
+  const next = progress.takeQueue();
+  if (!next.length) return;
+  unlockBusy = true;
+  const show = (i) => {
+    if (i >= next.length || studioOpen) {
+      $('unlock').hidden = true;
+      unlockBusy = false;
+      // Anything left goes back to the queue.
+      progress.queue.unshift(...next.slice(i));
+      return;
+    }
+    const u = next[i];
+    $('unlock-icon').textContent = u.icon;
+    $('unlock-title').textContent = u.title;
+    $('unlock-text').textContent = u.text;
+    $('unlock').hidden = false;
+    $('unlock').classList.remove('pop');
+    void $('unlock').offsetWidth;
+    $('unlock').classList.add('pop');
+    audio.play('chime', 0.6);
+    setTimeout(() => show(i + 1), 2600);
+  };
+  show(0);
+}
+
 // ---------- Boot ----------
 buildPowers();
+renderHub();
+setTimeout(flushUnlocks, 1500);
 updateToggles();
 refreshMiniThumb();
 askPoints();

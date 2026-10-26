@@ -28,8 +28,36 @@
         <h1 class="title">Magic<br />Cam</h1>
         <button class="install-btn" id="install-btn" hidden><span data-icon="download"></span>Installer</button>
       </header>
+      <section class="hub">
+        <button class="level-card" id="level-card" aria-label="Niveau et succès">
+          <span class="lvl-badge" id="lvl-num">1</span>
+          <span class="lvl-info"
+            ><strong id="lvl-title">Niveau 1</strong><span class="lvl-bar"><i id="lvl-fill"></i></span
+            ><small id="lvl-xp">0 / 80 XP</small></span
+          >
+          <span class="lvl-ach" id="lvl-ach">🏅 0</span>
+        </button>
+        <button class="daily-card" id="daily-card">
+          <img id="daily-img" alt="" />
+          <span class="daily-info"><small>Défi du jour · +150 XP</small><strong id="daily-text"></strong></span>
+          <span class="daily-state" id="daily-state">›</span>
+        </button>
+      </section>
       <nav class="cats" id="cats" aria-label="Catégories"></nav>
       <div class="powers" id="powers"></div>
+    </main>
+
+    <!-- Progress: level, stats, achievements -->
+    <main class="view" id="view-progress">
+      <header class="page-head">
+        <button class="btn btn-ghost back-cam" data-back><span data-icon="back"></span>Retour</button>
+        <h1 class="page-title">Succès</h1>
+      </header>
+      <div class="progress-page">
+        <div class="stats" id="stats"></div>
+        <h2 class="sub-title">Succès</h2>
+        <div class="ach-list" id="ach-list"></div>
+      </div>
     </main>
 
     <!-- Gallery -->
@@ -199,6 +227,8 @@
       <div class="studio-side">
         <button class="icon-btn" id="btn-flip" aria-label="Changer de caméra"><span data-icon="flip"></span></button>
         <button class="icon-btn" id="btn-color" aria-label="Changer la couleur"><span class="swatch" id="swatch"></span></button>
+        <button class="icon-btn" id="btn-arena" aria-label="Mode Arène"><span data-icon="target"></span></button>
+        <button class="icon-btn" id="btn-dual" aria-label="Double pouvoir"><span data-icon="hands"></span></button>
         <button class="icon-btn" id="btn-look" aria-label="Filtre d’image"><span data-icon="film"></span></button>
         <button class="icon-btn" id="btn-points" aria-label="Points de suivi"><span data-icon="points"></span></button>
         <button class="icon-btn" id="btn-sound" aria-label="Sons"><span data-icon="sound"></span></button>
@@ -274,9 +304,14 @@
       </div>
     </div>
 
+    <div class="unlock" id="unlock" hidden>
+      <span class="unlock-icon" id="unlock-icon"></span><span><strong id="unlock-title"></strong><small id="unlock-text"></small></span>
+    </div>
+
     <nav class="tabbar" id="tabbar">
       <button class="tab active" data-tab="home"><span data-icon="sparkle"></span>Pouvoirs</button>
       <button class="tab" data-tab="gallery"><span data-icon="folder"></span>Mes vidéos</button>
+      <button class="tab" data-tab="progress"><span data-icon="trophy"></span>Succès</button>
       <button class="tab" data-tab="settings"><span data-icon="gear"></span>Paramètres</button>
     </nav>
 

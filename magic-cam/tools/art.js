@@ -330,6 +330,10 @@ function scene(id, W, H) {
     snow: { hands: one('open', 0.5, 0.95), frames: 120 },
     fireflies: { hands: one('open', 0.5, 0.95), frames: 120 },
     wisps: { hands: one('open', 0.5, 0.95), frames: 60 },
+    runes: {
+      hands: (t) => [hand('pinch', W * (0.5 + Math.cos(t * 5) * 0.22), H * (0.62 + Math.sin(t * 5) * 0.2), L * 0.75, W, H)],
+      frames: 38,
+    },
     chidori: { hands: one('open', 0.5, 0.85, { roll: 0.2 }), frames: 30 },
     genkidama: { hands: one('open', 0.5, 0.72), frames: 120 },
     getsuga: {

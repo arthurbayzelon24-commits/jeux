@@ -30,6 +30,7 @@ export class Engine {
     this.charge = new PowerCharge();
     this.flashes = [];
     this.lights = [];
+    this.mechanics = [];
     this.seg = null;
     this.maskInverted = 0;
   }
@@ -56,6 +57,64 @@ export class Engine {
     this.plate = null;
     this.charge.reset();
     effect?.start?.(this);
+  }
+
+  // Game mechanics (arena, runes, quests...) layered over any power. Each one
+  // may have update(dt, hands, engine), draw(ctx, engine) and reset().
+  addMechanic(m) {
+    if (!this.mechanics.includes(m)) this.mechanics.push(m);
+  }
+  removeMechanic(m) {
+    this.mechanics = this.mechanics.filter((x) => x !== m);
+  }
+  #runMechanics(name, ...args) {
+    for (const m of this.mechanics) {
+      try {
+        m[name]?.(...args);
+      } catch (err) {
+        console.error(`Mécanique (${name}) :`, err);
+      }
+    }
+  }
+
+  // Tiny event bus: 'ultimate', 'spell', 'hit'... listened to by mechanics
+  // and by the progression system.
+  on(name, fn) {
+    ((this.listeners ||= {})[name] ||= []).push(fn);
+    return () => (this.listeners[name] = this.listeners[name].filter((f) => f !== fn));
+  }
+  emit(name, data) {
+    for (const fn of this.listeners?.[name] || []) {
+      try {
+        fn(data, this);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }
+
+  // Where the power is on screen: a small brightness map of the effects
+  // layer (1/8 size), refreshed at most every 80 ms. Lets the arena know
+  // that a beam, a fireball or lightning touches a target, whatever the power.
+  heatAt(x, y) {
+    const lv = this.fx?.levels?.[1];
+    if (!lv || this.settings.bloom === false) return 0;
+    const now = this.t;
+    if (!this.heat || now - this.heat.t > 0.08) {
+      try {
+        const { width, height } = lv.canvas;
+        this.heat = { t: now, w: width, h: height, data: lv.ctx.getImageData(0, 0, width, height).data };
+      } catch {
+        return 0;
+      }
+    }
+    const { w, h, data } = this.heat;
+    const px = Math.floor((x / this.W) * w);
+    const py = Math.floor((y / this.H) * h);
+    if (px < 0 || py < 0 || px >= w || py >= h) return 0;
+    const i = (py * w + px) * 4;
+    // Brightness weighted by coverage.
+    return ((data[i] + data[i + 1] + data[i + 2]) / 765) * (data[i + 3] / 255);
   }
 
   // Effects call these to make the scene react.
@@ -391,6 +450,7 @@ export class Engine {
     const k = this.charge.scale;
     this.hands = k > 1.01 ? realHands.map((h) => Object.create(h, { size: { value: h.size * k } })) : realHands;
     this.#safe('update', dt, this.hands, this);
+    this.#runMechanics('update', dt, realHands, this);
 
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
@@ -490,6 +550,7 @@ export class Engine {
       this.body.draw(ctx, this.unit);
       for (const h of this.hands) drawHandSkeleton(ctx, h);
     }
+    this.#runMechanics('draw', ctx, this);
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     for (const fl of this.flashes) {
