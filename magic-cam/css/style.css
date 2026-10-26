@@ -1894,3 +1894,21 @@ body.in-studio {
   box-shadow: 0 0 calc(var(--hf) * 40px) calc(var(--hf) * 10px) rgba(255, 215, 120, calc(var(--hf) * 0.8));
   transition: box-shadow 0.1s;
 }
+
+/* Recorded area when a video format is chosen (outside is dimmed) */
+.format-guide {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.45);
+}
+.format-guide[hidden] {
+  display: none;
+}
+.studio-top,
+.studio-side,
+.studio-bottom {
+  z-index: 3;
+}
