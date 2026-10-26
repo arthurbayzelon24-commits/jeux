@@ -1809,7 +1809,7 @@ function flushUnlocks() {
 }
 
 // "What's new" once per big update (after the first-launch question).
-const NEWS_KEY = 'magic-cam-news-8';
+const NEWS_KEY = 'magic-cam-news-9';
 function showNews() {
   try {
     if (localStorage.getItem(NEWS_KEY) || !settings.pointsAsked) return;

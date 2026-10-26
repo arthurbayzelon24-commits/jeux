@@ -275,22 +275,26 @@ export function invisibleEffect() {
         plate = e.backgroundPlate();
         plateAge = 0;
       }
-      ctx.drawImage(e.layers.frame, 0, 0);
-      // You fade into the room behind you.
+      // You fade into the room behind you (no need for the camera image
+      // under the room once you are fully gone).
+      if (k < 1) ctx.drawImage(e.layers.frame, 0, 0);
       ctx.globalAlpha = k;
       ctx.drawImage(plate, 0, 0, e.W, e.H);
       ctx.globalAlpha = 1;
       // A heat-haze shimmer where you are: the room, shifted, only on you.
-      if (!tmp || tmp.width !== e.W || tmp.height !== e.H) tmp = makeCanvas(e.W, e.H);
+      // Made at half size (it is blurry anyway): half the work.
+      const w = Math.round(e.W / 2);
+      const h = Math.round(e.H / 2);
+      if (!tmp || tmp.width !== w || tmp.height !== h) tmp = makeCanvas(w, h);
       const g = tmp.getContext('2d');
       g.globalCompositeOperation = 'copy';
-      const sx = noise1(e.t * 3) * 6 * e.unit;
-      const sy = noise1(e.t * 3 + 7) * 6 * e.unit;
-      g.drawImage(plate, sx, sy, e.W, e.H);
+      const sx = noise1(e.t * 3) * 3 * e.unit;
+      const sy = noise1(e.t * 3 + 7) * 3 * e.unit;
+      g.drawImage(plate, sx, sy, w, h);
       g.globalCompositeOperation = 'destination-in';
-      g.drawImage(e.layers.person, 0, 0);
+      g.drawImage(e.layers.person, 0, 0, w, h);
       ctx.globalAlpha = 0.55 * k * (0.7 + 0.3 * noise1(e.t * 5));
-      ctx.drawImage(tmp, 0, 0);
+      ctx.drawImage(tmp, 0, 0, e.W, e.H);
       ctx.globalAlpha = 1;
       // While fading, a ghost of you that gets lighter.
       if (k < 1) {
