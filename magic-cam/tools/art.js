@@ -268,6 +268,20 @@ function scene(id, W, H) {
     water: { hands: (t) => [hand('point', W * (0.3 + t * 0.25), H * (0.8 + Math.sin(t * 6) * 0.1), L, W, H, { roll: 0.3 })], frames: 45 },
     floating: { hands: one('open', 0.5, 1.0, { tilt: 1.1 }), frames: 50 },
     telekinesis: { hands: one('open', 0.5, 0.95), frames: 70 },
+    mindgrab: { hands: one('point', 0.35, 0.9, { roll: 0.5 }), frames: 70 },
+    shockwave: { hands: one('open', 0.5, 0.9), frames: 14, trigger: 4 },
+    magnet: {
+      hands: () => [
+        hand('open', W * 0.3, H * 0.85, L, W, H, { roll: -0.3 }),
+        hand('open', W * 0.7, H * 0.85, L, W, H, { roll: 0.3, flip: true }),
+      ],
+      frames: 60,
+    },
+    chrono: { hands: one('open', 0.8, 0.62, { roll: 0.2 }), frames: 30, person: true, trigger: 20 },
+    gravity: {
+      hands: (t) => [hand(Math.floor(t * 5) % 2 ? 'pinch' : 'open', W * (0.3 + ((t * 0.9) % 0.4)), H * 0.55, L * 0.8, W, H)],
+      frames: 70,
+    },
     butterflies: { hands: one('open', 0.5, 0.9), frames: 120 },
     koi: { hands: one('open', 0.55, 0.85), frames: 120 },
     sakura: { hands: one('open', 0.62, 0.95, { roll: 0.3 }), frames: 150 },

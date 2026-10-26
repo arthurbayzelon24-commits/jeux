@@ -19,6 +19,9 @@ export function teleportEffect() {
   let spot = 0;
   let sample = null;
   let ring = null;
+  // The learned background is rebuilt a few times a second, not every frame.
+  let plate = null;
+  let plateAge = 1;
 
   // Samples the person's pixels at low resolution to spawn coloured dust.
   const burst = (e, into) => {
@@ -85,7 +88,7 @@ export function teleportEffect() {
   return {
     id: 'teleport',
     name: 'Téléportation',
-    hint: 'Restez en entier dans l’image quelques secondes pour que le décor soit mémorisé, puis serrez le poing et ouvrez-le d’un coup (ou touchez « Téléporter »).',
+    hint: 'Restez en entier dans l’image quelques secondes pour que le décor soit mémorisé, puis claquez des doigts comme Thanos (ou serrez le poing et ouvrez-le d’un coup).',
     colors: COLORS,
     needs: { seg: true, plate: true },
     action: { label: 'Téléporter', run: (e) => go(e) },
@@ -104,7 +107,7 @@ export function teleportEffect() {
     update(dt, hands, e) {
       dust.update(dt);
       if (ring) ring.t += dt;
-      if (hands.some((h) => h.events.release)) go(e);
+      if (hands.some((h) => h.events.snap || h.events.release)) go(e);
       timer += dt;
       if (state === 'out' && timer > 0.45) {
         state = 'gone';
@@ -127,7 +130,12 @@ export function teleportEffect() {
         ctx.drawImage(e.layers.frame, 0, 0);
         return true;
       }
-      ctx.drawImage(e.backgroundPlate(), 0, 0, e.W, e.H);
+      plateAge += e.dt;
+      if (!plate || plateAge > (state === 'idle' ? 0.25 : 0.1)) {
+        plate = e.backgroundPlate();
+        plateAge = 0;
+      }
+      ctx.drawImage(plate, 0, 0, e.W, e.H);
       if (visible <= 0) return true;
       const dx = offset * e.W;
       const glitch = visible < 1;
@@ -158,9 +166,10 @@ export function teleportEffect() {
         c.globalAlpha = clamp(a);
         c.fillStyle = `rgb(${p.col[0]},${p.col[1]},${p.col[2]})`;
         c.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+        if (p.glow === undefined) p.glow = Math.random() < 0.35;
+        if (!p.glow) return;
         c.globalCompositeOperation = 'lighter';
-        c.globalAlpha = clamp(a * 0.6);
-        drawGlow(c, rgb, p.x, p.y, p.size * 1.8, a * 0.5);
+        drawGlow(c, rgb, p.x, p.y, p.size * 2.2, a * 0.6);
       });
       ctx.globalAlpha = 1;
       if (ring && ring.t < 0.9) {

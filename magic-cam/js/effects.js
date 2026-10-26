@@ -26,6 +26,7 @@ import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
 import { runesEffect } from './fx/runes.js';
 import { freeModeEffect } from './fx/free.js';
+import { mindGrabEffect, shockwaveEffect, magnetEffect, chronoEffect, gravityEffect } from './fx/pack-physics.js';
 import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
 import { planetEffect, crystalBallEffect, auroraEffect, starsEffect, cometEffect, rainbowEffect } from './fx/pack-cosmic.js';
 import { bubblesEffect, confettiEffect, coinsEffect, snowEffect, firefliesEffect, wispsEffect } from './fx/pack-fun.js';
@@ -47,6 +48,7 @@ import { shieldEffect, neonEffect, matrixEffect, webEffect, laserEyesEffect, hal
 export const CATEGORIES = [
   { id: 'libre', name: 'Mode libre' },
   { id: 'anime', name: 'Animé' },
+  { id: 'physique', name: 'Physique' },
   { id: 'feu', name: 'Feu' },
   { id: 'energie', name: 'Énergie' },
   { id: 'cosmos', name: 'Cosmos' },
@@ -77,12 +79,17 @@ export const EFFECTS = [
   { id: 'firefist', cat: 'anime', make: fireFistEffect, tint: '#ff7820', gesture: 'Poing, puis frappez', charge: 'fist' },
   { id: 'haki', cat: 'anime', make: hakiEffect, tint: '#ff2840', gesture: 'Serrez le poing', charge: 'fist' },
   { id: 'domain', cat: 'anime', make: domainEffect, tint: '#b4dcff', gesture: 'Signe V ou index levé, tenez 1 s' },
+  { id: 'mindgrab', cat: 'physique', make: mindGrabEffect, tint: '#be78ff', gesture: 'Pointez un objet, restez immobile' },
+  { id: 'shockwave', cat: 'physique', make: shockwaveEffect, tint: '#dcebff', gesture: 'Poing puis main ouverte, ou poussez' },
+  { id: 'magnet', cat: 'physique', make: magnetEffect, tint: '#c8d7eb', gesture: 'Chaque main est un aimant' },
+  { id: 'chrono', cat: 'physique', make: chronoEffect, tint: '#78c8ff', gesture: 'Claquez des doigts' },
+  { id: 'gravity', cat: 'physique', make: gravityEffect, tint: '#ffc846', gesture: 'Pincez pour créer une balle' },
   { id: 'kamehameha', cat: 'energie', make: kamehamehaEffect, tint: '#4aa3ff', gesture: 'Mains jointes, puis poussez', charge: 'open' },
   { id: 'runes', cat: 'fun', make: runesEffect, tint: '#ffc86e', gesture: 'Pincez, dessinez ○ △ □ ⚡ ／ V, lâchez' },
   { id: 'hud', cat: 'heros', make: hudEffect, tint: '#50dcff', gesture: 'Tapez sur le clavier holographique' },
   { id: 'firebeam', cat: 'feu', make: fireBeamEffect, tint: '#ff7a1a', gesture: 'Pointez l’index', charge: 'point' },
   { id: 'saber', cat: 'energie', make: saberEffect, tint: '#ff3b3b', gesture: 'Fermez le poing', charge: 'fist' },
-  { id: 'portal', cat: 'cosmos', make: portalEffect, tint: '#ff9a2e', gesture: 'Tracez un cercle avec l’index' },
+  { id: 'portal', cat: 'cosmos', make: portalEffect, tint: '#ff9a2e', gesture: 'Faites des cercles avec la main, comme Doctor Strange' },
   { id: 'circle', cat: 'energie', make: magicCircleEffect, tint: '#ffaa3a', gesture: 'Montrez la paume', charge: 'open' },
   { id: 'plasma', cat: 'energie', make: plasmaEffect, tint: '#d24dff', gesture: 'Main ouverte', charge: 'open' },
   { id: 'lightning', cat: 'energie', make: lightningEffect, tint: '#5cb2ff', gesture: 'Main ouverte, doigts écartés', charge: 'open' },
@@ -101,7 +108,7 @@ export const EFFECTS = [
   { id: 'shadow', cat: 'heros', make: shadowEffect, tint: '#9640ff', gesture: 'Mains ouvertes, poing pour l’orbe', charge: 'fist' },
   { id: 'aura', cat: 'heros', make: auraEffect, tint: '#9a6bff', gesture: 'Reculez, levez les mains' },
   { id: 'wings', cat: 'heros', make: wingsEffect, tint: '#ffe0a0', gesture: 'Reculez, levez les bras' },
-  { id: 'teleport', cat: 'heros', make: teleportEffect, tint: '#2fe0d0', gesture: 'Poing puis main ouverte' },
+  { id: 'teleport', cat: 'heros', make: teleportEffect, tint: '#2fe0d0', gesture: 'Claquez des doigts comme Thanos' },
   { id: 'telekinesis', cat: 'heros', make: telekinesisEffect, tint: '#3fc1ff', gesture: 'Main ouverte, pincez pour attraper' },
   { id: 'floating', cat: 'heros', make: floatingEffect, tint: '#8fb8ff', gesture: 'Paume vers le haut' },
   { id: 'dragon', cat: 'feu', make: dragonEffect, tint: '#ff7020', gesture: 'Guidez-le avec l’index' },

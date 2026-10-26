@@ -272,6 +272,14 @@ export class HandTracker {
       if (prev === 'pinch') events.pinchEnd = true;
       if (g === 'open') events.open = true;
     }
+    // Thanos snap: thumb and middle fingertip pressed together, then the middle
+    // finger snaps down onto the palm while the thumb springs away.
+    const snapD = d3(4, 12);
+    if (snapD < 0.032 && !ext.ring) t.snapReady = now;
+    else if (t.snapReady && now - t.snapReady < 400 && snapD > 0.055 && d3(12, 0) < d3(9, 0) * 1.75) {
+      events.snap = true;
+      t.snapReady = 0;
+    } else if (t.snapReady && now - t.snapReady >= 400) t.snapReady = 0;
     t.events = events;
     t.open = t.gesture === 'open';
     t.fist = t.gesture === 'fist';

@@ -80,6 +80,11 @@ export function fireballEffect() {
     setColor(i) {
       tint = COLORS[i].hue;
     },
+    // Throws a fireball from (x, y) at the given speed (used by the free mode).
+    launch(e, x, y, vx, vy, r) {
+      projectiles.push({ x, y, vx, vy, r, life: 1.1 });
+      e.audio.play('whoosh', 1);
+    },
     start() {
       fire.clear();
       smoke.clear();
@@ -118,8 +123,8 @@ export function fireballEffect() {
         if (merged || !(h.open || h.gesture === 'relaxed')) continue;
         const ball = holdPoint(h);
         // Throw: a fast swipe launches the charged ball.
-        const throwSpeed = Math.min(e.W, e.H) * 2.2;
-        if (c > 0.8 && h.speed > throwSpeed && h.visible) {
+        const throwSpeed = Math.min(e.W, e.H) * 1.6;
+        if (c > 0.6 && h.speed > throwSpeed && h.visible) {
           const v = { x: h.vel.x * 1.3, y: h.vel.y * 1.3 };
           projectiles.push({ x: ball.x, y: ball.y, vx: v.x, vy: v.y, r: r * 1.2, life: 1.1 });
           charge.set(h.id, 0);
