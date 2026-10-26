@@ -1665,3 +1665,23 @@ body.in-studio {
 .arena-mode i {
   color: var(--gold-2);
 }
+
+/* Mastery stars on the cards */
+.power-art {
+  position: relative;
+}
+.stars {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  color: var(--gold-1);
+  background: rgba(10, 9, 12, 0.65);
+  text-shadow: 0 0 8px rgba(243, 197, 107, 0.8);
+}
+.stars[hidden] {
+  display: none;
+}

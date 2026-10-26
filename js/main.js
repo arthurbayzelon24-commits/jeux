@@ -542,7 +542,7 @@ function loop(now) {
       now,
     });
     // Experience for time spent doing magic (someone in view).
-    if (engine.hands.length || engine.body.presence > 0.3) progress.tick(engine.dt);
+    if (engine.hands.length || engine.body.presence > 0.3) progress.tick(engine.dt, currentEffect);
   } catch (err) {
     console.error(err);
   }
@@ -1104,7 +1104,22 @@ function syncFamiliar() {
 }
 syncFamiliar();
 
+// Mastery stars on the power cards.
+function renderStars() {
+  for (const w of $('powers').children) {
+    const n = progress.stars(w.dataset.id);
+    let el = w.querySelector('.stars');
+    if (!el) {
+      el = document.createElement('span');
+      el.className = 'stars';
+      w.querySelector('.power-art').append(el);
+    }
+    el.textContent = n ? '★'.repeat(n) + '☆'.repeat(3 - n) : '';
+    el.hidden = !n;
+  }
+}
 function renderHub() {
+  renderStars();
   const { level, into, need } = progress.levelProgress;
   $('lvl-num').textContent = level;
   $('lvl-title').textContent = `Niveau ${level}`;
@@ -1138,6 +1153,7 @@ function renderProgress() {
     ['Temps de magie', `${min} min`],
     ['Défis réussis', s.dailyDone],
     ['Secrets', `${s.secrets.length}/${SECRETS.length}`],
+    ['Pouvoirs maîtrisés', `${progress.mastered} ★★★`],
     ['Familier', formFor(progress.level)?.name || 'Niveau 2'],
   ];
   $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><strong>${v}</strong><small>${k}</small></div>`).join('');
