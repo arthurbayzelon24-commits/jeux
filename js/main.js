@@ -659,6 +659,28 @@ async function stopRecording(show = true) {
   else if (settings.autosave) await gallery.add(item);
 }
 
+// The score screen of a game, kept as a photo in "Mes vidéos" (to share it).
+function saveScoreShot() {
+  if (!settings.autosave) return;
+  // Once the end screen is drawn.
+  setTimeout(async () => {
+    if (!studioOpen) return;
+    const blob = await new Promise((r) => stage.toBlob(r, 'image/jpeg', 0.9));
+    if (!blob) return;
+    const c = document.createElement('canvas');
+    const k = 320 / Math.max(stage.width, stage.height);
+    c.width = stage.width * k;
+    c.height = stage.height * k;
+    c.getContext('2d').drawImage(stage, 0, 0, c.width, c.height);
+    try {
+      await gallery.add({ kind: 'photo', blob, type: 'image/jpeg', thumb: c.toDataURL('image/jpeg', 0.75), effect: currentEffect });
+      refreshMiniThumb();
+    } catch (err) {
+      console.warn(err);
+    }
+  }, 900);
+}
+
 async function takePhoto() {
   const flash = $('shutter-flash');
   flash.classList.remove('go');
@@ -1022,9 +1044,15 @@ quality.particles = PARTICLES[settings.fxQuality] || 1;
 
 // ---------- Mechanics: arena, double power ----------
 const arena = new Arena();
-arena.onEnd = (r) => progress.arena(r, currentEffect);
+arena.onEnd = (r) => {
+  progress.arena(r, currentEffect);
+  saveScoreShot();
+};
 const duel = new Duel();
-duel.onEnd = (r) => progress.duel(r);
+duel.onEnd = (r) => {
+  progress.duel(r);
+  saveScoreShot();
+};
 function stopArena() {
   arena.stop();
   duel.stop();
