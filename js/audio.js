@@ -65,7 +65,7 @@ export class SoundFx {
     gain.gain.exponentialRampToValueAtTime(0.0001, t + attack + hold + release);
   }
 
-  play(name, volume = 1) {
+  play(name, volume = 1, pitch = 1) {
     const ctx = this.ctx;
     if (!ctx || ctx.state !== 'running') return;
     const now = ctx.currentTime;
@@ -184,6 +184,13 @@ export class SoundFx {
       case 'sizzle':
         noise('highpass', 4000, 0.8, 0.01, 0.15, 0.4, 0.25);
         break;
+      case 'combo': {
+        // A bright note that climbs with the combo (pitch = 1, 1.06, ...).
+        const f = 660 * pitch;
+        tone('triangle', f, f * 1.002, 0.002, 0.04, 0.25, 0.18);
+        tone('sine', f * 2, f * 2.004, 0.002, 0.02, 0.15, 0.06);
+        break;
+      }
       case 'twinkle':
         tone('sine', 1800 + Math.random() * 1200, 2600, 0.005, 0.03, 0.5, 0.06);
         break;
