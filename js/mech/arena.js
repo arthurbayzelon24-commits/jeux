@@ -1,4 +1,5 @@
-// Arena: a 60-second game over any power. Targets appear on screen; your
+// Arena: a game over any power, in three modes (classic 60 s, survival with
+// 3 lives, zen without bombs nor timer). Targets appear on screen; your
 // power destroys them wherever it touches them (beams, fireballs, lightning:
 // read from the effects layer), and so do fast hand strikes. Combos multiply
 // the score, bombs must be avoided, green clocks give time, and a power's
@@ -14,11 +15,32 @@ const TYPES = {
   clock: { pts: 0, hp: 1, r: 0.04, rgb: [80, 255, 140], life: 4, weight: 0.5, clock: true },
   // Halfway through the round: a boss with a health bar.
   boss: { pts: 500, hp: 12, r: 0.11, rgb: [255, 90, 200], life: 20, weight: 0, boss: true },
+  // Power-ups: points x2 for 8 s, or everything frozen for 5 s.
+  double: { pts: 0, hp: 1, r: 0.04, rgb: [90, 255, 255], life: 4, weight: 0.35, bonus: 'double' },
+  freeze: { pts: 0, hp: 1, r: 0.04, rgb: [190, 230, 255], life: 4, weight: 0.35, bonus: 'freeze' },
+  // Survival: an extra life instead of the clocks.
+  heart: { pts: 0, hp: 1, r: 0.04, rgb: [255, 90, 120], life: 4, weight: 0, heart: true },
+};
+export const MODES = {
+  classic: { name: 'Classique', text: '60 secondes, boss à mi-manche' },
+  survival: { name: 'Survie', text: '3 vies, de plus en plus vite' },
+  zen: { name: 'Zen', text: 'Sans bombes ni chrono' },
 };
 const BEST_KEY = 'magic-cam-arena-best';
+const bestKey = (mode) => (mode === 'classic' ? BEST_KEY : `${BEST_KEY}-${mode}`);
+// Targets that do not break the combo when they vanish.
+const harmless = (T) => T.bomb || T.clock || T.bonus || T.heart;
 
-function pickType(elapsed, clocks) {
-  const entries = Object.entries(TYPES).filter(([k]) => (elapsed > 8 || (k !== 'bomb' && k !== 'clock')) && (k !== 'clock' || clocks < 3));
+function pickType(elapsed, clocks, mode) {
+  const weights = { ...Object.fromEntries(Object.entries(TYPES).map(([k, t]) => [k, t.weight])) };
+  if (elapsed < 8) weights.bomb = weights.clock = weights.double = weights.freeze = 0;
+  if (clocks >= 3) weights.clock = 0;
+  if (mode === 'zen') weights.bomb = weights.clock = weights.freeze = 0;
+  if (mode === 'survival') {
+    weights.heart = clocks < 4 ? 0.5 : 0;
+    weights.clock = 0;
+  }
+  const entries = Object.entries(TYPES).map(([k, t]) => [k, { ...t, weight: weights[k] }]);
   let n = Math.random() * entries.reduce((a, [, t]) => a + t.weight, 0);
   for (const [k, t] of entries) if ((n -= t.weight) <= 0) return k;
   return 'orb';
@@ -30,10 +52,15 @@ export class Arena {
     this.burst = new Particles(900);
     this.popups = [];
     this.onEnd = null;
+    this.mode = 'classic';
+    this.best = this.bestOf('classic');
+  }
+
+  bestOf(mode) {
     try {
-      this.best = Number(localStorage.getItem(BEST_KEY)) || 0;
+      return Number(localStorage.getItem(bestKey(mode))) || 0;
     } catch {
-      this.best = 0;
+      return 0;
     }
   }
 
@@ -41,7 +68,12 @@ export class Arena {
     return this.state !== 'off';
   }
 
-  start(e) {
+  start(e, mode = this.mode) {
+    this.mode = MODES[mode] ? mode : 'classic';
+    this.best = this.bestOf(this.mode);
+    this.lives = 3;
+    this.doubleT = 0;
+    this.freezeT = 0;
     this.state = 'countdown';
     this.timer = 3;
     this.score = 0;
@@ -67,6 +99,12 @@ export class Arena {
     }
   }
 
+  // Leaving: a zen session is scored, an unfinished timed round is not.
+  quit(e) {
+    if (this.state === 'play' && this.mode === 'zen') this.#finish(e);
+    else this.stop();
+  }
+
   stop() {
     this.state = 'off';
     this.targets = [];
@@ -75,12 +113,12 @@ export class Arena {
   }
 
   get multiplier() {
-    return Math.min(5, 1 + Math.floor(this.combo / 5));
+    return Math.min(5, 1 + Math.floor(this.combo / 5)) * (this.doubleT > 0 ? 2 : 1);
   }
 
   #spawn(e) {
-    const kind = pickType(this.elapsed, this.clocks);
-    if (kind === 'clock') this.clocks++;
+    const kind = pickType(this.elapsed, this.clocks, this.mode);
+    if (kind === 'clock' || kind === 'heart') this.clocks++;
     const T = TYPES[kind];
     const R = T.r * Math.min(e.W, e.H) * (e.W < e.H ? 1.4 : 1);
     // Away from the edges, the top bar and the bottom controls.
@@ -139,6 +177,23 @@ export class Arena {
       e.shake(25);
       e.flash([255, 40, 40], 0.35, 3);
       e.audio.play('boom', 0.8);
+      if (this.mode === 'survival') this.#loseLife(e);
+      return;
+    }
+    if (T.heart) {
+      this.lives = Math.min(5, this.lives + 1);
+      this.#explode(e, t, T.rgb);
+      this.#pop('+1 ♥', t.x, t.y, T.rgb, true);
+      e.audio.play('chime', 0.8);
+      return;
+    }
+    if (T.bonus) {
+      if (T.bonus === 'double') this.doubleT = 8;
+      else this.freezeT = 5;
+      this.#explode(e, t, T.rgb);
+      this.#pop(T.bonus === 'double' ? 'POINTS x2' : 'GEL !', t.x, t.y, T.rgb, true);
+      e.audio.play(T.bonus === 'double' ? 'coin' : 'crack', 0.9);
+      if (T.bonus === 'freeze') e.flash([200, 240, 255], 0.3, 2);
       return;
     }
     if (T.clock) {
@@ -167,6 +222,13 @@ export class Arena {
     }
     e.audio.play(t.kind === 'gold' ? 'coin' : 'pop', 0.7);
     e.emit('hit', { kind: t.kind, combo: this.combo });
+  }
+
+  #loseLife(e) {
+    this.lives--;
+    this.#pop(this.lives > 0 ? `♥ ${this.lives}` : 'PERDU', e.W / 2, e.H * 0.36, [255, 90, 120], true);
+    e.flash([255, 30, 60], 0.3, 3);
+    if (this.lives <= 0) this.#finish(e);
   }
 
   #clearAll(e, spell) {
@@ -215,7 +277,11 @@ export class Arena {
     if (this.state !== 'play') return;
     this.elapsed += dt;
     this.time -= dt;
-    if (!this.bossDone && this.elapsed > 28) {
+    this.doubleT = Math.max(0, this.doubleT - dt);
+    this.freezeT = Math.max(0, this.freezeT - dt);
+    // Zen and survival have no clock; the boss comes in classic only.
+    if (this.mode !== 'classic') this.time = Infinity;
+    if (!this.bossDone && this.mode === 'classic' && this.elapsed > 28) {
       this.bossDone = true;
       const R = TYPES.boss.r * Math.min(e.W, e.H) * (e.W < e.H ? 1.4 : 1);
       this.targets.push({
@@ -241,14 +307,18 @@ export class Arena {
     this.spawnT -= dt;
     if (this.spawnT <= 0 && this.targets.length < 8) {
       this.#spawn(e);
-      this.spawnT = Math.max(0.35, 1.1 - this.elapsed * 0.012);
+      const ramp = this.mode === 'survival' ? 0.018 : this.mode === 'zen' ? 0.004 : 0.012;
+      this.spawnT = Math.max(this.mode === 'survival' ? 0.25 : 0.35, 1.1 - this.elapsed * ramp);
     }
     const strike = Math.min(e.W, e.H) * 0.6;
+    // Frozen: targets neither move nor age (power-ups and hearts still do).
+    const frozen = this.freezeT > 0;
     for (const t of this.targets) {
-      t.age += dt;
+      const still = frozen && !TYPES[t.kind].bonus && !TYPES[t.kind].heart;
+      t.age += still ? 0 : dt;
       t.cool -= dt;
-      t.x = clamp(t.x + t.vx * dt, t.r, e.W - t.r);
-      t.y = clamp(t.y + t.vy * dt, t.r, e.H - t.r);
+      t.x = clamp(t.x + (still ? 0 : t.vx * dt), t.r, e.W - t.r);
+      t.y = clamp(t.y + (still ? 0 : t.vy * dt), t.r, e.H - t.r);
       if (t.x <= t.r || t.x >= e.W - t.r) t.vx *= -1;
       if (t.y <= t.r || t.y >= e.H - t.r) t.vy *= -1;
       // The power touching it.
@@ -276,8 +346,11 @@ export class Arena {
       }
       if (!t.dead && t.age > t.life) {
         t.dead = true;
-        // Missing a target breaks the combo (bombs and clocks don't count).
-        if (!TYPES[t.kind].bomb && !TYPES[t.kind].clock) this.combo = 0;
+        // Missing a target breaks the combo, and costs a life in survival.
+        if (!harmless(TYPES[t.kind])) {
+          this.combo = 0;
+          if (this.mode === 'survival' && this.state === 'play') this.#loseLife(e);
+        }
       }
     }
     this.targets = this.targets.filter((t) => !t.dead);
@@ -288,6 +361,7 @@ export class Arena {
   }
 
   #finish(e) {
+    if (this.state === 'end') return;
     this.state = 'end';
     this.timer = 6;
     this.targets = [];
@@ -295,14 +369,14 @@ export class Arena {
     if (this.record) {
       this.best = this.score;
       try {
-        localStorage.setItem(BEST_KEY, String(this.best));
+        localStorage.setItem(bestKey(this.mode), String(this.best));
       } catch {
         /* not saved */
       }
     }
     e.audio.play(this.record ? 'teleport' : 'chime', 1);
     if (this.record) e.flash([255, 220, 120], 0.5, 1.5);
-    this.onEnd?.({ score: this.score, best: this.best, record: this.record, maxCombo: this.maxCombo, hits: this.hits });
+    this.onEnd?.({ mode: this.mode, score: this.score, best: this.best, record: this.record, maxCombo: this.maxCombo, hits: this.hits });
   }
 
   draw(ctx, e) {
@@ -340,11 +414,17 @@ export class Arena {
       ctx.globalAlpha = 0.3 + 0.7 * k;
       text(String(n), cx, e.H / 2, 120 + 60 * k, '#ffd77a');
       ctx.globalAlpha = 1;
-      text('ARÈNE', cx, e.H / 2 - 110 * u, 30, '#fff');
+      text(`ARÈNE · ${MODES[this.mode].name.toUpperCase()}`, cx, e.H / 2 - 110 * u, 30, '#fff');
     } else if (this.state === 'play') {
       text(String(this.score), cx, top, 44, '#ffe7a8');
       const low = this.time < 10;
-      text(`${Math.ceil(this.time)} s`, cx, top + 40 * u, 22, low ? '#ff6b6b' : '#fff');
+      if (this.mode === 'classic') text(`${Math.ceil(this.time)} s`, cx, top + 40 * u, 22, low ? '#ff6b6b' : '#fff');
+      else if (this.mode === 'survival') text('♥'.repeat(Math.max(0, this.lives)), cx, top + 40 * u, 24, '#ff5a78');
+      else text('ZEN', cx, top + 40 * u, 18, '#9ff5d0');
+      const buffs = [this.doubleT > 0 && `x2 ${Math.ceil(this.doubleT)} s`, this.freezeT > 0 && `GEL ${Math.ceil(this.freezeT)} s`]
+        .filter(Boolean)
+        .join('  ·  ');
+      if (buffs) text(buffs, cx, top + 86 * u, 17, '#9ff');
       if (this.multiplier > 1) text(`x${this.multiplier}`, cx + 90 * u, top, 26, '#7df9ff');
       // Combo bar: time left to keep the combo.
       const left = clamp(1 - (this.elapsed - this.lastHit) / 2);
@@ -447,6 +527,9 @@ export class Arena {
         }
         ctx.fillText('!', t.x, t.y);
       } else if (T.clock) ctx.fillText('+3', t.x, t.y);
+      else if (T.heart) ctx.fillText('♥', t.x, t.y);
+      else if (T.bonus === 'double') ctx.fillText('x2', t.x, t.y);
+      else if (T.bonus === 'freeze') ctx.fillText('❄', t.x, t.y);
       else if (t.kind === 'gold') ctx.fillText('★', t.x, t.y);
     }
     // Ring showing the time left before it vanishes.

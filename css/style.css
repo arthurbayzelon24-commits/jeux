@@ -1615,3 +1615,53 @@ body.in-studio {
   font-size: 1.2rem;
   color: var(--gold-1);
 }
+
+/* Arena mode picker */
+.arena-menu {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 35;
+  transform: translate(-50%, -50%);
+  width: min(88vw, 360px);
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 20px;
+  text-align: center;
+  background: rgba(16, 14, 20, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(201, 158, 96, 0.6);
+}
+.arena-menu[hidden] {
+  display: none;
+}
+.arena-menu > strong {
+  font-size: 1.2rem;
+  color: var(--gold-1);
+}
+#arena-modes {
+  display: grid;
+  gap: 8px;
+}
+.arena-mode {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 14px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.arena-mode:active {
+  transform: scale(0.98);
+}
+.arena-mode small,
+.arena-mode i {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-style: normal;
+}
+.arena-mode i {
+  color: var(--gold-2);
+}

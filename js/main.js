@@ -6,7 +6,7 @@ import { CanvasRecorder, extensionFor } from './recorder.js';
 import { gallery, videoThumbnail } from './gallery.js';
 import { quality } from './fx/util.js';
 import { MESH_POINTS } from './handmesh.js';
-import { Arena } from './mech/arena.js';
+import { Arena, MODES } from './mech/arena.js';
 import { Secrets, SECRETS } from './mech/secrets.js';
 import { Progress, ACHIEVEMENTS } from './progress.js';
 import { makeDual } from './dual.js';
@@ -1014,16 +1014,39 @@ const arena = new Arena();
 arena.onEnd = (r) => progress.arena(r, currentEffect);
 function stopArena() {
   arena.stop();
+  $('arena-menu').hidden = true;
   engine.removeMechanic(arena);
   $('btn-arena').classList.remove('on');
 }
 $('btn-arena').addEventListener('click', () => {
   audio.init();
-  if (arena.active) return stopArena();
+  if (arena.active) {
+    arena.quit(engine);
+    if (!arena.active) stopArena();
+    return;
+  }
+  // Pick a mode (with its record).
+  $('arena-modes').innerHTML = Object.entries(MODES)
+    .map(
+      ([id, m]) =>
+        `<button class="arena-mode" data-mode="${id}"><b>${m.name}</b><small>${m.text}</small><i>Record : ${arena.bestOf(id)}</i></button>`,
+    )
+    .join('');
+  $('arena-menu').hidden = false;
+});
+$('arena-modes').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-mode]');
+  if (!b) return;
+  $('arena-menu').hidden = true;
   engine.addMechanic(arena);
-  arena.start(engine);
+  arena.start(engine, b.dataset.mode);
   $('btn-arena').classList.add('on');
 });
+$('arena-close').addEventListener('click', () => ($('arena-menu').hidden = true));
+// The round ended on its own: the button goes back to normal.
+setInterval(() => {
+  if (!arena.active && $('btn-arena').classList.contains('on')) stopArena();
+}, 500);
 
 let dualMain = null;
 let dualSecond = null;
