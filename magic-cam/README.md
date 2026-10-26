@@ -79,7 +79,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Zoom jusqu’à 10×** pour bien voir le visage.
 - **Combo** (Mode libre) : trois pouvoirs différents en moins de 4 s déclenchent une explosion de toutes les couleurs.
 - **Zoom à ta main** : barre de zoom à gauche de l’écran (**+** pour zoomer, **−** pour dézoomer, ou glisse le curseur ; double-touche = 1×), pince l’écran avec deux doigts (ou molette sur ordinateur), ou touche le bouton « 1× » (dézoom maximal → 1× → 2×). Pour dézoomer, l’application utilise d’abord l’objectif grand-angle quand le navigateur y donne accès, puis montre toute l’image filmée au lieu de la recadrer. Pour zoomer, elle utilise le zoom de la caméra, puis un zoom numérique qui se retrouve aussi dans les vidéos.
-- **Filtres d’image** (bouton pellicule dans le studio) : Normal, Cinéma (bandes noires 2,39:1, teinte bleu-orangé), Néon, Vintage (sépia et grain) et Noir et blanc (grain). Le filtre s’applique à la scène filmée ; les pouvoirs gardent leurs couleurs, et il est enregistré dans les vidéos.
+- **Filtres d’image** (bouton pellicule dans le studio) : Normal, Cinéma (bandes noires 2,39:1, teinte bleu-orangé), Néon, Vintage (sépia et grain), Noir et blanc (grain), Pop (couleurs vives, dégradé rose-bleu) et Coucher de soleil (orange, rose, violet). Le filtre s’applique à la scène filmée ; les pouvoirs gardent leurs couleurs, et il est enregistré dans les vidéos.
 
 ## Technique
 

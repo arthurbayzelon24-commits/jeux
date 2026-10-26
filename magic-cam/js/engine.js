@@ -730,6 +730,28 @@ export class Engine {
     } else if (look === 'noir') {
       fill('saturation', '#000');
       fill('soft-light', '#000', 0.5);
+    } else if (look === 'pop') {
+      // Vivid colours, like a music video.
+      fill('saturation', 'rgb(255,0,0)', 0.35);
+      fill('soft-light', 'rgb(255,255,255)', 0.25);
+      const g = ctx.createLinearGradient(0, 0, W, H);
+      g.addColorStop(0, 'rgb(255,80,140)');
+      g.addColorStop(1, 'rgb(60,140,255)');
+      ctx.globalCompositeOperation = 'soft-light';
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    } else if (look === 'sunset') {
+      // Golden hour: warm orange below, pink and violet above.
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, 'rgb(150,70,220)');
+      g.addColorStop(0.5, 'rgb(255,90,120)');
+      g.addColorStop(1, 'rgb(255,170,60)');
+      ctx.globalCompositeOperation = 'soft-light';
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+      fill('screen', 'rgb(60,20,10)', 0.3);
     }
     ctx.restore();
   }
