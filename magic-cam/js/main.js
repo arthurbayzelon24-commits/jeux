@@ -436,7 +436,7 @@ function updateToggles() {
   $('btn-sound').classList.toggle('off', !settings.sound);
   $('btn-sound').querySelector('[data-icon]').innerHTML = svg(settings.sound ? 'sound' : 'mute');
   $('btn-points').classList.toggle('on', settings.points);
-  document.documentElement.dataset.theme = settings.theme;
+  applyTheme();
   $('btn-music').classList.toggle('on', settings.music !== 'off');
   $('vignette').hidden = !settings.cinema;
   $('fps').hidden = !settings.fps;
@@ -1377,7 +1377,13 @@ form.addEventListener('change', (e) => {
   updateToggles();
 });
 syncForm();
-document.documentElement.dataset.theme = settings.theme;
+// App colour: on the page and on the phone's status bar.
+function applyTheme() {
+  document.documentElement.dataset.theme = settings.theme;
+  const bar = { or: '#1a1206', violet: '#160a2a', cyan: '#061a24', rose: '#240a18', vert: '#06200f', rouge: '#240806' }[settings.theme];
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bar || '#0b0a0f');
+}
+applyTheme();
 quality.particles = PARTICLES[settings.fxQuality] || 1;
 
 // ---------- Zoom: pinch with two fingers, mouse wheel, or the 1× button ----------
