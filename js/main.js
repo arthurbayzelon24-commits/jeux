@@ -265,6 +265,7 @@ function shelfRow(cat) {
 const powerWraps = () => $('powers').querySelectorAll('.power-wrap');
 
 function buildPowers() {
+  $('tagline').textContent = `${EFFECTS.length} pouvoirs · filme-toi comme un héros`;
   shelfRow('fav');
   for (const c of CATEGORIES) shelfRow(c.id);
   const carousel = $('carousel');
