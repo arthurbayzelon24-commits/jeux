@@ -24,6 +24,7 @@ Kamehameha, Rayon de feu, Sabre laser, Portail magique, Cercle magique, Orbe de 
 - **Runes magiques** (pouvoir) : pince les doigts, dessine une forme en l’air, lâche. Cercle = Bouclier, Triangle = Explosion, Carré = Prison de glace, Zigzag = Foudre, Ligne = Lame, V = Météore. Les runes touchent aussi les cibles de l’Arène.
 - **Double pouvoir** (bouton deux mains) : choisis un second pouvoir ; la main à droite de l’écran garde le premier, celle de gauche prend le second.
 - **Gestes secrets**, avec tous les pouvoirs : 5 gestes cachés à découvrir (indices dans la page Succès), dont un qui déclenche immédiatement le final du pouvoir.
+- **Familier** : dès le niveau 2, un compagnon suit ta main avec tous les pouvoirs ; il devient **Petit dragon** au niveau 5 et **Phénix** au niveau 10, fait la fête quand tu déclenches un final et, dans l’Arène, fonce régulièrement sur la cible la plus proche (désactivable dans les Paramètres).
 - **Progression** : expérience (temps de magie, nouveaux pouvoirs, finals, vidéos, runes, Arène), niveaux, 22 succès, défi du jour (+150 XP) sur l’accueil. Les annonces s’affichent sur l’accueil, jamais pendant le tournage.
 
 ## Interface holographique (style armure high-tech)

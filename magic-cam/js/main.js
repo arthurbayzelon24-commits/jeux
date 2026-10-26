@@ -8,6 +8,7 @@ import { quality } from './fx/util.js';
 import { MESH_POINTS } from './handmesh.js';
 import { Arena, MODES } from './mech/arena.js';
 import { Secrets, SECRETS } from './mech/secrets.js';
+import { Familiar, formFor } from './mech/familiar.js';
 import { Progress, ACHIEVEMENTS } from './progress.js';
 import { makeDual } from './dual.js';
 
@@ -67,6 +68,7 @@ const DEFAULTS = {
   sound: true,
   points: true,
   look: 'normal',
+  familiar: true,
   pointsAsked: false,
   eco: false,
 };
@@ -1000,6 +1002,7 @@ form.addEventListener('change', (e) => {
   const el = e.target;
   settings[el.name] = el.type === 'checkbox' ? el.checked : el.value;
   if (el.name === 'points') settings.pointsAsked = true;
+  if (el.name === 'familiar') syncFamiliar();
   saveSettings();
   audio.setEnabled(settings.sound);
   quality.particles = PARTICLES[settings.fxQuality] || 1;
@@ -1081,6 +1084,14 @@ engine.on('spell', (s) => s.main && progress.spell(s.kind));
 const secrets = new Secrets();
 secrets.onFound = (id) => progress.secret(id);
 engine.addMechanic(secrets);
+// The familiar grows with the level.
+const familiar = new Familiar();
+function syncFamiliar() {
+  familiar.setLevel(progress.level);
+  if (settings.familiar !== false) engine.addMechanic(familiar);
+  else engine.removeMechanic(familiar);
+}
+syncFamiliar();
 
 function renderHub() {
   const { level, into, need } = progress.levelProgress;
@@ -1116,6 +1127,7 @@ function renderProgress() {
     ['Temps de magie', `${min} min`],
     ['Défis réussis', s.dailyDone],
     ['Secrets', `${s.secrets.length}/${SECRETS.length}`],
+    ['Familier', formFor(progress.level)?.name || 'Niveau 2'],
   ];
   $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><strong>${v}</strong><small>${k}</small></div>`).join('');
   const top = s.arenaTop || [];
@@ -1137,6 +1149,7 @@ function renderProgress() {
   }).join('');
 }
 progress.onChange(() => {
+  familiar.setLevel(progress.level);
   if (!studioOpen) renderHub();
 });
 
