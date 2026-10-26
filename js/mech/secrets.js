@@ -205,7 +205,9 @@ export class Secrets {
       ctx.fillRect(0, 0, e.W, e.H);
     }
     this.fx.draw(ctx);
-    if (this.label && this.label.t < 1.6) {
+    // No label over a game's score (arena, duel).
+    const game = e.mechanics.some((m) => m !== this && m.active);
+    if (this.label && this.label.t < 1.6 && !game) {
       const l = this.label;
       ctx.globalAlpha = clamp(1.6 - l.t) * clamp(l.t * 6);
       ctx.textAlign = 'center';
