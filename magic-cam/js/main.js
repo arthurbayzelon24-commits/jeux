@@ -1205,7 +1205,7 @@ function renderProgress() {
     ? top
         .map(
           (r, i) =>
-            `<div class="top-row"><b>${['🥇', '🥈', '🥉', '4', '5'][i]}</b><img src="${art(r.effect)}" alt=""><span>${getEffect(r.effect)?.name || ''}<small>${new Date(r.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</small></span><strong>${r.score}</strong></div>`,
+            `<div class="top-row"><b>${['🥇', '🥈', '🥉', '4', '5'][i]}</b><img src="${art(r.effect)}" alt=""><span>${getEffect(r.effect)?.name || ''}<small>${MODES[r.mode || 'classic']?.name || ''} · ${new Date(r.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</small></span><strong>${r.score}</strong></div>`,
         )
         .join('')
     : '<p class="muted">Lance une manche avec le bouton cible dans la caméra.</p>';

@@ -289,7 +289,9 @@ export class Progress {
   arena(result, effect) {
     this.s.arenaBest = Math.max(this.s.arenaBest, result.score);
     // Top 5 rounds, with the power used.
-    this.s.arenaTop = [...this.s.arenaTop, { score: result.score, effect, date: Date.now() }].sort((a, b) => b.score - a.score).slice(0, 5);
+    this.s.arenaTop = [...this.s.arenaTop, { score: result.score, effect, mode: result.mode || 'classic', date: Date.now() }]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
     this.s.bestCombo = Math.max(this.s.bestCombo, result.maxCombo);
     this.addXp(Math.min(300, result.score / 8), 'Manche d’Arène');
     this.#dailyStep('arena', { effect, score: result.score });
