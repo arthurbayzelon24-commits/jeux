@@ -1730,3 +1730,9 @@ body.in-studio {
 .news-card .btn {
   width: 100%;
 }
+.rune-shape {
+  width: 36px;
+  text-align: center;
+  font-weight: 900;
+  text-shadow: 0 0 12px currentColor;
+}
