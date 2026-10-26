@@ -44,6 +44,29 @@ export class SoundFx {
     if (!stream?.getAudioTracks().length) return;
     this.micSource = this.ctx.createMediaStreamSource(stream);
     this.micSource.connect(this.recordDest);
+    // Listens for finger snaps: a short, sharp, high-pitched click.
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2500;
+    this.snapAnalyser = this.ctx.createAnalyser();
+    this.snapAnalyser.fftSize = 1024;
+    this.micSource.connect(hp).connect(this.snapAnalyser);
+    this.snapBuf = new Float32Array(this.snapAnalyser.fftSize);
+    this.snapLevel = 0.01;
+    this.snapCool = 0;
+  }
+
+  // True once for each snap-like click heard since the last call.
+  heardSnap(now) {
+    const a = this.snapAnalyser;
+    if (!a) return false;
+    a.getFloatTimeDomainData(this.snapBuf);
+    let peak = 0;
+    for (const v of this.snapBuf) peak = Math.max(peak, Math.abs(v));
+    const loud = peak > 0.18 && peak > this.snapLevel * 7 && now > this.snapCool;
+    this.snapLevel += (peak - this.snapLevel) * 0.05;
+    if (loud) this.snapCool = now + 400;
+    return loud;
   }
 
   get recordTracks() {
