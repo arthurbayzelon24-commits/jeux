@@ -34,6 +34,7 @@ export const ACHIEVEMENTS = [
   { id: 'daily3', icon: '📅', name: 'Régulier', text: 'Réussir 3 défis du jour', test: (s) => s.dailyDone >= 3 },
   { id: 'secret1', icon: '🗝️', name: 'Curiosité', text: 'Découvrir un geste secret', test: (s) => s.secrets.length >= 1 },
   { id: 'secretall', icon: '🐉', name: 'Gardien des secrets', text: 'Découvrir les 5 gestes secrets', test: (s) => s.secrets.length >= 5 },
+  { id: 'duel', icon: '⚔️', name: 'Duelliste', text: 'Gagner un duel élémentaire', test: (s) => s.duelWins >= 1 },
   { id: 'lvl10', icon: '🌟', name: 'Niveau 10', text: 'Atteindre le niveau 10', test: (s, x) => x.level >= 10 },
 ];
 
@@ -70,6 +71,7 @@ export class Progress {
       daily: null,
       secrets: [],
       arenaTop: [],
+      duelWins: 0,
     };
     try {
       this.s = { ...blank, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
@@ -208,6 +210,10 @@ export class Progress {
     if (this.s.secrets.includes(id)) return this.addXp(5);
     this.s.secrets.push(id);
     this.addXp(60, 'Geste secret découvert');
+  }
+  duel(result) {
+    if (result.won) this.s.duelWins = (this.s.duelWins || 0) + 1;
+    this.addXp(result.won ? 40 : 15, 'Duel terminé');
   }
   usedDual() {
     this.s.dual++;

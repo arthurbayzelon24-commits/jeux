@@ -9,6 +9,7 @@ import { MESH_POINTS } from './handmesh.js';
 import { Arena, MODES } from './mech/arena.js';
 import { Secrets, SECRETS } from './mech/secrets.js';
 import { Familiar, formFor } from './mech/familiar.js';
+import { Duel } from './mech/duel.js';
 import { Progress, ACHIEVEMENTS } from './progress.js';
 import { makeDual } from './dual.js';
 
@@ -1015,14 +1016,19 @@ quality.particles = PARTICLES[settings.fxQuality] || 1;
 // ---------- Mechanics: arena, double power ----------
 const arena = new Arena();
 arena.onEnd = (r) => progress.arena(r, currentEffect);
+const duel = new Duel();
+duel.onEnd = (r) => progress.duel(r);
 function stopArena() {
   arena.stop();
+  duel.stop();
+  engine.removeMechanic(duel);
   $('arena-menu').hidden = true;
   engine.removeMechanic(arena);
   $('btn-arena').classList.remove('on');
 }
 $('btn-arena').addEventListener('click', () => {
   audio.init();
+  if (duel.active) return stopArena();
   if (arena.active) {
     arena.quit(engine);
     if (!arena.active) stopArena();
@@ -1032,7 +1038,7 @@ $('btn-arena').addEventListener('click', () => {
   $('arena-modes').innerHTML = Object.entries(MODES)
     .map(
       ([id, m]) =>
-        `<button class="arena-mode" data-mode="${id}"><b>${m.name}</b><small>${m.text}</small><i>Record : ${arena.bestOf(id)}</i></button>`,
+        `<button class="arena-mode" data-mode="${id}"><b>${m.name}</b><small>${m.text}</small>${m.game ? '' : `<i>Record : ${arena.bestOf(id)}</i>`}</button>`,
     )
     .join('');
   $('arena-menu').hidden = false;
@@ -1041,14 +1047,19 @@ $('arena-modes').addEventListener('click', (ev) => {
   const b = ev.target.closest('[data-mode]');
   if (!b) return;
   $('arena-menu').hidden = true;
-  engine.addMechanic(arena);
-  arena.start(engine, b.dataset.mode);
+  if (b.dataset.mode === 'duel') {
+    engine.addMechanic(duel);
+    duel.start(engine);
+  } else {
+    engine.addMechanic(arena);
+    arena.start(engine, b.dataset.mode);
+  }
   $('btn-arena').classList.add('on');
 });
 $('arena-close').addEventListener('click', () => ($('arena-menu').hidden = true));
 // The round ended on its own: the button goes back to normal.
 setInterval(() => {
-  if (!arena.active && $('btn-arena').classList.contains('on')) stopArena();
+  if (!arena.active && !duel.active && $('btn-arena').classList.contains('on')) stopArena();
 }, 500);
 
 let dualMain = null;
