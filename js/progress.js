@@ -45,6 +45,7 @@ export const ACHIEVEMENTS = [
     text: 'Fusionner deux pouvoirs (double pouvoir, mains jointes)',
     test: (s) => s.fusions >= 1,
   },
+  { id: 'streak7', icon: '🔥', name: 'Flamme éternelle', text: 'Revenir 7 jours d’affilée', test: (s) => (s.streak?.best || 0) >= 7 },
   { id: 'lvl10', icon: '🌟', name: 'Niveau 10', text: 'Atteindre le niveau 10', test: (s, x) => x.level >= 10 },
 ];
 
@@ -308,6 +309,29 @@ export class Progress {
   fusion() {
     this.s.fusions = (this.s.fusions || 0) + 1;
     this.addXp(20, 'Fusion');
+  }
+  // Daily streak: coming back on consecutive days, with a growing bonus.
+  checkIn() {
+    const d = today();
+    const st = (this.s.streak ||= { last: null, count: 0, best: 0 });
+    if (st.last === d) return;
+    const first = !st.last;
+    const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+    st.count = st.last === yesterday ? st.count + 1 : 1;
+    st.best = Math.max(st.best, st.count);
+    st.last = d;
+    const bonus = 20 * Math.min(7, st.count);
+    this.queue.push({
+      icon: '🔥',
+      title: st.count > 1 ? `Série : ${st.count} jours !` : first ? 'Bienvenue !' : 'Bon retour !',
+      text: `Bonus du jour : +${bonus} XP`,
+    });
+    this.addXp(bonus);
+  }
+  get streak() {
+    return this.s.streak?.last === today() || this.s.streak?.last === new Date(Date.now() - 864e5).toISOString().slice(0, 10)
+      ? this.s.streak.count
+      : 0;
   }
   usedDual() {
     this.s.dual++;

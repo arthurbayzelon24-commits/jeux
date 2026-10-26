@@ -1132,7 +1132,8 @@ function renderHub() {
   $('lvl-title').textContent = `Niveau ${level}`;
   $('lvl-fill').style.width = `${Math.round((into / need) * 100)}%`;
   $('lvl-xp').textContent = `${into} / ${need} XP`;
-  $('lvl-ach').textContent = `🏅 ${progress.s.unlocked.length}/${ACHIEVEMENTS.length}`;
+  $('lvl-ach').textContent =
+    `${progress.streak > 1 ? `🔥 ${progress.streak}  ` : ''}🏅 ${progress.s.unlocked.length}/${ACHIEVEMENTS.length}`;
   const q = progress.quest;
   $('quest-step').textContent = q ? `Quête du Mage · étape ${q.index + 1}/${q.total} · +${q.reward} XP` : 'Quête du Mage terminée';
   $('quest-text').textContent = q ? q.text : 'Tu es un Grand Mage ! 🧙';
@@ -1165,6 +1166,7 @@ function renderProgress() {
     ['Temps de magie', `${min} min`],
     ['Défis réussis', s.dailyDone],
     ['Secrets', `${s.secrets.length}/${SECRETS.length}`],
+    ['Série record', `${s.streak?.best || 0} j`],
     ['Pouvoirs maîtrisés', `${progress.mastered} ★★★`],
     ['Familier', formFor(progress.level)?.name || 'Niveau 2'],
   ];
@@ -1243,6 +1245,7 @@ $('news-ok').addEventListener('click', () => {
 
 // ---------- Boot ----------
 buildPowers();
+progress.checkIn();
 renderHub();
 setTimeout(flushUnlocks, 1500);
 setTimeout(showNews, 600);

@@ -302,6 +302,31 @@ export class Arena {
     this.freezeT = Math.max(0, this.freezeT - dt);
     // Zen and survival have no clock; the boss comes in classic only.
     if (this.mode !== 'classic') this.time = Infinity;
+    // Golden rain: a wave of gold stars late in a classic round, and every
+    // 40 s in survival.
+    const rainAt = this.mode === 'classic' ? [45] : this.mode === 'survival' ? [40, 80, 120, 160] : [];
+    if (rainAt.some((t) => this.elapsed >= t && this.elapsed - dt < t)) {
+      this.#pop('PLUIE D’OR !', e.W / 2, e.H * 0.3, [255, 215, 90], true);
+      e.audio.play('chime', 1);
+      e.flash([255, 220, 120], 0.25, 2);
+      for (let k = 0; k < 6; k++) {
+        const R = TYPES.gold.r * Math.min(e.W, e.H) * (e.W < e.H ? 1.4 : 1);
+        this.targets.push({
+          kind: 'gold',
+          x: rand(0.12, 0.88) * e.W,
+          y: rand(0.22, 0.7) * e.H,
+          r: R,
+          hp: 1,
+          heat: 0,
+          age: 0,
+          life: 4,
+          cool: 0,
+          vx: rand(-1, 1) * e.W * 0.15,
+          vy: rand(-1, 1) * e.H * 0.1,
+          ph: rand(TAU),
+        });
+      }
+    }
     if (!this.bossDone && this.mode === 'classic' && this.elapsed > 28) {
       this.bossDone = true;
       const R = TYPES.boss.r * Math.min(e.W, e.H) * (e.W < e.H ? 1.4 : 1);
