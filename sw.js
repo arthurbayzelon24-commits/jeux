@@ -1,9 +1,19 @@
 // Magic Cam service worker: works offline and keeps the installed app up to
 // date. Every launch fetches the newest files first (cache only as fallback),
 // and a new version of this file takes over immediately.
-const VERSION = 'magic-cam-v18';
+const VERSION = 'magic-cam-v19';
 const LIB = 'magic-cam-lib';
 const POWERS = [
+  'chidori',
+  'genkidama',
+  'getsuga',
+  'hollowpurple',
+  'sharingan',
+  'supersaiyan',
+  'waterbreath',
+  'firefist',
+  'haki',
+  'domain',
   'kamehameha',
   'hud',
   'firebeam',

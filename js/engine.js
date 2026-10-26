@@ -411,8 +411,6 @@ export class Engine {
         ctx.translate(W, 0);
         ctx.scale(-1, 1);
       }
-      // Ultra quality: a light cinema grade (contrast and colour).
-      if (this.settings.fxQuality === 'ultra') ctx.filter = 'contrast(1.06) saturate(1.12)';
       ctx.drawImage(input.source, 0, 0, W, H);
       // Camera slower than the screen: the previous camera frame fades out
       // over the new one, so your own motion glides instead of jumping.
@@ -422,7 +420,6 @@ export class Engine {
         ctx.drawImage(blend.canvas, 0, 0, W, H);
         ctx.globalAlpha = 1;
       }
-      ctx.filter = 'none';
       ctx.restore();
     }
     if (effect?.drawBehind && this.segActive) {
