@@ -27,10 +27,23 @@ import { hudEffect } from './fx/hud.js';
 import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
 import { planetEffect, crystalBallEffect, auroraEffect, starsEffect, cometEffect, rainbowEffect } from './fx/pack-cosmic.js';
 import { bubblesEffect, confettiEffect, coinsEffect, snowEffect, firefliesEffect, wispsEffect } from './fx/pack-fun.js';
+import {
+  chidoriEffect,
+  spiritBombEffect,
+  getsugaEffect,
+  hollowPurpleEffect,
+  sharinganEffect,
+  superSaiyanEffect,
+  waterBreathingEffect,
+  fireFistEffect,
+  hakiEffect,
+  domainEffect,
+} from './fx/pack-anime.js';
 import { shieldEffect, neonEffect, matrixEffect, webEffect, laserEyesEffect, haloEffect } from './fx/pack-tech.js';
 
 // Categories of the powers screen (filter chips), in display order.
 export const CATEGORIES = [
+  { id: 'anime', name: 'Animé' },
   { id: 'feu', name: 'Feu' },
   { id: 'energie', name: 'Énergie' },
   { id: 'cosmos', name: 'Cosmos' },
@@ -43,6 +56,23 @@ export const CATEGORIES = [
 // power up to its final blast (powers without it have no charge). `tint` colours the icon and the card,
 // `gesture` is the short "how to cast it" line under the name.
 export const EFFECTS = [
+  { id: 'chidori', cat: 'anime', make: chidoriEffect, tint: '#78c8ff', gesture: 'Main ouverte ou poing', charge: 'open' },
+  {
+    id: 'genkidama',
+    cat: 'anime',
+    make: spiritBombEffect,
+    tint: '#a0d2ff',
+    gesture: 'Levez la main, puis lancez vers le bas',
+    charge: 'raised',
+  },
+  { id: 'getsuga', cat: 'anime', make: getsugaEffect, tint: '#ff3030', gesture: 'Poing fermé, tranchez vite', charge: 'fist' },
+  { id: 'hollowpurple', cat: 'anime', make: hollowPurpleEffect, tint: '#be50ff', gesture: 'Deux mains, rapprochez-les' },
+  { id: 'sharingan', cat: 'anime', make: sharinganEffect, tint: '#e0101e', gesture: 'Regardez la caméra' },
+  { id: 'supersaiyan', cat: 'anime', make: superSaiyanEffect, tint: '#ffd23c', gesture: 'Reculez, serrez les poings', charge: 'fist' },
+  { id: 'waterbreath', cat: 'anime', make: waterBreathingEffect, tint: '#3c96ff', gesture: 'Tranchez l’air avec la main' },
+  { id: 'firefist', cat: 'anime', make: fireFistEffect, tint: '#ff7820', gesture: 'Poing, puis frappez', charge: 'fist' },
+  { id: 'haki', cat: 'anime', make: hakiEffect, tint: '#ff2840', gesture: 'Serrez le poing', charge: 'fist' },
+  { id: 'domain', cat: 'anime', make: domainEffect, tint: '#b4dcff', gesture: 'Signe V ou index levé, tenez 1 s' },
   { id: 'kamehameha', cat: 'energie', make: kamehamehaEffect, tint: '#4aa3ff', gesture: 'Mains jointes, puis poussez', charge: 'open' },
   { id: 'hud', cat: 'heros', make: hudEffect, tint: '#50dcff', gesture: 'Tapez sur le clavier holographique' },
   { id: 'firebeam', cat: 'feu', make: fireBeamEffect, tint: '#ff7a1a', gesture: 'Pointez l’index', charge: 'point' },

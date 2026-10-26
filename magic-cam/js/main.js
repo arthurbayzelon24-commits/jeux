@@ -40,14 +40,15 @@ paintIcons();
 const $ = (id) => document.getElementById(id);
 
 // ---------- Settings ----------
-const SETTINGS_KEY = 'magic-cam-settings-v5';
+const SETTINGS_KEY = 'magic-cam-settings-v6';
+const MOBILE = window.matchMedia?.('(pointer: coarse)').matches;
 const DEFAULTS = {
   // smooth: the camera's highest frame rate first; sharp: its highest resolution.
   priority: 'smooth',
-  frameBlend: true,
+  frameBlend: false,
   quality: '32k',
   fpsTarget: '250',
-  fxQuality: 'ultra',
+  fxQuality: MOBILE ? 'high' : 'ultra',
   bloom: true,
   fps: false,
   maxDuration: '60',
@@ -68,12 +69,17 @@ const settings = (() => {
     if (saved) return { ...DEFAULTS, ...JSON.parse(saved) };
     // Keep the earlier answers, but switch to the new smooth default.
     const old = JSON.parse(
-      localStorage.getItem('magic-cam-settings-v4') ||
+      localStorage.getItem('magic-cam-settings-v5') ||
+        localStorage.getItem('magic-cam-settings-v4') ||
         localStorage.getItem('magic-cam-settings-v3') ||
         localStorage.getItem('magic-cam-settings-v2') ||
         '{}',
     );
     delete old.priority;
+    // The frame blend could double the image when moving: off for everyone.
+    delete old.frameBlend;
+    // Phones: Ultra was too heavy (lag, stutter); High looks almost the same.
+    if (MOBILE && (old.fxQuality || 'ultra') === 'ultra') old.fxQuality = 'high';
     if (old.eco) old.fxQuality = 'eco';
     delete old.eco;
     return { ...DEFAULTS, ...old };
@@ -374,22 +380,33 @@ async function startCamera() {
 async function boostFrameRate(track, portrait) {
   if (!track) return;
   const caps = track.getCapabilities?.() || {};
-  const max = Math.min(Number(settings.fpsTarget) || 250, caps.frameRate?.max || 120);
-  if (max <= (track.getSettings().frameRate || 0)) return;
-  for (const floor of [Math.min(100, max), Math.min(50, max)]) {
-    for (const long of [1920, 1280, 960, 640]) {
-      const short = Math.round((long * 9) / 16);
-      try {
-        await track.applyConstraints({
-          width: { ideal: portrait ? short : long },
-          height: { ideal: portrait ? long : short },
-          frameRate: { min: floor, ideal: max },
-        });
-        if ((track.getSettings().frameRate || floor) >= floor * 0.9) return;
-      } catch {
-        /* this size cannot go that fast: try a smaller one */
-      }
+  const max = Math.min(Number(settings.fpsTarget) || 250, caps.frameRate?.max || 0);
+  // Only when the camera says it can go faster: forcing a frame rate it does
+  // not have made some phones stall, blur or flicker.
+  if (!max || max <= (track.getSettings().frameRate || 0) + 5) return;
+  const before = { ...track.getSettings() };
+  for (const long of [1920, 1280]) {
+    const short = Math.round((long * 9) / 16);
+    try {
+      await track.applyConstraints({
+        width: { ideal: portrait ? short : long },
+        height: { ideal: portrait ? long : short },
+        frameRate: { ideal: max },
+      });
+      if ((track.getSettings().frameRate || 0) >= Math.min(max, 100) * 0.9) return;
+    } catch {
+      /* not possible at this size */
     }
+  }
+  // No gain: back to the original settings.
+  try {
+    await track.applyConstraints({
+      width: { ideal: before.width },
+      height: { ideal: before.height },
+      frameRate: { ideal: before.frameRate || 30 },
+    });
+  } catch {
+    /* keep what we have */
   }
 }
 

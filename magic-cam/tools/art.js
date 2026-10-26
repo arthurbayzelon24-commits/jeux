@@ -330,6 +330,34 @@ function scene(id, W, H) {
     snow: { hands: one('open', 0.5, 0.95), frames: 120 },
     fireflies: { hands: one('open', 0.5, 0.95), frames: 120 },
     wisps: { hands: one('open', 0.5, 0.95), frames: 60 },
+    chidori: { hands: one('open', 0.5, 0.85, { roll: 0.2 }), frames: 30 },
+    genkidama: { hands: one('open', 0.5, 0.72), frames: 120 },
+    getsuga: {
+      hands: (t) => [hand('fist', W * (0.85 - Math.min(1, t * 3) * 0.6), H * (0.95 - Math.min(1, t * 3) * 0.3), L, W, H, { roll: -0.8 })],
+      frames: 9,
+    },
+    hollowpurple: {
+      hands: (t) => {
+        const d = Math.max(0.1, 0.32 - t * 0.3);
+        return [
+          hand('open', W * (0.5 - d), H * 0.95, L * 0.8, W, H, { roll: -0.3 }),
+          hand('open', W * (0.5 + d), H * 0.95, L * 0.8, W, H, { roll: 0.3, flip: true }),
+        ];
+      },
+      frames: 40,
+    },
+    sharingan: { hands: () => [], frames: 20, person: true, pose: true },
+    supersaiyan: { hands: () => [], frames: 30, person: true },
+    waterbreath: {
+      hands: (t) => [hand('point', W * (0.15 + t * 0.7), H * (0.85 - Math.sin(t * 4) * 0.25), L * 0.8, W, H, { roll: 0.6 })],
+      frames: 32,
+    },
+    firefist: {
+      hands: (t) => [hand('fist', W * (0.3 + Math.min(0.2, t * 1.5)), H * (1.05 - Math.min(0.3, t * 2.2)), L, W, H)],
+      frames: 20,
+    },
+    haki: { hands: one('fist', 0.5, 0.95), frames: 25 },
+    domain: { hands: () => [], frames: 30, person: true, trigger: 5 },
   };
   return S[id] || { hands: one('open', 0.5, 0.92), frames: 50 };
 }

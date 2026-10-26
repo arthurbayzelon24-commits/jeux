@@ -244,8 +244,12 @@ export class HandTracker {
     t.pinchPoint = { x: (lm[4].x + lm[8].x) / 2, y: (lm[4].y + lm[8].y) / 2 };
     t.openness = count / 4;
 
+    // In a closed fist the thumb rests on the curled index, close enough to
+    // look like a pinch: a fist (index tip folded back near its knuckle) wins.
+    const folded = count === 0 && d3(8, 0) < d3(5, 0) * 1.25;
     let g = 'relaxed';
-    if (pinch) g = 'pinch';
+    if (folded) g = 'fist';
+    else if (pinch) g = 'pinch';
     else if (count === 0) g = 'fist';
     else if (count >= 4) g = 'open';
     else if (ext.index && !ext.middle && !ext.ring && !ext.pinky) g = 'point';
