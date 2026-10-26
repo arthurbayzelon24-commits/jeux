@@ -287,9 +287,14 @@
         <button class="icon-btn" id="btn-dual" aria-label="Double pouvoir"><span data-icon="hands"></span></button>
         <button class="icon-btn" id="btn-look" aria-label="Filtre d’image"><span data-icon="film"></span></button>
         <button class="icon-btn" id="btn-points" aria-label="Points de suivi"><span data-icon="points"></span></button>
-        <button class="icon-btn" id="btn-backdrop" aria-label="Décor magique"><span data-icon="mountain"></span></button>
         <button class="icon-btn" id="btn-music" aria-label="Musique de fond"><span data-icon="music"></span></button>
         <button class="icon-btn" id="btn-sound" aria-label="Sons"><span data-icon="sound"></span></button>
+      </div>
+
+      <div class="zoom-bar" id="zoom-bar">
+        <button class="icon-btn zoom-step" id="zoom-in" aria-label="Zoomer">+</button>
+        <div class="zoom-track" id="zoom-track" aria-label="Niveau de zoom"><i id="zoom-fill"></i><b id="zoom-knob"></b></div>
+        <button class="icon-btn zoom-step" id="zoom-out" aria-label="Dézoomer">−</button>
       </div>
 
       <button class="action-btn" id="btn-action" hidden></button>
@@ -354,12 +359,12 @@
           <li>
             <b>🎬 Vidéos plus fluides</b> : 720p sur téléphone comme les applis vidéo, cadence stable, enregistrement image par image.
           </li>
-          <li><b>🏞️ Décors magiques</b> (bouton montagne) : Espace, Volcan, Forêt, Temple derrière toi, comme un fond vert.</li>
+          <li><b>🔍 Barre de zoom</b> à gauche de l’écran : <b>+</b> pour zoomer, <b>−</b> pour dézoomer, ou glisse le curseur.</li>
           <li><b>♪ Musique de fond</b> dans les vidéos, et les effets qui pulsent sur le rythme.</li>
           <li><b>✋ Filmer sans les mains</b> : deux paumes immobiles 1,5 s pour lancer ou arrêter.</li>
           <li><b>⏸ Pause / reprise</b>, <b>✂️ Couper</b>, <b>⏩ Accéléré</b>, fondu au noir, format 9:16 pour TikTok.</li>
           <li><b>🪄 Transition magique</b> : main sur la caméra, puis retirée = nouveau pouvoir.</li>
-          <li><b>🔍 Zoom</b> à deux doigts, lumière d’appoint, grille, taille des pouvoirs.</li>
+          <li><b>🤏 Zoom</b> à deux doigts aussi, lumière d’appoint, grille, taille des pouvoirs.</li>
         </ul>
         <button class="btn btn-gold" id="news-ok">C’est parti !</button>
       </div>

@@ -2008,3 +2008,66 @@ body.rec-paused #btn-pause {
   width: 100%;
   accent-color: var(--gold-2);
 }
+
+/* Zoom bar on the left of the camera: + / slider / − */
+.zoom-bar {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-60%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 3;
+}
+.zoom-step {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.zoom-track {
+  position: relative;
+  width: 34px;
+  height: 150px;
+  border-radius: 17px;
+  background: rgba(10, 10, 14, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  touch-action: none;
+  cursor: pointer;
+}
+.zoom-track i {
+  position: absolute;
+  left: 15px;
+  width: 4px;
+  bottom: 12px;
+  height: calc((100% - 24px) * var(--z, 0.5));
+  border-radius: 2px;
+  background: linear-gradient(#ffd27a, #ff8a3c);
+}
+.zoom-track b {
+  position: absolute;
+  left: 7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  bottom: calc(2px + (100% - 24px) * var(--z, 0.5));
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 210, 122, 0.8);
+}
+.zoom-track .one {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.5);
+}
+body.is-recording .zoom-bar {
+  opacity: 0.6;
+}
+@media (max-height: 560px) {
+  .zoom-track {
+    height: 90px;
+  }
+}
