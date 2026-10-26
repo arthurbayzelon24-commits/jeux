@@ -78,6 +78,7 @@ export class Arena {
     this.lives = 3;
     this.doubleT = 0;
     this.freezeT = 0;
+    this.feverT = 0;
     this.state = 'countdown';
     this.timer = 3;
     this.score = 0;
@@ -136,7 +137,7 @@ export class Arena {
   }
 
   get multiplier() {
-    return Math.min(5, 1 + Math.floor(this.combo / 5)) * (this.doubleT > 0 ? 2 : 1);
+    return Math.min(5, 1 + Math.floor(this.combo / 5)) * (this.doubleT > 0 ? 2 : 1) * (this.feverT > 0 ? 3 : 1);
   }
 
   #spawn(e) {
@@ -229,6 +230,13 @@ export class Arena {
     this.combo = this.elapsed - this.lastHit < 2 ? this.combo + 1 : 1;
     this.lastHit = this.elapsed;
     this.maxCombo = Math.max(this.maxCombo, this.combo);
+    // Fever: every 15 hits in a row, 6 s where everything is worth x3.
+    if (this.combo % 15 === 0) {
+      this.feverT = 6;
+      this.#pop('FIÈVRE ! x3', e.W / 2, e.H * 0.36, [255, 120, 220], true);
+      e.audio.play('teleport', 1);
+      e.flash([255, 150, 230], 0.3, 2);
+    }
     this.hits++;
     const pts = T.pts * this.multiplier;
     this.score += pts;
@@ -303,6 +311,7 @@ export class Arena {
     this.time -= dt;
     this.doubleT = Math.max(0, this.doubleT - dt);
     this.freezeT = Math.max(0, this.freezeT - dt);
+    this.feverT = Math.max(0, this.feverT - dt);
     // Zen and survival have no clock; the boss comes in classic only.
     if (this.mode !== 'classic') this.time = Infinity;
     // Golden rain: a wave of gold stars late in a classic round, and every
@@ -485,6 +494,13 @@ export class Arena {
       ctx.globalAlpha = 1;
       text(`ARÈNE · ${MODES[this.mode].name.toUpperCase()}`, cx, e.H / 2 - 110 * u, 30, '#fff');
     } else if (this.state === 'play') {
+      if (this.feverT > 0) {
+        // Rainbow frame pulsing around the screen.
+        const w = (10 + 6 * Math.sin(e.t * 12)) * u;
+        ctx.lineWidth = w;
+        ctx.strokeStyle = `hsla(${(e.t * 300) % 360},100%,65%,${0.5 + 0.3 * clamp(this.feverT - 1)})`;
+        ctx.strokeRect(w / 2, w / 2, e.W - w, e.H - w);
+      }
       text(String(this.score), cx, top, 44, '#ffe7a8');
       const low = this.time < 10;
       if (this.mode === 'classic') text(`${Math.ceil(this.time)} s`, cx, top + 40 * u, 22, low ? '#ff6b6b' : '#fff');
