@@ -31,6 +31,7 @@ export class Engine {
     this.flashes = [];
     this.lights = [];
     this.mechanics = [];
+    this.userZoom = 1;
     this.seg = null;
     this.maskInverted = 0;
   }
@@ -472,7 +473,8 @@ export class Engine {
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
     // Camera shake and zoom punch, around the centre.
-    const z = this.zoom * (this.shakeAmp > 0.3 ? 1.02 : 1);
+    // userZoom: the zoom you choose (pinch / wheel); zoom: the effects' punch.
+    const z = this.zoom * this.userZoom * (this.shakeAmp > 0.3 ? 1.02 : 1);
     const a = this.shakeAmp > 0.3 ? this.shakeAmp : 0;
     const m = [z, 0, 0, z, (W * (1 - z)) / 2 + (Math.random() * 2 - 1) * a, (H * (1 - z)) / 2 + (Math.random() * 2 - 1) * a];
     ctx.setTransform(...m);

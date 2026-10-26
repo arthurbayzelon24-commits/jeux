@@ -1883,3 +1883,7 @@ body.in-studio {
   border-radius: 10px;
   object-fit: cover;
 }
+.zoom-btn {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
