@@ -330,7 +330,11 @@ function selectEffect(id, fromUser = false) {
   }
   const fx = getEffect(id);
   audio.stopLoops(); // the previous power's continuous sounds
-  engine.setEffect(dualSecond && dualSecond !== id ? makeDual(fx, getEffect(dualSecond)) : fx);
+  const tint = (x) => {
+    const h = (EFFECTS.find((d) => d.id === x)?.tint || '#ffffff').slice(1);
+    return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  };
+  engine.setEffect(dualSecond && dualSecond !== id ? makeDual(fx, getEffect(dualSecond), [tint(id), tint(dualSecond)]) : fx);
   $('btn-dual').classList.toggle('on', !!dualSecond || dualPicking);
   if (studioOpen || fromUser) progress.tried(id);
   if (fx.colors && colorIndex[id] !== undefined) fx.setColor(colorIndex[id]);
@@ -1093,6 +1097,7 @@ const progress = new Progress(EFFECTS);
 progress.effectName = (id) => getEffect(id)?.name;
 engine.on('ultimate', () => progress.ultimate(currentEffect));
 engine.on('spell', (s) => s.main && progress.spell(s.kind));
+engine.on('fusion', () => progress.fusion());
 // Secret moves work with every power.
 const secrets = new Secrets();
 secrets.onFound = (id) => progress.secret(id);

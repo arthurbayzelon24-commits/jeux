@@ -38,6 +38,13 @@ export const ACHIEVEMENTS = [
   { id: 'master1', icon: '🌠', name: 'Maîtrise', text: 'Obtenir 3 étoiles sur un pouvoir', test: (s, x) => x.mastered >= 1 },
   { id: 'master5', icon: '🏯', name: 'Légende', text: 'Obtenir 3 étoiles sur 5 pouvoirs', test: (s, x) => x.mastered >= 5 },
   { id: 'quest', icon: '🧙', name: 'Grand Mage', text: 'Finir la Quête du Mage', test: (s) => s.quest >= 12 },
+  {
+    id: 'fusion',
+    icon: '☯️',
+    name: 'Fusion',
+    text: 'Fusionner deux pouvoirs (double pouvoir, mains jointes)',
+    test: (s) => s.fusions >= 1,
+  },
   { id: 'lvl10', icon: '🌟', name: 'Niveau 10', text: 'Atteindre le niveau 10', test: (s, x) => x.level >= 10 },
 ];
 
@@ -297,6 +304,10 @@ export class Progress {
     if (result.won) this.s.duelWins = (this.s.duelWins || 0) + 1;
     this.addXp(result.won ? 40 : 15, 'Duel terminé');
     this.#quest('duel', result);
+  }
+  fusion() {
+    this.s.fusions = (this.s.fusions || 0) + 1;
+    this.addXp(20, 'Fusion');
   }
   usedDual() {
     this.s.dual++;
