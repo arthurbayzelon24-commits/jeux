@@ -32,15 +32,12 @@ export class Secrets {
     this.cool = {};
     this.rays = 0;
     this.zen = 0;
-    this.label = null;
   }
 
   #fire(id, e, at) {
     if ((this.cool[id] || 0) > e.t) return;
     // Calm effects must not come back too often while filming.
     this.cool[id] = e.t + ({ zen: 30, victory: 10 }[id] || 3);
-    const s = SECRETS.find((x) => x.id === id);
-    this.label = { text: s.name, t: 0 };
     this.onFound?.(id);
     const fx = this.fx;
     if (id === 'clap') {
@@ -101,7 +98,6 @@ export class Secrets {
 
   update(dt, hands, e) {
     this.fx.update(dt);
-    if (this.label) this.label.t += dt;
     this.rays = Math.max(0, this.rays - dt);
     this.zen = Math.max(0, this.zen - dt);
     const live = hands.filter((h) => h.presence > 0.5);
@@ -205,20 +201,6 @@ export class Secrets {
       ctx.fillRect(0, 0, e.W, e.H);
     }
     this.fx.draw(ctx);
-    // No label over a game's score (arena, duel).
-    const game = e.mechanics.some((m) => m !== this && m.active);
-    if (this.label && this.label.t < 1.6 && !game) {
-      const l = this.label;
-      ctx.globalAlpha = clamp(1.6 - l.t) * clamp(l.t * 6);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = `900 ${Math.round(34 * e.unit)}px system-ui, sans-serif`;
-      ctx.lineWidth = 6 * e.unit;
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-      ctx.strokeText(`✦ ${l.text} ✦`, e.W / 2, e.H * 0.3);
-      ctx.fillStyle = '#ffe9b0';
-      ctx.fillText(`✦ ${l.text} ✦`, e.W / 2, e.H * 0.3);
-    }
     ctx.restore();
   }
 }

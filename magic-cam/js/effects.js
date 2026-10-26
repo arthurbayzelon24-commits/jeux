@@ -25,6 +25,7 @@ import { wingsEffect } from './fx/wings.js';
 import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
 import { runesEffect } from './fx/runes.js';
+import { freeModeEffect } from './fx/free.js';
 import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
 import { planetEffect, crystalBallEffect, auroraEffect, starsEffect, cometEffect, rainbowEffect } from './fx/pack-cosmic.js';
 import { bubblesEffect, confettiEffect, coinsEffect, snowEffect, firefliesEffect, wispsEffect } from './fx/pack-fun.js';
@@ -44,6 +45,7 @@ import { shieldEffect, neonEffect, matrixEffect, webEffect, laserEyesEffect, hal
 
 // Categories of the powers screen (filter chips), in display order.
 export const CATEGORIES = [
+  { id: 'libre', name: 'Mode libre' },
   { id: 'anime', name: 'Animé' },
   { id: 'feu', name: 'Feu' },
   { id: 'energie', name: 'Énergie' },
@@ -57,6 +59,7 @@ export const CATEGORIES = [
 // power up to its final blast (powers without it have no charge). `tint` colours the icon and the card,
 // `gesture` is the short "how to cast it" line under the name.
 export const EFFECTS = [
+  { id: 'free', cat: 'libre', make: freeModeEffect, tint: '#ffd27a', gesture: 'Chaque geste fait un pouvoir' },
   { id: 'chidori', cat: 'anime', make: chidoriEffect, tint: '#78c8ff', gesture: 'Main ouverte ou poing', charge: 'open' },
   {
     id: 'genkidama',

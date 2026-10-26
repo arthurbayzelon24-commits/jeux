@@ -439,6 +439,10 @@ export class Engine {
     else this.body.advance(dt);
 
     this.segActive = !!(effect?.needs?.seg && input.mask);
+    // Points mode without a body power: the silhouette is still needed for
+    // the point cloud.
+    if (!this.segActive && this.settings.points && input.mask && input.maskFresh !== false)
+      this.#processMask(input.mask, input.mirror, false);
     if (this.segActive) {
       const L = this.#ensureLayers();
       // Mirrored camera frame.
@@ -560,6 +564,7 @@ export class Engine {
 
     // Tracking points: body first, hands (more detailed) on top.
     if (this.settings.points) {
+      this.#pointCloud(ctx);
       this.body.draw(ctx, this.unit);
       for (const h of this.hands) drawHandSkeleton(ctx, h);
     }
@@ -575,6 +580,57 @@ export class Engine {
     this.flashes = this.flashes.filter((fl) => fl.alpha > 0.01);
     ctx.globalCompositeOperation = 'source-over';
     this.#lookOverlay(ctx, W, H);
+  }
+
+  // Body point cloud: a dense grid of points over the whole silhouette (from
+  // the segmentation), spaced so that a person in frame carries more than
+  // 100 000 points, with a scan line sweeping down the body.
+  #pointCloud(ctx) {
+    const s = this.seg;
+    if (!s?.present || !s.canvas) {
+      this.cloudCount = 0;
+      return;
+    }
+    const { W, H } = this;
+    const body = s.area * W * H;
+    const gap = Math.max(1.5, Math.sqrt(body / 120000));
+    this.cloudCount = Math.round(body / (gap * gap));
+    const step = Math.max(2, Math.round(gap * 4) / 4);
+    if (!this.cloud || this.cloud.canvas.width !== W || this.cloud.canvas.height !== H || this.cloud.step !== step) {
+      // Tile of 4x4 points, repeated over the screen.
+      const t = makeCanvas(Math.round(step * 4), Math.round(step * 4));
+      const tg = t.getContext('2d');
+      tg.fillStyle = '#fff';
+      for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) tg.fillRect(Math.round(x * step), Math.round(y * step), 1, 1);
+      const canvas = makeCanvas(W, H);
+      const c = canvas.getContext('2d');
+      this.cloud = { canvas, c, step, pattern: c.createPattern(t, 'repeat') };
+    }
+    const { c, canvas, pattern } = this.cloud;
+    c.globalCompositeOperation = 'copy';
+    c.fillStyle = pattern;
+    c.fillRect(0, 0, W, H);
+    // Scan line: a brighter band moving down the body.
+    c.globalCompositeOperation = 'source-atop';
+    const y = ((this.t * 0.35) % 1.2) * H - H * 0.1;
+    const g = c.createLinearGradient(0, y - H * 0.08, 0, y + H * 0.08);
+    g.addColorStop(0, 'rgba(120,230,255,0)');
+    g.addColorStop(0.5, 'rgba(255,255,255,1)');
+    g.addColorStop(1, 'rgba(120,230,255,0)');
+    c.fillStyle = 'rgba(80,200,255,1)';
+    c.fillRect(0, 0, W, H);
+    c.fillStyle = g;
+    c.fillRect(0, y - H * 0.08, W, H * 0.16);
+    // Keep only the points on the body.
+    c.globalCompositeOperation = 'destination-in';
+    c.drawImage(s.canvas, 0, 0, W, H);
+    c.globalCompositeOperation = 'source-over';
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(canvas, 0, 0);
+    ctx.restore();
   }
 
   // Image look (studio filter button): colour grade of the filmed scene,
