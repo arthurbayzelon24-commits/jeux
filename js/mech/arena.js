@@ -241,6 +241,7 @@ export class Arena {
       for (let i = 0; i < 3; i++) this.#explode(e, t, T.rgb);
     }
     e.audio.play(t.kind === 'gold' ? 'coin' : 'pop', 0.7);
+    e.buzz?.(t.kind === 'gold' ? 30 : 15);
     e.emit('hit', { kind: t.kind, combo: this.combo });
   }
 

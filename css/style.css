@@ -1709,3 +1709,24 @@ body.in-studio {
     grid-template-columns: 1fr 1fr 1fr;
   }
 }
+
+/* What's new */
+.news-card {
+  max-width: 440px;
+  text-align: left;
+}
+.news-card h2 {
+  text-align: center;
+}
+.news-list {
+  margin: 12px 0 18px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+.news-card .btn {
+  width: 100%;
+}
