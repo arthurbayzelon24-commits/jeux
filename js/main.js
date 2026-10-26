@@ -1328,6 +1328,8 @@ const LOOKS = [
   ['neon', 'Néon'],
   ['vintage', 'Vintage'],
   ['noir', 'Noir et blanc'],
+  ['pop', 'Pop'],
+  ['sunset', 'Coucher de soleil'],
 ];
 let lookTimer = 0;
 $('btn-look').addEventListener('click', () => {
