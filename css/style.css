@@ -2272,3 +2272,26 @@ body.is-recording .zoom-bar {
 :root[data-theme='or'] .banner::after {
   display: none;
 }
+
+/* Studio: the side buttons sit in one glass column */
+.studio-side {
+  gap: 6px;
+  padding: 6px;
+  border-radius: 30px;
+  background: rgba(12, 10, 18, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.studio-side .icon-btn {
+  background: transparent;
+  border-color: transparent;
+  backdrop-filter: none;
+}
+.studio-side .icon-btn.on {
+  background: rgba(var(--acc-glow), 0.22);
+  border-color: rgba(var(--acc-glow), 0.6);
+}
+.power-pill {
+  border-color: rgba(var(--acc-glow), 0.5);
+}

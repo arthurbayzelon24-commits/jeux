@@ -116,7 +116,8 @@ export function clonesEffect() {
       if (cool <= 0 && count > 0 && L.some((h) => h.events.snap)) set(e, 0);
       shown += clamp(count - shown, -dt * 6, dt * 6);
       // Keep a copy of you every 1/20 s, for 0.7 s.
-      if (e.segActive && e.seg?.present && e.t - lastShot > 0.05) {
+      // Copies are only kept while clones are out or a seal is being made.
+      if ((count > 0 || shown > 0.01 || seal) && e.segActive && e.seg?.present && e.t - lastShot > 0.05) {
         lastShot = e.t;
         const old = history.length && e.t - history[0].t > 0.7 ? history.shift() : null;
         const w = Math.round(e.W / 2);
