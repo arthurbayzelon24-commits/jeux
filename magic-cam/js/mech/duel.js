@@ -163,7 +163,7 @@ export class Duel {
     ctx.lineTo(e.W / 2, e.H * 0.8);
     ctx.stroke();
     ctx.setLineDash([]);
-    const top = e.H * 0.1;
+    const top = e.H * (e.H > e.W ? 0.15 : 0.13); // below the top bar in portrait
     text(`${this.score[0]}  –  ${this.score[1]}`, e.W / 2, top, 40, '#ffe7a8');
     const label = (i) => (this.solo ? (i === this.you ? 'TOI' : 'ORDI') : `JOUEUR ${i + 1}`);
     text(label(0), e.W * 0.25, top, 18, '#9fd3ff');

@@ -76,7 +76,7 @@ export function chidoriEffect() {
       }
       if (!h || g < 0.05) bolts = [];
       e.audio.loop('buzz', g * 0.8);
-      if (h) e.light(h.palm.x, h.palm.y, h.size * 6, rgb, 0.25 * g);
+      if (h) e.light(h.palm.x, h.palm.y, h.size * 5, rgb, 0.14 * g);
     },
     draw(ctx, e) {
       sparks.draw(ctx);
@@ -84,7 +84,7 @@ export function chidoriEffect() {
       if (!h || g < 0.05) return;
       const R = h.size * 0.55 * (e.charge?.scale || 1) * g;
       ctx.globalCompositeOperation = 'lighter';
-      drawGlow(ctx, rgb, h.palm.x, h.palm.y, R * 2.6, 0.7, 0.1);
+      drawGlow(ctx, rgb, h.palm.x, h.palm.y, R * 2.2, 0.45, 0.1);
       strokeBolts(ctx, bolts, rgb, 2.2 * e.unit, 0.95 * g);
       drawGlow(ctx, [255, 255, 255], h.palm.x, h.palm.y, R * 0.9 * (0.85 + 0.15 * Math.random()), 1, 0.5);
       ctx.globalCompositeOperation = 'source-over';
