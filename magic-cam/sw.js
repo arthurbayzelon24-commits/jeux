@@ -1,7 +1,7 @@
 // Magic Cam service worker: works offline and keeps the installed app up to
 // date. Every launch fetches the newest files first (cache only as fallback),
 // and a new version of this file takes over immediately.
-const VERSION = 'magic-cam-v61';
+const VERSION = 'magic-cam-v62';
 const LIB = 'magic-cam-lib';
 const POWERS = [
   'free',
@@ -73,10 +73,10 @@ const SHELL = [
   'css/style.css',
   'manifest.webmanifest',
   'assets/header.jpg',
-  'assets/icon2-64.png',
-  'assets/icon2-180.png',
-  'assets/icon2-192.png',
-  'assets/icon2-512.png',
+  'assets/icon3-64.png',
+  'assets/icon3-180.png',
+  'assets/icon3-192.png',
+  'assets/icon3-512.png',
   ...POWERS.map((id) => `assets/powers/${id}.jpg`),
 ];
 

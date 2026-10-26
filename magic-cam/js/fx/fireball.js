@@ -14,6 +14,8 @@ export function fireballEffect() {
   const smoke = new Particles(120);
   const projectiles = [];
   const charge = new Map();
+  const sizes = new Map();
+  const cool = new Map();
   let tint = null;
   let shockwaves = [];
 
@@ -74,7 +76,7 @@ export function fireballEffect() {
   return {
     id: 'fireball',
     name: 'Boule de feu',
-    hint: 'Main ouverte : une boule de feu apparaît. Lancez-la d’un geste rapide. Serrez le poing pour l’enflammer, rapprochez les mains pour une boule géante.',
+    hint: 'Main ouverte : une boule de feu apparaît tout de suite. Lance-la d’un geste rapide, ou tends la main vers la caméra pour l’envoyer droit sur l’écran. Serre le poing pour l’enflammer, rapproche les mains pour une boule géante.',
     colors: COLORS,
     needs: { seg: false },
     setColor(i) {
@@ -108,9 +110,14 @@ export function fireballEffect() {
       }
 
       for (const h of live) {
-        const c = Math.min(1, (charge.get(h.id) ?? 0) + dt * 2);
+        // No waiting: the ball is in the hand almost at once.
+        const c = Math.min(1, (charge.get(h.id) ?? 0) + dt * 8);
         charge.set(h.id, c);
-        const r = h.size * 0.48 * c * h.presence;
+        const r = h.size * 0.48 * Math.max(0.6, c) * h.presence;
+        const prevSize = sizes.get(h.id) ?? h.size;
+        sizes.set(h.id, h.size);
+        const cd = (cool.get(h.id) ?? 0) - dt;
+        cool.set(h.id, cd);
         if (h.fist) {
           // Burning fist.
           for (let i = 0; i < 4; i++) {
@@ -122,12 +129,16 @@ export function fireballEffect() {
         }
         if (merged || !(h.open || h.gesture === 'relaxed')) continue;
         const ball = holdPoint(h);
-        // Throw: a fast swipe launches the charged ball.
-        const throwSpeed = Math.min(e.W, e.H) * 1.6;
-        if (c > 0.6 && h.speed > throwSpeed && h.visible) {
-          const v = { x: h.vel.x * 1.3, y: h.vel.y * 1.3 };
-          projectiles.push({ x: ball.x, y: ball.y, vx: v.x, vy: v.y, r: r * 1.2, life: 1.1 });
-          charge.set(h.id, 0);
+        // Throw, right away: a quick move of the hand sends the ball that
+        // way; pushing the hand out towards the camera (or opening a fist)
+        // throws it at the viewer.
+        const swipe = h.speed > Math.min(e.W, e.H) * 1.0 && h.visible;
+        const push = (h.size - prevSize) / dt > h.size * 1.4 || h.events.release;
+        if (cd <= 0 && (swipe || push)) {
+          if (swipe) projectiles.push({ x: ball.x, y: ball.y, vx: h.vel.x * 1.4, vy: h.vel.y * 1.4, r: r * 1.2, life: 1.1 });
+          else projectiles.push({ x: ball.x, y: ball.y, vx: 0, vy: 0, r: r * 1.2, life: 0.45, toward: true });
+          charge.set(h.id, 0.4);
+          cool.set(h.id, 0.35);
           e.audio.play('whoosh', 1);
           continue;
         }
@@ -148,12 +159,14 @@ export function fireballEffect() {
         p.life -= dt;
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        p.r *= 1 + dt * 0.8;
+        // Thrown at the viewer: it swells fast, as if it flew into the lens.
+        p.r *= 1 + dt * (p.toward ? 6 : 0.8);
         for (let i = 0; i < 8; i++) flame(p.x, p.y, p.r, -p.vx * 0.2, -p.vy * 0.2, rand(0.25, 0.5));
         e.light(p.x, p.y, p.r * 8, tint || [255, 130, 30], 0.35);
         const out = p.x < -p.r || p.y < -p.r || p.x > e.W + p.r || p.y > e.H + p.r;
         if (p.life <= 0 || out) {
-          explode(e, clamp(p.x, 0, e.W), clamp(p.y, 0, e.H), p.r * 1.5);
+          explode(e, clamp(p.x, 0, e.W), clamp(p.y, 0, e.H), p.r * (p.toward ? 1 : 1.5));
+          if (p.toward) e.shake(30);
           p.dead = true;
         }
       }

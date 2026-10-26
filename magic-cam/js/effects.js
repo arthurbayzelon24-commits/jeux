@@ -95,7 +95,7 @@ export const EFFECTS = [
   { id: 'plasma', cat: 'energie', make: plasmaEffect, tint: '#d24dff', gesture: 'Main ouverte', charge: 'open' },
   { id: 'lightning', cat: 'energie', make: lightningEffect, tint: '#5cb2ff', gesture: 'Main ouverte, doigts écartés', charge: 'open' },
   { id: 'thunder', cat: 'energie', make: thunderEffect, tint: '#a9c4ff', gesture: 'Levez la main vers le ciel', charge: 'raised' },
-  { id: 'fireball', cat: 'feu', make: fireballEffect, tint: '#ff8c2a', gesture: 'Main ouverte, lancez vite', charge: 'open' },
+  { id: 'fireball', cat: 'feu', make: fireballEffect, tint: '#ff8c2a', gesture: 'Tendez la main : elle part' },
   { id: 'rasengan', cat: 'energie', make: rasenganEffect, tint: '#5ab4ff', gesture: 'Main ouverte, poussez pour lancer', charge: 'open' },
   { id: 'blackhole', cat: 'cosmos', make: blackholeEffect, tint: '#ffaa50', gesture: 'Main ouverte', charge: 'open' },
   { id: 'galaxy', cat: 'cosmos', make: galaxyEffect, tint: '#ff8fd0', gesture: 'Main ouverte, tournez-la' },

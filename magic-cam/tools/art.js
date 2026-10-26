@@ -460,25 +460,26 @@ export function renderHeader(W = 1400, H = 560) {
   return c.toDataURL('image/jpeg', 0.88);
 }
 
-// App icon: a bold white video camera on a vivid magenta-to-violet-to-blue
-// gradient, with a magic wand crossing it and a burst of sparkles. Flat and
-// high-contrast so it reads at any size. Full-bleed: the phone rounds it.
+// App icon: a white open hand holding a blazing fireball, on the app's
+// gradient (fire orange, pink, violet), with a red "recording" dot. Flat
+// shapes so it reads at any size. Full-bleed: the phone rounds the corners.
 export function renderIcon(size = 1024) {
   const S = size;
   const c = makeCanvas(S, S);
   const g = c.getContext('2d');
   const u = S / 1024;
-  const bg = g.createLinearGradient(0, 0, S, S);
-  bg.addColorStop(0, '#ff4f7b');
-  bg.addColorStop(0.45, '#8a2cf2');
-  bg.addColorStop(1, '#1d6bff');
+  const bg = g.createLinearGradient(0, S, S, 0);
+  bg.addColorStop(0, '#ffb238');
+  bg.addColorStop(0.3, '#ff6a3d');
+  bg.addColorStop(0.6, '#ff3d8b');
+  bg.addColorStop(0.85, '#a43dff');
+  bg.addColorStop(1, '#4f7bff');
   g.fillStyle = bg;
   g.fillRect(0, 0, S, S);
-  // Soft light in the top left and a darker corner, for depth.
-  const light = g.createRadialGradient(S * 0.2, S * 0.15, 0, S * 0.2, S * 0.15, S * 0.8);
-  light.addColorStop(0, 'rgba(255,255,255,0.35)');
-  light.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = light;
+  const shade = g.createRadialGradient(S * 0.5, S * 0.45, S * 0.2, S * 0.5, S * 0.5, S * 0.75);
+  shade.addColorStop(0, 'rgba(0,0,0,0)');
+  shade.addColorStop(1, 'rgba(30,0,40,0.35)');
+  g.fillStyle = shade;
   g.fillRect(0, 0, S, S);
   const round = (x, y, w, h, r) => {
     g.beginPath();
@@ -489,52 +490,77 @@ export function renderIcon(size = 1024) {
     g.arcTo(x, y, x + w, y, r);
     g.closePath();
   };
-  // White video camera: rounded body and the lens cone on the right.
-  g.save();
-  g.shadowColor = 'rgba(40,0,80,0.45)';
-  g.shadowBlur = 40 * u;
-  g.shadowOffsetY = 16 * u;
-  g.fillStyle = '#ffffff';
-  round(S * 0.17, S * 0.36, S * 0.46, S * 0.36, 70 * u);
-  g.fill();
-  g.beginPath();
-  g.moveTo(S * 0.66, S * 0.48);
-  g.lineTo(S * 0.84, S * 0.38);
-  g.quadraticCurveTo(S * 0.87, S * 0.37, S * 0.87, S * 0.41);
-  g.lineTo(S * 0.87, S * 0.67);
-  g.quadraticCurveTo(S * 0.87, S * 0.71, S * 0.84, S * 0.7);
-  g.lineTo(S * 0.66, S * 0.6);
-  g.closePath();
-  g.fill();
-  g.restore();
-  // Record dot on the camera.
-  const rec = g.createRadialGradient(S * 0.3, S * 0.47, 0, S * 0.3, S * 0.47, S * 0.05);
-  rec.addColorStop(0, '#ff7a8f');
-  rec.addColorStop(1, '#ff1e4d');
-  g.fillStyle = rec;
-  g.beginPath();
-  g.arc(S * 0.3, S * 0.47, S * 0.045, 0, Math.PI * 2);
-  g.fill();
-  // Magic wand: a dark stick with a white tip, coming up to the top right.
-  g.save();
-  g.translate(S * 0.5, S * 0.6);
-  g.rotate(-0.78);
-  g.fillStyle = '#1b1035';
-  round(-S * 0.03, -S * 0.02, S * 0.42, S * 0.06, 22 * u);
-  g.fill();
-  g.fillStyle = '#ffffff';
-  round(S * 0.3, -S * 0.02, S * 0.09, S * 0.06, 22 * u);
-  g.fill();
-  g.restore();
-  // Burst of sparkles at the wand's tip.
-  const tipX = S * 0.5 + Math.cos(-0.78) * S * 0.39;
-  const tipY = S * 0.6 + Math.sin(-0.78) * S * 0.39;
-  const glow = g.createRadialGradient(tipX, tipY, 0, tipX, tipY, S * 0.22);
-  glow.addColorStop(0, 'rgba(255,240,170,0.95)');
-  glow.addColorStop(0.35, 'rgba(255,200,90,0.45)');
-  glow.addColorStop(1, 'rgba(255,200,90,0)');
-  g.fillStyle = glow;
+  // The fireball floating above the palm: glow, flames, bright core.
+  const fx = S * 0.5;
+  const fy = S * 0.4;
+  const R = S * 0.2;
+  const halo = g.createRadialGradient(fx, fy, 0, fx, fy, R * 2.2);
+  halo.addColorStop(0, 'rgba(255,230,120,0.9)');
+  halo.addColorStop(0.4, 'rgba(255,140,40,0.45)');
+  halo.addColorStop(1, 'rgba(255,90,40,0)');
+  g.fillStyle = halo;
   g.fillRect(0, 0, S, S);
+  // Flame tongues around the ball, licking upwards.
+  for (let k = 0; k < 9; k++) {
+    const a = -Math.PI / 2 + (k - 4) * 0.27 + Math.sin(k * 2.3) * 0.05;
+    const len = R * (1.2 + (k % 2 ? 0.35 : 0.8) * (1 - Math.abs(k - 4) / 5));
+    const flame = g.createLinearGradient(fx, fy, fx + Math.cos(a) * len, fy + Math.sin(a) * len);
+    flame.addColorStop(0, '#ffcf3d');
+    flame.addColorStop(1, 'rgba(255,70,40,0.9)');
+    g.fillStyle = flame;
+    g.beginPath();
+    const w = 0.28;
+    g.moveTo(fx + Math.cos(a - w) * R * 0.8, fy + Math.sin(a - w) * R * 0.8);
+    g.quadraticCurveTo(
+      fx + Math.cos(a - w * 0.3) * len * 0.9,
+      fy + Math.sin(a - w * 0.3) * len * 0.9,
+      fx + Math.cos(a) * len,
+      fy + Math.sin(a) * len,
+    );
+    g.quadraticCurveTo(
+      fx + Math.cos(a + w * 0.3) * len * 0.9,
+      fy + Math.sin(a + w * 0.3) * len * 0.9,
+      fx + Math.cos(a + w) * R * 0.8,
+      fy + Math.sin(a + w) * R * 0.8,
+    );
+    g.fill();
+  }
+  // White open hand, palm up, at the bottom.
+  g.save();
+  g.shadowColor = 'rgba(60,0,60,0.45)';
+  g.shadowBlur = 40 * u;
+  g.shadowOffsetY = 14 * u;
+  g.fillStyle = '#ffffff';
+  const px = S * 0.5;
+  const py = S * 0.78;
+  round(px - S * 0.17, py - S * 0.1, S * 0.34, S * 0.3, 90 * u);
+  g.fill();
+  const finger = (x, y, w, h, a) => {
+    g.save();
+    g.translate(x, y);
+    g.rotate(a);
+    round(-w / 2, -h, w, h, w / 2);
+    g.fill();
+    g.restore();
+  };
+  const fw = S * 0.075;
+  finger(px - S * 0.12, py + S * 0.02, fw, S * 0.26, -0.3);
+  finger(px - S * 0.04, py + S * 0.02, fw, S * 0.31, -0.1);
+  finger(px + S * 0.045, py + S * 0.02, fw, S * 0.3, 0.1);
+  finger(px + S * 0.125, py + S * 0.02, fw, S * 0.24, 0.3);
+  finger(px - S * 0.12, py + S * 0.1, fw * 1.1, S * 0.2, -1.0);
+  g.restore();
+  const ball = g.createRadialGradient(fx - R * 0.25, fy - R * 0.25, R * 0.05, fx, fy, R);
+  ball.addColorStop(0, '#ffffff');
+  ball.addColorStop(0.3, '#fff3a0');
+  ball.addColorStop(0.65, '#ffa531');
+  ball.addColorStop(1, '#ff4a1f');
+  g.fillStyle = ball;
+  g.beginPath();
+  g.arc(fx, fy, R, 0, Math.PI * 2);
+  g.fill();
+  // Sparkles and the red recording dot.
+  g.fillStyle = '#fffbe8';
   const star = (x, y, r) => {
     g.beginPath();
     for (let k = 0; k < 8; k++) {
@@ -545,12 +571,17 @@ export function renderIcon(size = 1024) {
     g.closePath();
     g.fill();
   };
-  g.fillStyle = '#fffbe8';
-  star(tipX, tipY, S * 0.12);
-  star(tipX - S * 0.17, tipY - S * 0.04, S * 0.045);
-  star(tipX + S * 0.03, tipY + S * 0.16, S * 0.04);
-  star(S * 0.16, S * 0.2, S * 0.05);
-  star(S * 0.86, S * 0.86, S * 0.035);
+  star(S * 0.2, S * 0.2, S * 0.05);
+  star(S * 0.82, S * 0.3, S * 0.04);
+  star(S * 0.16, S * 0.6, S * 0.03);
+  g.fillStyle = '#ffffff';
+  g.beginPath();
+  g.arc(S * 0.82, S * 0.16, S * 0.065, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = '#ff1e4d';
+  g.beginPath();
+  g.arc(S * 0.82, S * 0.16, S * 0.045, 0, Math.PI * 2);
+  g.fill();
   return c.toDataURL('image/png');
 }
 
