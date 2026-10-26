@@ -509,6 +509,7 @@ async function openStudio(id) {
   engine.body.reset();
   tracker.reset();
   frameTimes.length = 0;
+  frameCap = 0;
   lastFrame = 0;
   lastCamFrame = 0;
   camInterval = 0;
@@ -534,8 +535,11 @@ function loop(now) {
   if (!studioOpen) return;
   loopId = requestAnimationFrame(loop);
   if (video.readyState < 2 || !video.videoWidth) return;
+  // Steady pace: when the phone cannot keep up with a 90/120 Hz screen,
+  // every other refresh is skipped (a regular 60 i/s looks smoother than an
+  // irregular 90).
+  if (frameCap && lastFrame && now - lastFrame < frameCap - 2) return;
   const fx = engine.effect;
-  // The body point cloud needs the silhouette too.
   // A body power needs the silhouette every frame; the point cloud alone
   // only every third camera frame (the segmentation is the heaviest model).
   const needSeg = !!fx?.needs?.seg;
@@ -590,6 +594,7 @@ function loop(now) {
 // does, then raised again when there is room. Never while recording.
 const frameTimes = [];
 let lastFrame = 0;
+let frameCap = 0;
 let lastAdapt = 0;
 let fpsShown = 0;
 function adaptResolution(now) {
@@ -612,7 +617,11 @@ function adaptResolution(now) {
   const sorted = [...frameTimes].sort((a, b) => a - b);
   const usual = sorted[Math.floor(sorted.length * 0.25)];
   const dropped = frameTimes.filter((t) => t > usual * 1.6).length / frameTimes.length;
-  if (dropped > 0.2 && engine.renderScale > 0.45) engine.renderScale = Math.max(0.45, engine.renderScale * 0.85);
+  // First a steady 60 i/s on fast screens, then a lower resolution.
+  if (dropped > 0.2 && !frameCap && usual < 13) {
+    frameCap = 1000 / 60;
+    frameTimes.length = 0;
+  } else if (dropped > 0.2 && engine.renderScale > 0.45) engine.renderScale = Math.max(0.45, engine.renderScale * 0.85);
   else if (dropped < 0.04 && engine.renderScale < 1) engine.renderScale = Math.min(1, engine.renderScale * 1.1);
 }
 
