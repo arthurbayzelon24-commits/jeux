@@ -1736,3 +1736,144 @@ body.in-studio {
   font-weight: 900;
   text-shadow: 0 0 12px currentColor;
 }
+
+/* ---------- Crystals, daily challenges, shop ---------- */
+.wallet-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  text-align: left;
+  border: 1.5px solid rgba(110, 200, 255, 0.5);
+  background: linear-gradient(180deg, #1c2029, #14161c);
+}
+.wallet-gem {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 8px rgba(110, 200, 255, 0.6));
+}
+.wallet-shop {
+  flex: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #06202e;
+  background: linear-gradient(180deg, #bfeaff, #6cc8ff);
+}
+.challenges-card {
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(201, 158, 96, 0.5);
+  background: linear-gradient(180deg, #1e1c21, #151317);
+}
+.ch-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.ch-head small {
+  color: var(--muted);
+}
+.challenge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 0.86rem;
+  cursor: pointer;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.challenge:first-child {
+  border-top: 0;
+}
+.ch-check {
+  flex: none;
+  width: 22px;
+  text-align: center;
+  color: var(--gold-2);
+}
+.ch-text {
+  flex: 1;
+}
+.challenge b {
+  flex: none;
+  font-size: 0.8rem;
+  color: #8fd8ff;
+}
+.challenge.done {
+  opacity: 0.55;
+  cursor: default;
+}
+.challenge.done .ch-check {
+  color: #6ee696;
+}
+.shop-list {
+  display: grid;
+  gap: 10px;
+}
+@media (min-width: 720px) {
+  .shop-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.shop-item img {
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.shop-item span {
+  flex: 1;
+  display: grid;
+  min-width: 0;
+}
+.shop-item small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.shop-item b {
+  flex: none;
+  color: #8fd8ff;
+}
+.shop-item b.short {
+  color: var(--muted);
+}
+.power-wrap.locked .power-art img {
+  filter: grayscale(0.7) brightness(0.55);
+}
+.price {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  color: #fff;
+  background: rgba(10, 9, 12, 0.75);
+  border: 1px solid rgba(110, 200, 255, 0.6);
+}
+.price[hidden],
+.fx-chip[hidden] {
+  display: none;
+}
+.buy-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 18px;
+  object-fit: cover;
+}

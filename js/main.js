@@ -6,11 +6,8 @@ import { CanvasRecorder, extensionFor } from './recorder.js';
 import { gallery, videoThumbnail } from './gallery.js';
 import { quality } from './fx/util.js';
 import { MESH_POINTS } from './handmesh.js';
-import { Arena, MODES } from './mech/arena.js';
-import { Secrets, SECRETS } from './mech/secrets.js';
-import { Familiar, formFor } from './mech/familiar.js';
-import { Duel } from './mech/duel.js';
-import { Progress, ACHIEVEMENTS } from './progress.js';
+import { Secrets } from './mech/secrets.js';
+import { Progress } from './progress.js';
 import { makeDual } from './dual.js';
 import { SPELLS } from './fx/runes.js';
 
@@ -70,7 +67,6 @@ const DEFAULTS = {
   sound: true,
   points: true,
   look: 'normal',
-  familiar: true,
   haptics: true,
   pointsAsked: false,
   eco: false,
@@ -276,7 +272,7 @@ async function showPage(name) {
   if (studioOpen) await closeStudio();
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`));
   if (name === 'gallery') renderGallery();
-  if (name === 'progress') renderProgress();
+  if (name === 'progress') renderShop();
 }
 function closePage() {
   document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
@@ -326,7 +322,6 @@ function selectEffect(id, fromUser = false) {
     dualSecond = id;
     id = dualMain;
     currentEffect = id;
-    progress.usedDual();
     showChip(`Main gauche : ${getEffect(dualSecond).name}`);
   }
   const fx = getEffect(id);
@@ -337,7 +332,6 @@ function selectEffect(id, fromUser = false) {
   };
   engine.setEffect(dualSecond && dualSecond !== id ? makeDual(fx, getEffect(dualSecond), [tint(id), tint(dualSecond)]) : fx);
   $('btn-dual').classList.toggle('on', !!dualSecond || dualPicking);
-  if (studioOpen || fromUser) progress.tried(id);
   if (fx.colors && colorIndex[id] !== undefined) fx.setColor(colorIndex[id]);
   updateSwatch();
   $('power-pill').innerHTML =
@@ -467,6 +461,7 @@ function showError(err) {
 }
 
 async function openStudio(id) {
+  if (id && !progress.owns(id)) return askBuy(id);
   studioOpen = true;
   $('view-studio').hidden = false;
   document.body.classList.add('in-studio');
@@ -502,7 +497,6 @@ async function openStudio(id) {
 
 async function closeStudio() {
   cancelCountdown();
-  stopArena();
   if (recorder.recording) await stopRecording(false);
   studioOpen = false;
   cancelAnimationFrame(loopId);
@@ -519,7 +513,8 @@ function loop(now) {
   loopId = requestAnimationFrame(loop);
   if (video.readyState < 2 || !video.videoWidth) return;
   const fx = engine.effect;
-  const wantSeg = !!fx?.needs?.seg;
+  // The body point cloud needs the silhouette too.
+  const wantSeg = !!fx?.needs?.seg || settings.points;
   // Each new camera frame goes to the detection worker; rendering never waits
   // for it, and the engine predicts the hands' motion in between.
   let newFrame = false;
@@ -549,7 +544,6 @@ function loop(now) {
       now,
     });
     // Experience for time spent doing magic (someone in view).
-    if (engine.hands.length || engine.body.presence > 0.3) progress.tick(engine.dt, currentEffect);
   } catch (err) {
     console.error(err);
   }
@@ -575,7 +569,7 @@ function adaptResolution(now) {
     const fps = 1000 / (recent.reduce((s, x) => s + x, 0) / recent.length);
     const cam = Math.round(stream?.getVideoTracks()[0]?.getSettings().frameRate || 0);
     $('fps').textContent =
-      `écran ${Math.round(fps)} i/s · caméra ${cam} i/s · détection ${Math.round(tracker.detectFps)} i/s · ${MESH_POINTS} points/main`;
+      `écran ${Math.round(fps)} i/s · caméra ${cam} i/s · détection ${Math.round(tracker.detectFps)} i/s · ${MESH_POINTS} points/main${engine.cloudCount ? ` · ${engine.cloudCount.toLocaleString('fr-FR')} points sur le corps` : ''}`;
   }
   if (now - lastAdapt < 1500 || frameTimes.length < 60 || recorder.recording) return;
   lastAdapt = now;
@@ -654,7 +648,7 @@ async function stopRecording(show = true) {
   if (!res || !res.blob.size) return;
   const thumb = await videoThumbnail(res.blob);
   const item = { kind: 'video', blob: res.blob, type: res.type, duration: res.duration, thumb, effect: currentEffect };
-  progress.recorded(currentEffect);
+  progress.recorded(currentEffect, res.duration, !!dualSecond);
   if (show) showResult(item);
   else if (settings.autosave) await gallery.add(item);
 }
@@ -694,7 +688,7 @@ async function takePhoto() {
   c.width = stage.width * k;
   c.height = stage.height * k;
   c.getContext('2d').drawImage(stage, 0, 0, c.width, c.height);
-  progress.photo();
+  progress.photo(currentEffect);
   showResult({ kind: 'photo', blob, type: 'image/jpeg', thumb: c.toDataURL('image/jpeg', 0.75), effect: currentEffect });
 }
 
@@ -1032,7 +1026,6 @@ form.addEventListener('change', (e) => {
   const el = e.target;
   settings[el.name] = el.type === 'checkbox' ? el.checked : el.value;
   if (el.name === 'points') settings.pointsAsked = true;
-  if (el.name === 'familiar') syncFamiliar();
   saveSettings();
   audio.setEnabled(settings.sound);
   quality.particles = PARTICLES[settings.fxQuality] || 1;
@@ -1042,61 +1035,7 @@ form.addEventListener('change', (e) => {
 syncForm();
 quality.particles = PARTICLES[settings.fxQuality] || 1;
 
-// ---------- Mechanics: arena, double power ----------
-const arena = new Arena();
-arena.onEnd = (r) => {
-  progress.arena(r, currentEffect);
-  saveScoreShot();
-};
-const duel = new Duel();
-duel.onEnd = (r) => {
-  progress.duel(r);
-  saveScoreShot();
-};
-function stopArena() {
-  arena.stop();
-  duel.stop();
-  engine.removeMechanic(duel);
-  $('arena-menu').hidden = true;
-  engine.removeMechanic(arena);
-  $('btn-arena').classList.remove('on');
-}
-$('btn-arena').addEventListener('click', () => {
-  audio.init();
-  if (duel.active) return stopArena();
-  if (arena.active) {
-    arena.quit(engine);
-    if (!arena.active) stopArena();
-    return;
-  }
-  // Pick a mode (with its record).
-  $('arena-modes').innerHTML = Object.entries(MODES)
-    .map(
-      ([id, m]) =>
-        `<button class="arena-mode" data-mode="${id}"><b>${m.name}</b><small>${m.text}</small>${m.game ? '' : `<i>Record : ${arena.bestOf(id)}</i>`}</button>`,
-    )
-    .join('');
-  $('arena-menu').hidden = false;
-});
-$('arena-modes').addEventListener('click', (ev) => {
-  const b = ev.target.closest('[data-mode]');
-  if (!b) return;
-  $('arena-menu').hidden = true;
-  if (b.dataset.mode === 'duel') {
-    engine.addMechanic(duel);
-    duel.start(engine);
-  } else {
-    engine.addMechanic(arena);
-    arena.start(engine, b.dataset.mode);
-  }
-  $('btn-arena').classList.add('on');
-});
-$('arena-close').addEventListener('click', () => ($('arena-menu').hidden = true));
-// The round ended on its own: the button goes back to normal.
-setInterval(() => {
-  if (!arena.active && !duel.active && $('btn-arena').classList.contains('on')) stopArena();
-}, 500);
-
+// ---------- Double power ----------
 let dualMain = null;
 let dualSecond = null;
 let dualPicking = false;
@@ -1121,117 +1060,107 @@ function showChip(text, ms = 1100) {
   lookTimer = setTimeout(() => (chip.hidden = true), ms);
 }
 
-// ---------- Progression: level, daily challenge, achievements ----------
+// ---------- Crystals: daily challenges and the power shop ----------
 const progress = new Progress(EFFECTS);
 progress.effectName = (id) => getEffect(id)?.name;
 engine.on('ultimate', () => progress.ultimate(currentEffect));
-engine.on('spell', (s) => s.main && progress.spell(s.kind));
-engine.on('fusion', () => progress.fusion());
+engine.on('freePower', (id) => progress.freePower(id));
 // Secret moves work with every power.
 const secrets = new Secrets();
-secrets.onFound = (id) => progress.secret(id);
+secrets.onFound = () => progress.secret();
 engine.addMechanic(secrets);
-// The familiar grows with the level.
-const familiar = new Familiar();
-function syncFamiliar() {
-  familiar.setLevel(progress.level);
-  if (settings.familiar !== false) engine.addMechanic(familiar);
-  else engine.removeMechanic(familiar);
-}
-syncFamiliar();
 
-// Mastery stars on the power cards.
-function renderStars() {
+function challengeRows(list) {
+  return list
+    .map(
+      (c) =>
+        `<div class="challenge${c.done ? ' done' : ''}" data-power="${c.power || ''}"><span class="ch-check">${c.done ? '✓' : '○'}</span><span class="ch-text">${c.text}${c.goal > 1 && !c.done && c.progress.length ? ` (${c.progress.length}/${c.goal})` : ''}</span><b>💎 ${c.reward}</b></div>`,
+    )
+    .join('');
+}
+// Locked powers on the cards and in the studio row.
+function renderLocks() {
   for (const w of $('powers').children) {
-    const n = progress.stars(w.dataset.id);
-    let el = w.querySelector('.stars');
-    if (!el) {
-      el = document.createElement('span');
-      el.className = 'stars';
-      w.querySelector('.power-art').append(el);
+    const id = w.dataset.id;
+    const locked = !progress.owns(id);
+    w.classList.toggle('locked', locked);
+    let tag = w.querySelector('.price');
+    if (!tag) {
+      tag = document.createElement('span');
+      tag.className = 'price';
+      w.querySelector('.power-art').append(tag);
     }
-    el.textContent = n ? '★'.repeat(n) + '☆'.repeat(3 - n) : '';
-    el.hidden = !n;
+    tag.textContent = `🔒 💎 ${progress.price(id)}`;
+    tag.hidden = !locked;
   }
+  document.querySelectorAll('.fx-chip').forEach((c) => (c.hidden = !progress.owns(c.dataset.id)));
 }
 function renderHub() {
-  renderStars();
-  const { level, into, need } = progress.levelProgress;
-  $('lvl-num').textContent = level;
-  $('lvl-title').textContent = `Niveau ${level}`;
-  $('lvl-fill').style.width = `${Math.round((into / need) * 100)}%`;
-  $('lvl-xp').textContent = `${into} / ${need} XP`;
-  $('lvl-ach').textContent =
-    `${progress.streak > 1 ? `🔥 ${progress.streak}  ` : ''}🏅 ${progress.s.unlocked.length}/${ACHIEVEMENTS.length}`;
-  const q = progress.quest;
-  $('quest-step').textContent = q ? `Quête du Mage · étape ${q.index + 1}/${q.total} · +${q.reward} XP` : 'Quête du Mage terminée';
-  $('quest-text').textContent = q ? q.text : 'Tu es un Grand Mage ! 🧙';
-  $('quest-fill').style.width = `${Math.round(((q ? q.index : 12) / 12) * 100)}%`;
-  const d = progress.daily;
-  $('daily-img').src = art(d.power);
-  $('daily-text').textContent = d.text;
-  $('daily-state').textContent = d.done ? '✓' : '›';
-  $('daily-card').classList.toggle('done', d.done);
+  renderLocks();
+  $('wallet-num').textContent = progress.s.crystals;
+  $('wallet-streak').textContent = progress.streak > 1 ? `🔥 ${progress.streak} jours` : '';
+  const list = progress.challenges;
+  $('hub-challenges').innerHTML = challengeRows(list);
+  $('hub-done').textContent = `${list.filter((c) => c.done).length}/3`;
 }
-$('daily-card').addEventListener('click', () => openStudio(progress.daily.power));
-$('quest-card').addEventListener('click', () => openStudio(progress.quest?.power || currentEffect));
-$('level-card').addEventListener('click', () => {
+$('hub-challenges').addEventListener('click', (ev) => {
+  const row = ev.target.closest('.challenge');
+  if (row && !row.classList.contains('done'))
+    openStudio(row.dataset.power || (row.textContent.includes('Mode libre') ? 'free' : currentEffect));
+});
+$('wallet-card').addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === 'progress'));
   showPage('progress');
 });
 
-function renderProgress() {
-  const s = progress.s;
-  const min = Math.floor(s.seconds / 60);
-  const stats = [
-    ['Niveau', progress.level],
-    ['XP total', s.xp],
-    ['Pouvoirs essayés', `${s.tried.length}/${EFFECTS.length}`],
-    ['Finals', s.ultimates],
-    ['Vidéos', s.videos],
-    ['Runes lancées', s.spells],
-    ['Record Arène', s.arenaBest],
-    ['Combo max', `x${s.bestCombo}`],
-    ['Temps de magie', `${min} min`],
-    ['Défis réussis', s.dailyDone],
-    ['Secrets', `${s.secrets.length}/${SECRETS.length}`],
-    ['Série record', `${s.streak?.best || 0} j`],
-    ['Pouvoirs maîtrisés', `${progress.mastered} ★★★`],
-    ['Familier', formFor(progress.level)?.name || 'Niveau 2'],
-  ];
-  $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><strong>${v}</strong><small>${k}</small></div>`).join('');
-  const top = s.arenaTop || [];
-  $('arena-top').innerHTML = top.length
-    ? top
-        .map(
-          (r, i) =>
-            `<div class="top-row"><b>${['🥇', '🥈', '🥉', '4', '5'][i]}</b><img src="${art(r.effect)}" alt=""><span>${getEffect(r.effect)?.name || ''}<small>${MODES[r.mode || 'classic']?.name || ''} · ${new Date(r.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</small></span><strong>${r.score}</strong></div>`,
-        )
+// Shop page: the challenges, then every power still to buy.
+function renderShop() {
+  $('shop-crystals').textContent = progress.s.crystals;
+  $('shop-challenges').innerHTML = challengeRows(progress.challenges);
+  const locked = EFFECTS.filter((d) => !progress.owns(d.id));
+  $('shop-list').innerHTML = locked.length
+    ? locked
+        .map((d) => {
+          const p = progress.price(d.id);
+          return `<button class="shop-item" data-id="${d.id}"><img src="${art(d.id)}" alt=""><span><strong>${getEffect(d.id).name}</strong><small>${d.gesture}</small></span><b class="${progress.s.crystals >= p ? '' : 'short'}">💎 ${p}</b></button>`;
+        })
         .join('')
-    : '<p class="muted">Lance une manche avec le bouton cible dans la caméra.</p>';
-  // Rune book: shape -> spell, with the ones already cast.
-  const SHAPES = { circle: '○', triangle: '△', square: '□', zigzag: '⚡', line: '／', v: 'V' };
-  $('rune-list').innerHTML = Object.entries(SPELLS)
-    .map(([k, sp]) => {
-      const on = s.spellKinds.includes(k);
-      return `<div class="ach${on ? ' on' : ''}"><span class="ach-icon rune-shape" style="color:rgb(${sp.rgb.join(',')})">${SHAPES[k]}</span><span><strong>${sp.name}</strong><small>${on ? 'Déjà lancée' : 'Pas encore lancée'}</small></span></div>`;
-    })
-    .join('');
-  $('secret-list').innerHTML = SECRETS.map((x) => {
-    const on = s.secrets.includes(x.id);
-    return `<div class="ach${on ? ' on' : ''}"><span class="ach-icon">${on ? '🗝️' : '❔'}</span><span><strong>${on ? x.name : '???'}</strong><small>${x.hint}</small></span></div>`;
-  }).join('');
-  $('ach-list').innerHTML = ACHIEVEMENTS.map((a) => {
-    const on = s.unlocked.includes(a.id);
-    return `<div class="ach${on ? ' on' : ''}"><span class="ach-icon">${on ? a.icon : '🔒'}</span><span><strong>${a.name}</strong><small>${a.text}</small></span></div>`;
-  }).join('');
+    : '<p class="muted">Tu as tous les pouvoirs !</p>';
 }
+$('shop-list').addEventListener('click', (ev) => {
+  const b = ev.target.closest('.shop-item');
+  if (b) askBuy(b.dataset.id);
+});
+
+// Buying a power.
+let buying = null;
+function askBuy(id) {
+  buying = id;
+  const p = progress.price(id);
+  const enough = progress.s.crystals >= p;
+  $('buy-img').src = art(id);
+  $('buy-name').textContent = getEffect(id).name;
+  $('buy-text').textContent = enough
+    ? `Débloquer ce pouvoir pour 💎 ${p} ? Il te restera ${progress.s.crystals - p} cristaux.`
+    : `Il te manque ${p - progress.s.crystals} cristaux. Réussis les défis du jour pour en gagner !`;
+  $('buy-ok').hidden = !enough;
+  $('buy').hidden = false;
+}
+$('buy-ok').addEventListener('click', () => {
+  if (buying && progress.buy(buying)) {
+    audio.init();
+    audio.play('coin', 1);
+    $('buy').hidden = true;
+    renderHub();
+    renderShop();
+    openStudio(buying);
+  }
+});
+$('buy-cancel').addEventListener('click', () => ($('buy').hidden = true));
 progress.onChange(() => {
-  familiar.setLevel(progress.level);
   if (!studioOpen) renderHub();
 });
 
-// Achievements and level-ups are announced on the home screen, one by one.
 let unlockBusy = false;
 function flushUnlocks() {
   if (unlockBusy || studioOpen || !$('news').hidden) return;
@@ -1261,7 +1190,7 @@ function flushUnlocks() {
 }
 
 // "What's new" once per big update (after the first-launch question).
-const NEWS_KEY = 'magic-cam-news-2';
+const NEWS_KEY = 'magic-cam-news-3';
 function showNews() {
   try {
     if (localStorage.getItem(NEWS_KEY) || !settings.pointsAsked) return;

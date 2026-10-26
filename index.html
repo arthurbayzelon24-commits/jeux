@@ -29,26 +29,17 @@
         <button class="install-btn" id="install-btn" hidden><span data-icon="download"></span>Installer</button>
       </header>
       <section class="hub">
-        <button class="level-card" id="level-card" aria-label="Niveau et succès">
-          <span class="lvl-badge" id="lvl-num">1</span>
+        <button class="wallet-card" id="wallet-card" aria-label="Cristaux et boutique">
+          <span class="wallet-gem">💎</span>
           <span class="lvl-info"
-            ><strong id="lvl-title">Niveau 1</strong><span class="lvl-bar"><i id="lvl-fill"></i></span
-            ><small id="lvl-xp">0 / 80 XP</small></span
-          >
-          <span class="lvl-ach" id="lvl-ach">🏅 0</span>
-        </button>
-        <button class="daily-card quest-card" id="quest-card">
-          <span class="quest-icon">🧙</span>
-          <span class="daily-info"
-            ><small id="quest-step">Quête du Mage</small><strong id="quest-text"></strong
-            ><span class="lvl-bar"><i id="quest-fill"></i></span
+            ><strong><span id="wallet-num">0</span> cristaux</strong><small id="wallet-streak"></small
           ></span>
+          <span class="wallet-shop">Boutique ›</span>
         </button>
-        <button class="daily-card" id="daily-card">
-          <img id="daily-img" alt="" />
-          <span class="daily-info"><small>Défi du jour · +150 XP</small><strong id="daily-text"></strong></span>
-          <span class="daily-state" id="daily-state">›</span>
-        </button>
+        <div class="challenges-card">
+          <div class="ch-head"><strong>Défis du jour</strong><small id="hub-done">0/3</small></div>
+          <div id="hub-challenges"></div>
+        </div>
       </section>
       <nav class="cats" id="cats" aria-label="Catégories"></nav>
       <div class="powers" id="powers"></div>
@@ -58,18 +49,14 @@
     <main class="view" id="view-progress">
       <header class="page-head">
         <button class="btn btn-ghost back-cam" data-back><span data-icon="back"></span>Retour</button>
-        <h1 class="page-title">Succès</h1>
+        <h1 class="page-title">Boutique · 💎 <span id="shop-crystals">0</span></h1>
       </header>
       <div class="progress-page">
-        <div class="stats" id="stats"></div>
-        <h2 class="sub-title">Meilleurs scores de l’Arène</h2>
-        <div class="arena-top" id="arena-top"></div>
-        <h2 class="sub-title">Grimoire des runes</h2>
-        <div class="ach-list" id="rune-list"></div>
-        <h2 class="sub-title">Gestes secrets</h2>
-        <div class="ach-list" id="secret-list"></div>
-        <h2 class="sub-title">Succès</h2>
-        <div class="ach-list" id="ach-list"></div>
+        <h2 class="sub-title">Défis du jour</h2>
+        <p class="muted">Chaque défi réussi rapporte des cristaux. Nouveaux défis chaque jour, et un bonus quand tu reviens.</p>
+        <div class="challenges-card" id="shop-challenges"></div>
+        <h2 class="sub-title">Pouvoirs à débloquer</h2>
+        <div class="shop-list" id="shop-list"></div>
       </div>
     </main>
 
@@ -165,10 +152,6 @@
             ><input type="checkbox" name="haptics"
           /></label>
           <label class="row toggle"
-            ><span>Familier<small>Un compagnon magique qui suit ta main (dès le niveau 2) et t’aide dans l’Arène</small></span
-            ><input type="checkbox" name="familiar"
-          /></label>
-          <label class="row toggle"
             ><span>Points de suivi<small>Points sur les mains et le corps détectés par la caméra</small></span
             ><input type="checkbox" name="points"
           /></label>
@@ -248,7 +231,6 @@
       <div class="studio-side">
         <button class="icon-btn" id="btn-flip" aria-label="Changer de caméra"><span data-icon="flip"></span></button>
         <button class="icon-btn" id="btn-color" aria-label="Changer la couleur"><span class="swatch" id="swatch"></span></button>
-        <button class="icon-btn" id="btn-arena" aria-label="Jeux : Arène et Duel"><span data-icon="target"></span></button>
         <button class="icon-btn" id="btn-dual" aria-label="Double pouvoir"><span data-icon="hands"></span></button>
         <button class="icon-btn" id="btn-look" aria-label="Filtre d’image"><span data-icon="film"></span></button>
         <button class="icon-btn" id="btn-points" aria-label="Points de suivi"><span data-icon="points"></span></button>
@@ -258,12 +240,6 @@
       <button class="action-btn" id="btn-action" hidden></button>
       <div class="countdown" id="countdown" hidden></div>
       <div class="look-chip" id="look-chip" hidden></div>
-      <div class="arena-menu" id="arena-menu" hidden>
-        <strong>Jeux</strong>
-        <div id="arena-modes"></div>
-        <button class="btn btn-ghost" id="arena-close">Fermer</button>
-      </div>
-
       <div class="studio-bottom">
         <div class="carousel" id="carousel" role="listbox" aria-label="Pouvoirs"></div>
         <div class="controls">
@@ -300,19 +276,30 @@
     </section>
 
     <!-- First launch: tracking points? -->
+    <div class="modal" id="buy" hidden>
+      <div class="modal-card ask-card">
+        <img class="buy-img" id="buy-img" alt="" />
+        <h2 id="buy-name"></h2>
+        <p id="buy-text"></p>
+        <div class="ask-actions">
+          <button class="btn btn-gold" id="buy-ok">Débloquer</button>
+          <button class="btn btn-ghost" id="buy-cancel">Plus tard</button>
+        </div>
+      </div>
+    </div>
+
     <div class="modal" id="news" hidden>
       <div class="modal-card ask-card news-card">
         <h2>Quoi de neuf ? ✨</h2>
         <ul class="news-list">
           <li>
-            <b>🎯 Jeux</b> (bouton cible dans la caméra) : Arène en 3 modes avec boss et bonus, et Duel élémentaire Feu / Eau / Foudre.
+            <b>✋ Mode libre</b> : chaque geste fait un pouvoir. Main devant = cercle magique, deux mains en boule = trou noir, agiter la
+            main = éclairs, deux mains au ciel = foudre, poing = sabre, index = rayon de feu…
           </li>
-          <li><b>🪄 Runes magiques</b> : dessine une forme en l’air pour lancer un sort.</li>
-          <li><b>🤲 Double pouvoir</b> : un pouvoir différent dans chaque main.</li>
-          <li><b>🧙 Quête du Mage</b>, niveaux, succès, défi du jour et étoiles de maîtrise.</li>
-          <li><b>🐉 Familier</b> qui te suit et évolue avec ton niveau.</li>
-          <li><b>🗝️ 5 gestes secrets</b> à découvrir.</li>
-          <li><b>🍥 10 pouvoirs d’animé</b> et 61 pouvoirs en tout.</li>
+          <li><b>🌌 Plus de 100 000 points</b> sur tout ton corps (option Points de suivi).</li>
+          <li><b>💎 Défis du jour</b> : gagne des cristaux et achète de nouveaux pouvoirs dans la Boutique.</li>
+          <li><b>🤲 Double pouvoir</b> : un pouvoir dans chaque main, joins-les pour une fusion.</li>
+          <li><b>🪄 Runes</b>, <b>🍥 pouvoirs d’animé</b> et 62 pouvoirs en tout.</li>
         </ul>
         <button class="btn btn-gold" id="news-ok">C’est parti !</button>
       </div>
@@ -355,7 +342,7 @@
     <nav class="tabbar" id="tabbar">
       <button class="tab active" data-tab="home"><span data-icon="sparkle"></span>Pouvoirs</button>
       <button class="tab" data-tab="gallery"><span data-icon="folder"></span>Mes vidéos</button>
-      <button class="tab" data-tab="progress"><span data-icon="trophy"></span>Succès</button>
+      <button class="tab" data-tab="progress"><span data-icon="trophy"></span>Défis</button>
       <button class="tab" data-tab="settings"><span data-icon="gear"></span>Paramètres</button>
     </nav>
 
