@@ -397,6 +397,7 @@ async function startCamera() {
   await video.play().catch(() => {});
   if (!video.videoWidth) await new Promise((r) => video.addEventListener('loadedmetadata', r, { once: true }));
   audio.attachMic(stream);
+  setupZoom(stream.getVideoTracks()[0]);
 }
 
 // Pushes the camera to 100+ frames per second when it can: first at the
@@ -530,6 +531,12 @@ function loop(now) {
   adaptResolution(now);
   // Never let one bad frame stop the loop.
   try {
+    // The image size changed (resolution, camera): keep the chosen zoom.
+    if (stage.width !== zoomSize.w || stage.height !== zoomSize.h) {
+      zoomSize.w = stage.width;
+      zoomSize.h = stage.height;
+      applyZoom();
+    }
     engine.frame({
       source: video,
       sw: video.videoWidth,
@@ -1035,6 +1042,105 @@ form.addEventListener('change', (e) => {
 });
 syncForm();
 quality.particles = PARTICLES[settings.fxQuality] || 1;
+
+// ---------- Zoom: pinch with two fingers, mouse wheel, or the 1× button ----------
+// Zooming out first uses the camera's own zoom when it can go wider than 1×
+// (wide-angle lens), then shows the parts of the image the screen crops.
+// Zooming in uses the camera's zoom, then a digital zoom that the videos keep.
+let zoomZ = 1;
+let zoomTrack = null;
+let zoomCaps = null;
+let zoomHw = 1;
+let zoomPending = null;
+const zoomSize = { w: 0, h: 0 };
+const clampZ = (v, a, b) => Math.min(b, Math.max(a, v));
+function setupZoom(track) {
+  zoomTrack = track || null;
+  const z = track?.getCapabilities?.().zoom;
+  zoomCaps = z && z.max > z.min ? { min: z.min, max: z.max } : null;
+  zoomHw = track?.getSettings?.().zoom || 1;
+  applyZoom();
+}
+// How much bigger "fill the screen" is than "show the whole image".
+function coverRatio() {
+  const cw = stage.width;
+  const ch = stage.height;
+  if (!cw || !ch) return 1;
+  const a = window.innerWidth / cw;
+  const b = window.innerHeight / ch;
+  return Math.max(a, b) / Math.min(a, b);
+}
+function zoomRange() {
+  const hwMin = Math.min(zoomCaps?.min ?? 1, 1);
+  return [Math.max(0.25, hwMin / coverRatio()), 5];
+}
+function applyZoom() {
+  const [lo, hi] = zoomRange();
+  zoomZ = clampZ(zoomZ, lo, hi);
+  const hw = zoomCaps ? clampZ(zoomZ, zoomCaps.min, zoomCaps.max) : 1;
+  if (zoomCaps && Math.abs(hw - zoomHw) > 0.01) {
+    // Camera zoom changes are sent at most every 120 ms.
+    if (!zoomPending)
+      zoomPending = setTimeout(() => {
+        zoomPending = null;
+        const target = zoomCaps ? clampZ(zoomZ, zoomCaps.min, zoomCaps.max) : 1;
+        zoomTrack?.applyConstraints({ advanced: [{ zoom: target }] }).then(
+          () => (zoomHw = target),
+          () => (zoomCaps = null),
+        );
+      }, 120);
+  }
+  const rest = zoomZ / (zoomCaps ? hw : 1);
+  // In: digital zoom drawn by the engine (so it is in the videos too).
+  engine.userZoom = Math.max(1, rest);
+  // Out: less of the image is cropped by the screen (down to all of it).
+  const k = coverRatio();
+  stage.style.objectFit = 'contain';
+  stage.style.transform = `scale(${rest >= 1 ? k * 1.04 : Math.max(1, k * 1.04 * rest)})`;
+  $('btn-zoom').textContent = `${String(Math.round(zoomZ * 10) / 10).replace('.', ',')}×`;
+  $('btn-zoom').classList.toggle('on', Math.abs(zoomZ - 1) > 0.02);
+}
+// Two-finger pinch anywhere on the camera image.
+let pinch0 = null;
+const touchDist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+$('view-studio').addEventListener(
+  'touchstart',
+  (ev) => {
+    if (ev.touches.length === 2) pinch0 = { d: touchDist(ev.touches), z: zoomZ };
+  },
+  { passive: true },
+);
+$('view-studio').addEventListener(
+  'touchmove',
+  (ev) => {
+    if (!pinch0 || ev.touches.length !== 2) return;
+    ev.preventDefault();
+    zoomZ = pinch0.z * (touchDist(ev.touches) / pinch0.d);
+    applyZoom();
+  },
+  { passive: false },
+);
+$('view-studio').addEventListener('touchend', (ev) => {
+  if (ev.touches.length < 2) pinch0 = null;
+});
+// Mouse wheel / trackpad on a computer.
+$('view-studio').addEventListener(
+  'wheel',
+  (ev) => {
+    if (ev.target.closest('.carousel')) return;
+    ev.preventDefault();
+    zoomZ *= Math.exp(-ev.deltaY * 0.0015);
+    applyZoom();
+  },
+  { passive: false },
+);
+// The button: widest -> 1× -> 2× -> widest...
+$('btn-zoom').addEventListener('click', () => {
+  const [lo] = zoomRange();
+  zoomZ = zoomZ > 1.5 ? lo : zoomZ < 0.99 ? 1 : 2;
+  applyZoom();
+});
+window.addEventListener('resize', () => studioOpen && applyZoom());
 
 // ---------- Double power ----------
 let dualMain = null;
