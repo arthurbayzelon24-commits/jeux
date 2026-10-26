@@ -231,7 +231,21 @@ const CAT_COLORS = {
   fun: '#ff5fd2',
 };
 // Powers shown with a "Nouveau" badge.
-const NEW_IDS = ['rain', 'snowfall', 'electro', 'clones', 'invisible', 'size', 'mindgrab', 'shockwave', 'magnet', 'chrono', 'gravity'];
+const NEW_IDS = [
+  'disco',
+  'neonline',
+  'rain',
+  'snowfall',
+  'electro',
+  'clones',
+  'invisible',
+  'size',
+  'mindgrab',
+  'shockwave',
+  'magnet',
+  'chrono',
+  'gravity',
+];
 // Home: one shelf (a row that scrolls sideways) per category, favourites first.
 function shelfRow(cat) {
   const grid = $('powers');
@@ -775,7 +789,11 @@ function updateFormatGuide() {
 // ---------- Background music (studio button ♪) ----------
 const music = new Music(audio);
 // Powers pulse on the beat: a tiny zoom on each kick drum.
-music.onBeat = (strength) => studioOpen && engine.punch(0.012 * strength);
+music.onBeat = (strength) => {
+  if (!studioOpen) return;
+  engine.punch(0.012 * strength);
+  engine.effect?.onBeat?.(engine, strength);
+};
 $('btn-music').addEventListener('click', () => {
   audio.init();
   const keys = Object.keys(TRACKS);

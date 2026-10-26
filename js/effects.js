@@ -26,6 +26,7 @@ import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
 import { runesEffect } from './fx/runes.js';
 import { freeModeEffect } from './fx/free.js';
+import { discoEffect, neonOutlineEffect } from './fx/pack-party.js';
 import { rainEffect, snowfallEffect, electroEffect } from './fx/pack-weather.js';
 import { clonesEffect, invisibleEffect, sizeEffect } from './fx/pack-body.js';
 import { mindGrabEffect, shockwaveEffect, magnetEffect, chronoEffect, gravityEffect } from './fx/pack-physics.js';
@@ -143,6 +144,8 @@ export const EFFECTS = [
   { id: 'rain', cat: 'nature', make: rainEffect, tint: '#9fc4ff', gesture: 'Main ouverte au-dessus = parapluie' },
   { id: 'snowfall', cat: 'nature', make: snowfallEffect, tint: '#f0f8ff', gesture: 'Restez immobile, la neige se pose' },
   { id: 'wisps', cat: 'fun', make: wispsEffect, tint: '#5ac8ff', gesture: 'Main ouverte' },
+  { id: 'disco', cat: 'fun', make: discoEffect, tint: '#ff3d8b', gesture: 'Levez vite la main pour le beat' },
+  { id: 'neonline', cat: 'fun', make: neonOutlineEffect, tint: '#3fd0ff', gesture: 'Votre contour brille en néon' },
 ];
 
 const instances = new Map();
