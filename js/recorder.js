@@ -32,8 +32,28 @@ export class CanvasRecorder {
     this.recorder = null;
   }
 
+  // True while recording or paused (a take in progress).
   get recording() {
-    return this.recorder?.state === 'recording';
+    return !!this.recorder && this.recorder.state !== 'inactive';
+  }
+  get paused() {
+    return this.recorder?.state === 'paused';
+  }
+  // Pause / resume: several takes end up in one video.
+  pause() {
+    if (this.recorder?.state !== 'recording') return;
+    this.recorder.pause();
+    this.pausedAt = performance.now();
+  }
+  resume() {
+    if (this.recorder?.state !== 'paused') return;
+    this.pausedMs += performance.now() - this.pausedAt;
+    this.recorder.resume();
+  }
+  // Seconds actually recorded (pauses excluded).
+  get elapsed() {
+    const end = this.paused ? this.pausedAt : performance.now();
+    return (end - this.startedAt - this.pausedMs) / 1000;
   }
 
   start({ audioTracks = [], fps = 30, aspect = null } = {}) {
@@ -74,13 +94,14 @@ export class CanvasRecorder {
     this.recorder = new MediaRecorder(stream, opts);
     this.recorder.ondataavailable = (ev) => ev.data?.size && this.chunks.push(ev.data);
     this.startedAt = performance.now();
+    this.pausedMs = 0;
     this.recorder.start(250);
     this.stream = stream;
   }
 
   // Called after each drawn frame.
   frame(now = performance.now()) {
-    if (!this.recording || now - this.lastPush < this.minGap) return;
+    if (this.recorder?.state !== 'recording' || now - this.lastPush < this.minGap) return;
     this.lastPush = now;
     if (this.out) {
       const { ctx, r } = this.out;
@@ -93,7 +114,7 @@ export class CanvasRecorder {
     return new Promise((resolve) => {
       const rec = this.recorder;
       if (!rec || rec.state === 'inactive') return resolve(null);
-      const duration = (performance.now() - this.startedAt) / 1000;
+      const duration = this.elapsed;
       rec.onstop = () => {
         const type = (rec.mimeType || this.chunks[0]?.type || 'video/webm').split(';')[0];
         const blob = new Blob(this.chunks, { type });

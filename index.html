@@ -203,6 +203,17 @@
           <label class="row toggle"><span>Garder dans Mes vidéos</span><input type="checkbox" name="autosave" /></label>
           <label class="row toggle"
             ><span
+              >Lumière d’appoint<small
+                >Un bord blanc lumineux sur l’écran éclaire ton visage dans le noir (caméra avant). Il n’apparaît pas dans les vidéos</small
+              ></span
+            ><input type="checkbox" name="fillLight"
+          /></label>
+          <label class="row toggle"
+            ><span>Grille de cadrage<small>Règle des tiers, pour bien placer ton sujet (pas dans les vidéos)</small></span
+            ><input type="checkbox" name="grid"
+          /></label>
+          <label class="row toggle"
+            ><span
               >Flou de mouvement<small>Traînée des effets rapides. Désactivé par défaut sur téléphone pour plus de fluidité</small></span
             ><input type="checkbox" name="motionBlur"
           /></label>
@@ -270,6 +281,8 @@
       <button class="action-btn" id="btn-action" hidden></button>
       <div class="countdown" id="countdown" hidden></div>
       <div class="format-guide" id="format-guide" hidden></div>
+      <div class="frame-grid" id="frame-grid" hidden></div>
+      <div class="fill-light" id="fill-light" hidden></div>
       <div class="look-chip" id="look-chip" hidden></div>
       <div class="studio-bottom">
         <div class="carousel" id="carousel" role="listbox" aria-label="Pouvoirs"></div>
@@ -283,6 +296,7 @@
             <span class="rec-core"></span>
           </button>
           <button class="icon-btn big" id="btn-photo" aria-label="Photo"><span data-icon="camera"></span></button>
+          <button class="icon-btn big" id="btn-pause" aria-label="Pause"><span data-icon="pause"></span></button>
         </div>
       </div>
 
