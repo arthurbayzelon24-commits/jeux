@@ -9,6 +9,29 @@ import { Particles, rand, TAU, clamp, makeCanvas, noise1, drawGlow } from './uti
 const live = (hands) => hands.filter((h) => h.presence > 0.5);
 const toggled = (hands) => live(hands).some((h) => h.events.snap || h.events.release);
 
+// A two-hand technique: returns true once when test(a, b, e) has held for
+// `hold` seconds; the hands must let go before it can fire again.
+function technique(hold = 0.5) {
+  let t = 0;
+  let spent = false;
+  return (hands, e, dt, test) => {
+    const L = live(hands);
+    const ok = L.length >= 2 && test(L[0], L[1], e);
+    if (!ok) {
+      t = 0;
+      spent = false;
+      return false;
+    }
+    t += dt;
+    if (t >= hold && !spent) {
+      spent = true;
+      return true;
+    }
+    return false;
+  };
+}
+const gap = (a, b) => Math.hypot(a.palm.x - b.palm.x, a.palm.y - b.palm.y);
+
 // Puff of smoke where something appears or disappears.
 function puff(fx, e, x, y, rgb, n = 40) {
   for (let i = 0; i < n; i++) {
@@ -190,6 +213,7 @@ export function invisibleEffect() {
     { name: 'Fantôme', rgb: [150, 255, 200] },
   ];
   let rgb = COLORS[0].rgb;
+  const seal = technique(0.6);
   let on = false;
   let k = 0;
   let plate = null;
@@ -222,7 +246,7 @@ export function invisibleEffect() {
   return {
     id: 'invisible',
     name: 'Invisibilité',
-    hint: 'Reste d’abord quelques secondes en entier dans l’image (le décor est mémorisé). Puis claque des doigts, ou poing puis main ouverte : tu deviens invisible. Pareil pour réapparaître.',
+    hint: 'Reste d’abord quelques secondes en entier dans l’image (le décor est mémorisé). Puis joins les paumes devant toi une demi-seconde (ou claque des doigts) : tu deviens invisible. Pareil pour réapparaître.',
     colors: COLORS,
     needs: { seg: true, plate: true },
     action: { label: 'Invisible', run: (e) => toggle(e) },
@@ -240,7 +264,8 @@ export function invisibleEffect() {
     update(dt, hands, e) {
       sparks.update(dt);
       cool -= dt;
-      if (toggled(hands)) toggle(e);
+      // Technique: palms joined in front of you (or a snap).
+      if (toggled(hands) || seal(hands, e, dt, (a, b) => a.open && b.open && gap(a, b) < (a.size + b.size) * 0.9)) toggle(e);
       k = clamp(k + (on ? dt : -dt) * 1.5);
     },
     drawBackground(ctx, e) {
@@ -296,10 +321,14 @@ export function sizeEffect() {
   let cool = 0;
   const sparks = new Particles(300);
 
-  const next = (e) => {
-    if (cool > 0) return;
+  const wide = technique(0.4);
+  const tiny = technique(0.4);
+  const normal = technique(0.5);
+  const next = (e) => go(e, (step + 1) % STEPS.length);
+  const go = (e, to) => {
+    if (cool > 0 || to === step) return;
     cool = 0.8;
-    step = (step + 1) % STEPS.length;
+    step = to;
     const giant = STEPS[step] > 1;
     e.audio.play(giant ? 'roar' : 'whoosh', 0.8);
     if (giant) e.shake(20);
@@ -325,7 +354,7 @@ export function sizeEffect() {
   return {
     id: 'size',
     name: 'Taille (Ant-Man)',
-    hint: 'Reste quelques secondes en entier dans l’image, puis claque des doigts (ou poing puis main ouverte) : tu deviens minuscule, puis géant, puis normal.',
+    hint: 'Reste quelques secondes en entier dans l’image, puis ouvre grand les bras (géant), pince avec les deux mains rapprochées (minuscule) ou serre les deux poings (normal). Un claquement de doigts passe à la taille suivante.',
     colors: COLORS,
     needs: { seg: true, plate: true },
     action: { label: 'Taille', run: (e) => next(e) },
@@ -343,7 +372,12 @@ export function sizeEffect() {
     update(dt, hands, e) {
       sparks.update(dt);
       cool -= dt;
+      // Techniques: arms wide open = giant, both hands pinching close
+      // together = tiny, both fists = back to normal (a snap: next size).
       if (toggled(hands)) next(e);
+      else if (wide(hands, e, dt, (a, b, e2) => a.open && b.open && gap(a, b) > e2.W * 0.55)) go(e, 2);
+      else if (tiny(hands, e, dt, (a, b) => a.pinch && b.pinch && gap(a, b) < (a.size + b.size) * 1.5)) go(e, 1);
+      else if (normal(hands, e, dt, (a, b) => a.fist && b.fist)) go(e, 0);
       // Springy change of size.
       k += (STEPS[step] - k) * (1 - Math.exp(-dt * 5));
       if (k > 1.05 && Math.abs(STEPS[step] - k) > 0.05) e.shake(3);
