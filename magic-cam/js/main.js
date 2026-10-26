@@ -1126,6 +1126,10 @@ function renderHub() {
   $('lvl-fill').style.width = `${Math.round((into / need) * 100)}%`;
   $('lvl-xp').textContent = `${into} / ${need} XP`;
   $('lvl-ach').textContent = `🏅 ${progress.s.unlocked.length}/${ACHIEVEMENTS.length}`;
+  const q = progress.quest;
+  $('quest-step').textContent = q ? `Quête du Mage · étape ${q.index + 1}/${q.total} · +${q.reward} XP` : 'Quête du Mage terminée';
+  $('quest-text').textContent = q ? q.text : 'Tu es un Grand Mage ! 🧙';
+  $('quest-fill').style.width = `${Math.round(((q ? q.index : 12) / 12) * 100)}%`;
   const d = progress.daily;
   $('daily-img').src = art(d.power);
   $('daily-text').textContent = d.text;
@@ -1133,6 +1137,7 @@ function renderHub() {
   $('daily-card').classList.toggle('done', d.done);
 }
 $('daily-card').addEventListener('click', () => openStudio(progress.daily.power));
+$('quest-card').addEventListener('click', () => openStudio(progress.quest?.power || currentEffect));
 $('level-card').addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === 'progress'));
   showPage('progress');
