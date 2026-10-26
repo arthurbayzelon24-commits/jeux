@@ -13,6 +13,8 @@ const TYPES = {
   crystal: { pts: 30, hp: 3, r: 0.065, rgb: [190, 120, 255], life: 8, weight: 1.6 },
   bomb: { pts: -40, hp: 1, r: 0.05, rgb: [255, 50, 50], life: 5, weight: 1.3, bomb: true },
   clock: { pts: 0, hp: 1, r: 0.04, rgb: [80, 255, 140], life: 4, weight: 0.5, clock: true },
+  // Ghosts flee from your hands: hit them with the power from a distance.
+  ghost: { pts: 40, hp: 1, r: 0.045, rgb: [220, 235, 255], life: 7, weight: 0.9, ghost: true },
   // Halfway through the round: a boss with a health bar.
   boss: { pts: 500, hp: 12, r: 0.11, rgb: [255, 90, 200], life: 20, weight: 0, boss: true },
   // Power-ups: points x2 for 8 s, or everything frozen for 5 s.
@@ -35,6 +37,7 @@ const harmless = (T) => T.bomb || T.clock || T.bonus || T.heart;
 function pickType(elapsed, clocks, mode) {
   const weights = { ...Object.fromEntries(Object.entries(TYPES).map(([k, t]) => [k, t.weight])) };
   if (elapsed < 8) weights.bomb = weights.clock = weights.double = weights.freeze = 0;
+  if (elapsed < 15) weights.ghost = 0;
   if (clocks >= 3) weights.clock = 0;
   if (mode === 'zen') weights.bomb = weights.clock = weights.freeze = 0;
   if (mode === 'survival') {
@@ -361,6 +364,26 @@ export class Arena {
     const frozen = this.freezeT > 0;
     for (const t of this.targets) {
       const still = frozen && !TYPES[t.kind].bonus && !TYPES[t.kind].heart;
+      if (TYPES[t.kind].ghost && !still) {
+        // Flee from the nearest hand, then drift calmly again.
+        for (const h of hands) {
+          const dx = t.x - h.palm.x;
+          const dy = t.y - h.palm.y;
+          const d = Math.hypot(dx, dy) || 1;
+          if (h.presence > 0.4 && d < h.size * 3) {
+            t.vx += (dx / d) * e.W * 3 * dt;
+            t.vy += (dy / d) * e.H * 3 * dt;
+          }
+        }
+        const sp = Math.hypot(t.vx, t.vy);
+        const max = Math.max(e.W, e.H) * 0.6;
+        if (sp > max) {
+          t.vx *= max / sp;
+          t.vy *= max / sp;
+        }
+        t.vx *= Math.exp(-dt * 1.5);
+        t.vy *= Math.exp(-dt * 1.5);
+      }
       t.age += still ? 0 : dt;
       t.cool -= dt;
       t.x = clamp(t.x + (still ? 0 : t.vx * dt), t.r, e.W - t.r);
@@ -371,7 +394,7 @@ export class Arena {
       const heat = e.heatAt(t.x, t.y);
       if (heat > 0.3) t.heat += dt * 3 * heat * (t.kind === 'boss' ? 0.6 : 1);
       // A fast hand strike through it.
-      if (t.cool <= 0)
+      if (t.cool <= 0 && !TYPES[t.kind].ghost)
         for (const h of hands) {
           if (h.presence < 0.5 || h.speed < strike) continue;
           const pts = [h.palm, ...h.tips];
@@ -500,7 +523,25 @@ export class Arena {
     ctx.globalCompositeOperation = 'lighter';
     drawGlow(ctx, T.rgb, t.x, t.y, r * 2.2, 0.5, 0.1);
     ctx.globalCompositeOperation = 'source-over';
-    if (t.kind === 'boss') {
+    if (t.kind === 'ghost') {
+      // A little ghost: round head, wavy bottom, two eyes.
+      ctx.fillStyle = 'rgba(235,245,255,0.85)';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y - r * 0.2, r, Math.PI, 0);
+      ctx.lineTo(t.x + r, t.y + r * 0.8);
+      for (let k = 0; k < 4; k++) {
+        const x0 = t.x + r - (k + 0.5) * (r / 2);
+        ctx.quadraticCurveTo(x0, t.y + r * (0.5 + 0.3 * Math.sin(e.t * 8 + k)), t.x + r - (k + 1) * (r / 2), t.y + r * 0.8);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#1a1a2e';
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.ellipse(t.x + side * r * 0.35, t.y - r * 0.25, r * 0.14, r * 0.2, 0, 0, TAU);
+        ctx.fill();
+      }
+    } else if (t.kind === 'boss') {
       // A big spiky core with its health bar.
       ctx.save();
       ctx.translate(t.x, t.y);
