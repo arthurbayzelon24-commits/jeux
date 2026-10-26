@@ -3,7 +3,7 @@
 // keyboard you really type on: tap a key with a quick finger press, pinch it,
 // or rest a fingertip on it. The 🎤 key turns on speech: say something and the
 // interface answers out loud. Your fingers pass in front of the holograms.
-import { drawGlow, rand, TAU, clamp, noise1 } from './util.js';
+import { drawGlow, rand, TAU, clamp, noise1, makeCanvas } from './util.js';
 
 const COLORS = [
   { name: 'Holo cyan', rgb: [80, 220, 255] },
@@ -33,6 +33,8 @@ const ROWS = [
   ],
 ];
 
+// Resting a finger this long on a key presses it.
+const DWELL = 0.7;
 const FONT = (px, weight = 600) => `${weight} ${Math.round(px)}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`;
 
 // Simple local answers (no server): time, date, greetings, help.
@@ -62,6 +64,10 @@ export function hudEffect() {
   const panelOffset = { radar: { x: 0, y: 0 }, stats: { x: 0, y: 0 }, term: { x: 0, y: 0 } };
   let drag = null;
   let layout = null;
+  // Smoothed body follow, so the screens glide instead of shaking with the pose.
+  let followS = null;
+  // The keyboard's still look is drawn once into this canvas (not 40 keys a frame).
+  let kbCache = null;
   let listening = false;
   let recog = null;
   let interim = '';
@@ -151,6 +157,10 @@ export function hudEffect() {
     let follow = 0;
     const b = e.body?.points;
     if (b && e.body.presence > 0.3 && b[11].v > 0.5 && b[12].v > 0.5) follow = ((b[11].x + b[12].x) / 2 - W / 2) * 0.25;
+    followS = followS === null ? follow : followS + (follow - followS) * (1 - Math.exp(-(e.dt || 1 / 60) * 2.5));
+    // Tiny moves are ignored, so the keys stay put under a resting finger.
+    if (Math.abs(followS - (layout?.follow ?? followS)) < m * 0.004) follow = layout?.follow ?? followS;
+    else follow = followS;
     const kw = Math.min(W * 0.96, m * 1.35);
     const kh = Math.min(H * 0.24, kw * 0.36);
     const kb = { cx: W / 2 + follow * 0.5, y: H * 0.52, w: kw, h: kh };
@@ -166,6 +176,7 @@ export function hudEffect() {
         stats: { x: W * 0.97 - pw + follow + panelOffset.stats.x, y: top + panelOffset.stats.y, w: pw, h: ph, skew: -0.08 },
         term: { x: W / 2 - tw / 2 + follow + panelOffset.term.x, y: top + panelOffset.term.y, w: tw, h: ph * 0.62, skew: 0 },
         kb,
+        follow,
       };
     }
     // Portrait: terminal across the top, radar and stats side by side below.
@@ -177,6 +188,7 @@ export function hudEffect() {
       radar: { x: W * 0.03 + follow + panelOffset.radar.x, y: top + th + m * 0.03 + panelOffset.radar.y, w: pw, h: ph, skew: 0.06 },
       stats: { x: W * 0.97 - pw + follow + panelOffset.stats.x, y: top + th + m * 0.03 + panelOffset.stats.y, w: pw, h: ph, skew: -0.06 },
       kb,
+      follow,
     };
   };
 
@@ -203,6 +215,26 @@ export function hudEffect() {
       return keys.find((k) => u >= k.u0 && u <= k.u1 && v >= k.v0 && v <= k.v1) || null;
     };
     return { keys, hit };
+  };
+
+  // One key: glass fill, outline and label.
+  const drawKey = (c, k, hot, rip, unit) => {
+    const q = k.quad;
+    const col = (a) => `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
+    c.beginPath();
+    q.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)));
+    c.closePath();
+    c.fillStyle = rip ? `rgba(255,255,255,${0.7 * (1 - rip.t / 0.5)})` : col(hot ? 0.38 : 0.12);
+    c.fill();
+    c.strokeStyle = col(hot ? 1 : 0.6);
+    c.lineWidth = (hot ? 2.2 : 1.1) * unit;
+    c.stroke();
+    c.fillStyle = hot || rip ? '#fff' : col(0.95);
+    c.font = FONT((q[3].y - q[0].y) * 0.5, 700);
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(k.label === '🎤' && listening ? '◉' : k.label, (q[0].x + q[2].x) / 2, (q[0].y + q[2].y) / 2);
+    c.textAlign = 'left';
   };
 
   const inPanel = (p, pn) => p.x > pn.x && p.x < pn.x + pn.w && p.y > pn.y - 10 && p.y < pn.y + pn.h * 0.22;
@@ -274,10 +306,10 @@ export function hudEffect() {
         const tap = (dRel > h.size * 2.8 || dZ < -h.size * 2.8) && st.cool <= 0;
         const pinch = h.events.pinchStart && kq.hit(h.pinchPoint);
         if (key) st.dwell += dt;
-        const target = tap ? st.stable || key : pinch || (st.dwell > 0.9 ? key : null);
+        const target = tap ? st.stable || key : pinch || (st.dwell > DWELL ? key : null);
         if (target) {
           press(e, target);
-          st.cool = 0.28;
+          st.cool = 0.22;
           st.dwell = -0.6;
         }
         // Grab a screen by its title bar with a pinch and move it.
@@ -458,33 +490,39 @@ export function hudEffect() {
         const hovered = new Set([...handState.values()].map((s) => s.key).filter(Boolean));
         ctx.save();
         ctx.globalAlpha = ko * flick;
+        const kb = layout.kb;
+        const kx = kb.cx - kb.w / 2;
+        const keyName = `${Math.round(kb.w)}x${Math.round(kb.h)}|${rgb}|${listening}`;
+        if (kbCache?.name !== keyName) {
+          const c =
+            kbCache?.canvas?.width === Math.ceil(kb.w) + 8 && kbCache.canvas.height === Math.ceil(kb.h) + 8
+              ? kbCache.canvas
+              : makeCanvas(Math.ceil(kb.w) + 8, Math.ceil(kb.h) + 8);
+          const g = c.getContext('2d');
+          g.clearRect(0, 0, c.width, c.height);
+          g.translate(4 - kx, 4 - kb.y);
+          for (const k of this.kq.keys) drawKey(g, k, false, null, e.unit);
+          g.setTransform(1, 0, 0, 1, 0, 0);
+          kbCache = { name: keyName, canvas: c };
+        }
+        ctx.drawImage(kbCache.canvas, kx - 4, kb.y - 4);
+        // Only the keys that change are drawn live.
         for (const k of this.kq.keys) {
           const q = k.quad;
           const hot = hovered.has(k);
           const rip = ripples.find((x) => x.key === k);
-          ctx.beginPath();
-          q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-          ctx.closePath();
-          ctx.fillStyle = rip ? `rgba(255,255,255,${0.7 * (1 - rip.t / 0.5)})` : col(hot ? 0.38 : 0.12);
-          ctx.fill();
-          ctx.strokeStyle = col(hot ? 1 : 0.6);
-          ctx.lineWidth = (hot ? 2.2 : 1.1) * e.unit;
-          ctx.stroke();
+          const resting = [...handState.values()].some((st) => st.key === k && st.dwell > 0.15);
+          if (!hot && !rip && !resting) continue;
+          drawKey(ctx, k, hot, rip, e.unit);
           const cx = (q[0].x + q[2].x) / 2;
           const cy = (q[0].y + q[2].y) / 2;
-          ctx.fillStyle = hot || rip ? '#fff' : col(0.95);
-          ctx.font = FONT((q[3].y - q[0].y) * 0.5, 700);
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(k.label === '🎤' && listening ? '◉' : k.label, cx, cy);
-          ctx.textAlign = 'left';
           // Resting a finger fills the key: a gentle way to press it.
           for (const st of handState.values()) {
             if (st.key !== k || st.dwell <= 0.15) continue;
             ctx.strokeStyle = 'rgba(255,255,255,0.9)';
             ctx.lineWidth = 2 * e.unit;
             ctx.beginPath();
-            ctx.arc(cx, cy, (q[3].y - q[0].y) * 0.42, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(st.dwell / 0.9));
+            ctx.arc(cx, cy, (q[3].y - q[0].y) * 0.42, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(st.dwell / DWELL));
             ctx.stroke();
           }
           if (rip) {

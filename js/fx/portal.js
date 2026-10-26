@@ -1,11 +1,14 @@
-// Sorcerer portal: draw a circle in the air with your index finger, leaving a
-// trail of sparks. When the loop closes, a spark-ringed portal to another
-// world opens there. Draw a new circle to move it.
+// Sorcerer portal, Doctor Strange style: turn your hand in circles in the air
+// (index or whole hand), leaving a trail of sparks. When the loop closes, a
+// spark-ringed portal opens there, showing your own landscape seen from
+// elsewhere (without you in it). Keep circling on it to make it bigger; a
+// circle somewhere else moves it.
 import { Particles, drawGlow, rand, TAU, noise1, makeCanvas } from './util.js';
 
 const COLORS = [
-  { name: 'Étincelles', rgb: [255, 150, 40], world: 'dusk' },
-  { name: 'Émeraude', rgb: [80, 255, 140], world: 'aurora' },
+  { name: 'Étincelles', rgb: [255, 150, 40], world: 'land' },
+  { name: 'Émeraude', rgb: [80, 255, 140], world: 'land' },
+  { name: 'Crépuscule', rgb: [255, 110, 70], world: 'dusk' },
   { name: 'Cosmos', rgb: [140, 150, 255], world: 'space' },
 ];
 
@@ -87,7 +90,8 @@ export function portalEffect() {
     id: 'portal',
     name: 'Portail magique',
     colors: COLORS,
-    needs: { seg: false },
+    hint: 'Fais des cercles avec la main, comme Doctor Strange : un portail s’ouvre sur ton paysage. Continue de tourner dessus pour l’agrandir.',
+    needs: { seg: true, plate: true },
     setColor(i) {
       scheme = COLORS[i];
       world = null;
@@ -101,9 +105,10 @@ export function portalEffect() {
       sparks.update(dt);
       const now = e.t;
       // A hand that blurs for a moment keeps drawing (it coasts on its motion).
-      const h = hands.find((x) => x.presence > 0.3 && (x.fingers.index || x.point));
+      const h = hands.filter((x) => x.presence > 0.3).sort((a, b) => b.size - a.size)[0];
       if (h) {
-        const tip = h.lm[8];
+        // The index tip when it points, else the middle of the hand.
+        const tip = h.fingers.index || h.point ? h.lm[8] : h.lm[9];
         const prev = trail[trail.length - 1];
         trail.push({ x: tip.x, y: tip.y, t: now });
         // Sparks thrown off the moving fingertip.
@@ -124,9 +129,18 @@ export function portalEffect() {
           });
         const loop = closedLoop(trail, h.size, now);
         if (loop) {
-          portal = { x: loop.x, y: loop.y, r: Math.max(loop.r, h.size * 1.4), open: 0, spin: 0 };
-          e.audio.play('teleport', 0.9);
-          e.flash(scheme.rgb, 0.25, 3);
+          const max = Math.min(e.W, e.H) * 0.48;
+          if (portal && Math.hypot(loop.x - portal.x, loop.y - portal.y) < portal.r * 1.2) {
+            // Circling again on the portal makes it grow.
+            portal.target = Math.min(max, portal.target * 1.35);
+            e.audio.play('whoosh', 0.6);
+          } else {
+            const r = Math.min(max, Math.max(loop.r, h.size * 1.4));
+            portal = { x: loop.x, y: loop.y, r: r * 0.6, target: r, open: 0, spin: 0 };
+            world = null;
+            e.audio.play('teleport', 0.9);
+            e.flash(scheme.rgb, 0.25, 3);
+          }
           trail = [];
         }
       }
@@ -134,6 +148,7 @@ export function portalEffect() {
 
       if (portal) {
         portal.open = Math.min(1, portal.open + dt * 1.8);
+        portal.r += (portal.target - portal.r) * (1 - Math.exp(-dt * 4));
         portal.spin += dt * 2.2;
         const R = portal.r * easeOut(portal.open);
         // The rim sheds sparks tangentially, like a spinning grinder.
@@ -162,13 +177,15 @@ export function portalEffect() {
     draw(ctx, e) {
       if (portal) {
         const R = portal.r * easeOut(portal.open);
-        if (!world) world = paintWorld(scheme.world, 512);
+        if (!world) world = scheme.world === 'land' ? landscape(e, portal) : paintWorld(scheme.world, 512);
         ctx.save();
         ctx.beginPath();
         ctx.arc(portal.x, portal.y, R, 0, TAU);
         ctx.clip();
         const s = R * 2.4;
-        ctx.drawImage(world, portal.x - s / 2 + Math.sin(e.t * 0.3) * R * 0.05, portal.y - s / 2, s, s);
+        const sw = world.width >= world.height ? s * (world.width / world.height) : s;
+        const sh = world.width >= world.height ? s : s * (world.height / world.width);
+        ctx.drawImage(world, portal.x - sw / 2 + Math.sin(e.t * 0.3) * R * 0.05, portal.y - sh / 2, sw, sh);
         // Edge shading for depth.
         const shade = ctx.createRadialGradient(portal.x, portal.y, R * 0.6, portal.x, portal.y, R);
         shade.addColorStop(0, 'rgba(0,0,0,0)');
@@ -217,6 +234,36 @@ export function portalEffect() {
 }
 
 const easeOut = (t) => 1 - (1 - t) ** 3;
+
+// Your own landscape, printed in the portal the moment it opens: the learned
+// background (you are not in it), seen from elsewhere: the other side of the
+// room, flipped, a little closer, with a touch of the portal's colour.
+function landscape(e, portal) {
+  const src = e.plate?.learned > 0.3 ? e.backgroundPlate() : e.segActive ? e.layers.frame : null;
+  const w = 640;
+  const h = Math.round((w * e.H) / e.W);
+  const c = makeCanvas(w, h);
+  const g = c.getContext('2d');
+  const zoom = 1.5;
+  // Look at the half of the scene away from the portal.
+  const fx = portal.x < e.W / 2 ? 0.68 : 0.32;
+  const sw = e.W / zoom;
+  const sh = e.H / zoom;
+  const sx = Math.max(0, Math.min(e.W - sw, fx * e.W - sw / 2));
+  const sy = (e.H - sh) / 2;
+  g.translate(w, 0);
+  g.scale(-1, 1);
+  if (src) g.drawImage(src, sx, sy, sw, sh, 0, 0, w, h);
+  else if (e.src?.source) g.drawImage(e.src.source, 0, 0, w, h);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  // Slight depth haze, like looking far away.
+  const haze = g.createLinearGradient(0, 0, 0, h);
+  haze.addColorStop(0, 'rgba(255,240,220,0.18)');
+  haze.addColorStop(1, 'rgba(0,0,0,0.1)');
+  g.fillStyle = haze;
+  g.fillRect(0, 0, w, h);
+  return c;
+}
 
 // A circle is recognised either when the fingertip comes back close to its
 // path (even between two sparse points of a fast move), or when the path has
