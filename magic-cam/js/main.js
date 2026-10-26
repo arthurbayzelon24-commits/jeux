@@ -35,6 +35,7 @@ const ICONS = {
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 10.5v5l4-2.5z"/>',
   slow: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
   boomerang: '<path d="M4 12a5 5 0 0 1 8-4l4 3a5 5 0 1 1 0 2l-4 3a5 5 0 0 1-8-4z"/>',
+  scissors: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1 20 20M8.1 15.9 20 4"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   play: '<path d="M7 5l12 7-12 7z"/>',
   music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
@@ -907,7 +908,8 @@ async function showResult(item, fromGallery = false) {
     media.append(v);
   }
   $('res-save').hidden = !!item.saved;
-  $('res-slow').hidden = $('res-boom').hidden = item.kind === 'photo';
+  $('res-slow').hidden = $('res-boom').hidden = $('res-trim').hidden = item.kind === 'photo';
+  $('trim-panel').hidden = true;
   $('result').hidden = false;
 }
 
@@ -939,6 +941,67 @@ async function remixResult(mode) {
     remixing = false;
   }
 }
+// ---------- Trim: keep only the part you want ----------
+const fmtS = (x) => `${x.toFixed(1).replace('.', ',')} s`;
+$('res-trim').addEventListener('click', () => {
+  const d = lastResult?.duration || 0;
+  if (!d) return;
+  for (const id of ['trim-a', 'trim-b']) $(id).max = String(d);
+  $('trim-a').value = '0';
+  $('trim-b').value = String(d);
+  $('trim-a-v').textContent = fmtS(0);
+  $('trim-b-v').textContent = fmtS(d);
+  $('trim-panel').hidden = !$('trim-panel').hidden;
+});
+for (const id of ['trim-a', 'trim-b'])
+  $(id).addEventListener('input', () => {
+    let a = Number($('trim-a').value);
+    let b = Number($('trim-b').value);
+    // At least half a second between the two.
+    if (b - a < 0.5) {
+      if (id === 'trim-a') a = Math.max(0, b - 0.5);
+      else b = Math.min(Number($('trim-b').max), a + 0.5);
+      $('trim-a').value = String(a);
+      $('trim-b').value = String(b);
+    }
+    $('trim-a-v').textContent = fmtS(a);
+    $('trim-b-v').textContent = fmtS(b);
+    // Preview the frame at the moved handle.
+    const v = $('result-media').querySelector('video');
+    if (v) {
+      v.pause();
+      v.currentTime = id === 'trim-a' ? a : b;
+    }
+  });
+$('trim-ok').addEventListener('click', async () => {
+  const src = lastResult;
+  if (remixing || !src || src.kind === 'photo') return;
+  remixing = true;
+  const lbl = $('trim-ok').querySelector('.lbl');
+  const label = lbl.textContent;
+  try {
+    const { trim } = await import('./remix.js');
+    const res = await trim(
+      src.blob,
+      Number($('trim-a').value),
+      Number($('trim-b').value),
+      (p) => (lbl.textContent = `${Math.round(p * 100)} %`),
+    );
+    if (!res?.blob.size) throw new Error('empty');
+    const thumb = await videoThumbnail(res.blob);
+    $('result-media').querySelector('video')?.pause();
+    if (src.url) URL.revokeObjectURL(src.url);
+    await showResult({ kind: 'video', blob: res.blob, type: res.type, duration: res.duration, thumb, effect: src.effect });
+  } catch (err) {
+    console.warn(err);
+    lbl.textContent = 'Impossible';
+    await new Promise((r) => setTimeout(r, 1500));
+  } finally {
+    lbl.textContent = label;
+    remixing = false;
+  }
+});
+
 $('res-slow').addEventListener('click', () => remixResult('slow'));
 $('res-boom').addEventListener('click', () => remixResult('boomerang'));
 
