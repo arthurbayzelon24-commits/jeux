@@ -2,7 +2,7 @@
 //   Disco          coloured spotlights sweeping the room and a mirror ball;
 //                  raise a hand to drop the beat (flash), fist = black light
 //   Contour néon   your outline glows in moving rainbow colours
-import { drawGlow, rand, TAU, clamp } from './util.js';
+import { Particles, drawGlow, rand, TAU, clamp } from './util.js';
 
 const PARTY = [
   [255, 60, 120],
@@ -282,6 +282,164 @@ export function glassEffect() {
         drawGlow(ctx, [220, 240, 255], c.x, c.y, Math.min(e.W, e.H) * 0.08, 0.6 * a, 0.3);
         ctx.restore();
       }
+    },
+  };
+}
+
+// ---------- Attrape-étoiles ----------
+// Golden stars fall slowly; touch one with an open hand and it bursts into
+// sparkles with a little chime.
+export function starCatchEffect() {
+  let stars = [];
+  const burst = new Particles(600);
+
+  return {
+    id: 'starcatch',
+    name: 'Attrape-étoiles',
+    hint: 'Des étoiles tombent doucement : attrape-les avec la main ouverte, elles éclatent en paillettes.',
+    needs: { seg: false },
+    start() {
+      stars = [];
+      burst.clear();
+    },
+    update(dt, hands, e) {
+      burst.update(dt);
+      while (stars.length < 7)
+        stars.push({
+          x: rand(0.08, 0.92) * e.W,
+          y: -rand(0, e.H * 0.6),
+          v: rand(60, 140) * e.unit,
+          r: rand(14, 22) * e.unit,
+          spin: rand(TAU),
+          rgb: PARTY[(Math.random() * PARTY.length) | 0],
+        });
+      const L = hands.filter((h) => h.presence > 0.5 && (h.open || h.gesture === 'relaxed'));
+      for (const s of stars) {
+        s.y += s.v * dt;
+        s.x += Math.sin(e.t + s.spin) * 20 * e.unit * dt;
+        s.spin += dt * 1.5;
+        const caught = L.some((h) => Math.hypot(h.palm.x - s.x, h.palm.y - s.y) < h.size * 1.1 + s.r);
+        if (caught) {
+          for (let i = 0; i < 40; i++) {
+            const a = rand(TAU);
+            const v = rand(100, 500) * e.unit;
+            burst.add({
+              x: s.x,
+              y: s.y,
+              vx: Math.cos(a) * v,
+              vy: Math.sin(a) * v,
+              drag: 2,
+              g: 300 * e.unit,
+              life: rand(0.4, 0.9),
+              size: rand(2, 5) * e.unit,
+              rgb: s.rgb,
+              core: 0.6,
+            });
+          }
+          e.audio.play('chime', 0.5);
+          s.y = e.H + 999;
+        }
+      }
+      stars = stars.filter((s) => s.y < e.H + s.r);
+    },
+    draw(ctx, e) {
+      burst.draw(ctx);
+      ctx.save();
+      for (const s of stars) {
+        ctx.globalCompositeOperation = 'lighter';
+        drawGlow(ctx, s.rgb, s.x, s.y, s.r * 2.6, 0.5, 0.2);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#fff6c8';
+        ctx.beginPath();
+        for (let k = 0; k < 10; k++) {
+          const a = s.spin + (k * Math.PI) / 5 - Math.PI / 2;
+          const rr = k % 2 ? s.r * 0.45 : s.r;
+          ctx.lineTo(s.x + Math.cos(a) * rr, s.y + Math.sin(a) * rr);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    },
+  };
+}
+
+// ---------- Projecteur ----------
+// The room goes dark and a stage spotlight follows you (your face, or your
+// body), with dust shining in its beam. Raise a hand: the light turns pink.
+export function spotlightEffect() {
+  let x = null;
+  let y = 0;
+  let pink = 0;
+  const dust = new Particles(120);
+
+  return {
+    id: 'spotlight',
+    name: 'Projecteur',
+    hint: 'La pièce s’assombrit et un projecteur de scène te suit. Lève une main pour qu’il devienne rose.',
+    needs: { seg: false, pose: true },
+    start() {
+      x = null;
+      dust.clear();
+    },
+    update(dt, hands, e) {
+      dust.update(dt);
+      const b = e.body?.points;
+      let tx = e.W / 2;
+      let ty = e.H * 0.45;
+      if (b && e.body.presence > 0.3 && b[0].v > 0.5) {
+        tx = b[0].x;
+        ty = b[0].y + e.H * 0.12;
+      }
+      if (x === null) {
+        x = tx;
+        y = ty;
+      }
+      x += (tx - x) * Math.min(1, dt * 4);
+      y += (ty - y) * Math.min(1, dt * 4);
+      const up = hands.some((h) => h.presence > 0.5 && h.palm.y < e.H * 0.3);
+      pink += ((up ? 1 : 0) - pink) * Math.min(1, dt * 3);
+      if (Math.random() < 0.5)
+        dust.add({
+          x: x + rand(-1, 1) * e.W * 0.15,
+          y: rand(0, e.H),
+          vx: rand(-8, 8),
+          vy: rand(-12, 12),
+          life: rand(1.5, 3),
+          size: rand(1, 2.5) * e.unit,
+          rgb: [255, 245, 220],
+          core: 0.6,
+          alpha: 0.6,
+          fadeIn: 0.3,
+        });
+    },
+    draw(ctx, e) {
+      if (x === null) return;
+      const R = Math.min(e.W, e.H) * 0.42;
+      ctx.save();
+      // Darkness everywhere except a soft circle around you.
+      const g = ctx.createRadialGradient(x, y, R * 0.55, x, y, R * 1.35);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(1, 'rgba(0,0,0,0.82)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, e.W, e.H);
+      // The beam from above.
+      const col = [255, Math.round(240 - pink * 120), Math.round(210 - pink * 30)];
+      ctx.globalCompositeOperation = 'lighter';
+      const beam = ctx.createLinearGradient(0, 0, 0, e.H);
+      beam.addColorStop(0, `rgba(${col.join(',')},0.22)`);
+      beam.addColorStop(0.6, `rgba(${col.join(',')},0.08)`);
+      beam.addColorStop(1, `rgba(${col.join(',')},0)`);
+      ctx.fillStyle = beam;
+      ctx.beginPath();
+      ctx.moveTo(x - e.W * 0.04, 0);
+      ctx.lineTo(x + e.W * 0.04, 0);
+      ctx.lineTo(x + R * 1.3, e.H);
+      ctx.lineTo(x - R * 1.3, e.H);
+      ctx.closePath();
+      ctx.fill();
+      dust.draw(ctx);
+      ctx.restore();
     },
   };
 }

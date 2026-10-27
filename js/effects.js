@@ -29,7 +29,7 @@ import { freeModeEffect } from './fx/free.js';
 import { crownEffect, heroMaskEffect } from './fx/pack-face.js';
 import { fireFingersEffect, gauntletEffect } from './fx/pack-hands.js';
 import { stringsEffect, fireTornadoEffect, whipEffect } from './fx/pack-energy2.js';
-import { discoEffect, neonOutlineEffect, glassEffect } from './fx/pack-party.js';
+import { discoEffect, neonOutlineEffect, glassEffect, starCatchEffect, spotlightEffect } from './fx/pack-party.js';
 import { rainEffect, snowfallEffect, electroEffect, frostEffect } from './fx/pack-weather.js';
 import { clonesEffect, invisibleEffect, sizeEffect, livingShadowEffect, dustEffect, speedEffect, hologramEffect } from './fx/pack-body.js';
 import { mindGrabEffect, shockwaveEffect, magnetEffect, chronoEffect, gravityEffect, ripplesEffect } from './fx/pack-physics.js';
@@ -158,6 +158,8 @@ export const EFFECTS = [
   { id: 'frost', cat: 'nature', make: frostEffect, tint: '#bee8ff', gesture: 'Serrez les poings, puis ouvrez' },
   { id: 'wisps', cat: 'fun', make: wispsEffect, tint: '#5ac8ff', gesture: 'Main ouverte' },
   { id: 'disco', cat: 'fun', make: discoEffect, tint: '#ff3d8b', gesture: 'Levez vite la main pour le beat' },
+  { id: 'starcatch', cat: 'fun', make: starCatchEffect, tint: '#ffd24a', gesture: 'Attrapez les étoiles, main ouverte' },
+  { id: 'spotlight', cat: 'fun', make: spotlightEffect, tint: '#fff0c8', gesture: 'Le projecteur vous suit' },
   { id: 'neonline', cat: 'fun', make: neonOutlineEffect, tint: '#3fd0ff', gesture: 'Votre contour brille en néon' },
   { id: 'glass', cat: 'fun', make: glassEffect, tint: '#dcefff', gesture: 'Coup de poing vers la caméra' },
   { id: 'crown', cat: 'fun', make: crownEffect, tint: '#f2c14e', gesture: 'Regardez la caméra' },
