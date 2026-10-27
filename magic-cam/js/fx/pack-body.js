@@ -516,8 +516,8 @@ export function dustEffect() {
   // Grains taken from your own colours, each with the moment it leaves
   // (higher on the body = earlier).
   const grains = (e) => {
-    const sw = Math.round(e.W / 8);
-    const sh = Math.round(e.H / 8);
+    const sw = Math.round(e.W / 11);
+    const sh = Math.round(e.H / 11);
     if (!sample || sample.width !== sw) sample = makeCanvas(sw, sh);
     const g = sample.getContext('2d', { willReadFrequently: true });
     g.clearRect(0, 0, sw, sh);
@@ -535,7 +535,18 @@ export function dustEffect() {
         top = Math.min(top, py);
         bottom = Math.max(bottom, py);
         const col = scheme.tint ? scheme.tint : [d[i], d[i + 1], d[i + 2]];
-        out.push({ hx: px, hy: py, x: px, y: py, col, s: rand(2, 5) * e.unit, vx: 0, vy: 0, ph: rand(TAU) });
+        out.push({
+          hx: px,
+          hy: py,
+          x: px,
+          y: py,
+          col,
+          fill: `rgb(${col[0]},${col[1]},${col[2]})`,
+          s: rand(3, 6) * e.unit,
+          vx: 0,
+          vy: 0,
+          ph: rand(TAU),
+        });
       }
     for (const p of out) p.delay = ((p.hy - top) / Math.max(1, bottom - top)) * 1.2 + rand(0, 0.3);
     return out;
@@ -633,7 +644,7 @@ export function dustEffect() {
         const away = state === 'going' ? clamp((t - p.delay) / 1.6) : state === 'coming' ? 1 - clamp((t - (1.5 - p.delay)) / 0.8) : 1;
         if (state === 'going' && t < p.delay) continue;
         ctx.globalAlpha = state === 'gone' ? 0 : 1 - away * 0.85;
-        ctx.fillStyle = `rgb(${p.col[0]},${p.col[1]},${p.col[2]})`;
+        ctx.fillStyle = p.fill;
         ctx.fillRect(p.x, p.y, p.s, p.s);
       }
       ctx.restore();
@@ -689,7 +700,7 @@ export function speedEffect() {
       const fast = Math.max(speed, handSpeed * 0.5, demo > 0 ? 1 : 0);
       if (e.t - lastShot > 0.06) {
         lastShot = e.t;
-        const old = ghosts.length >= 6 ? ghosts.shift() : null;
+        const old = ghosts.length >= 5 ? ghosts.shift() : null;
         const w = Math.round(e.W / 2);
         const h = Math.round(e.H / 2);
         const c = old?.c.width === w && old.c.height === h ? old.c : makeCanvas(w, h);
