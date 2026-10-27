@@ -2887,3 +2887,19 @@ body.clean #btn-action {
   display: flex;
   margin: 12px auto 0;
 }
+
+/* News: the list scrolls, the OK button stays in sight */
+.news-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 40px);
+  overflow: hidden;
+}
+.news-card .news-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.news-card > button {
+  flex: none;
+}
