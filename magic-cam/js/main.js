@@ -40,6 +40,7 @@ const ICONS = {
   scissors: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1 20 20M8.1 15.9 20 4"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   play: '<path d="M7 5l12 7-12 7z"/>',
+  shuffle: '<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
   slow: '<path d="M7 3h10M7 21h10M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9"/>',
   music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
@@ -167,6 +168,8 @@ let camFacing = 'user';
 // Ultra-wide lens chosen when zooming out below 1× (like the 0.5 of phone
 // cameras), or null for the normal camera; lensBase is its zoom (0.5).
 let lensDevice = null;
+// True while the power changes by itself (no how-to bubble then).
+let quietSwitch = false;
 let lensBase = 1;
 let loopId = 0;
 let lastVideoTime = -1;
@@ -466,7 +469,7 @@ function selectEffect(id, fromUser = false) {
   $('power-pill').innerHTML =
     `<img class="pill-icon" src="${art(def.id)}" alt="">${dualSecond ? `${fx.name} + ${getEffect(dualSecond).name}` : fx.name}`;
   $('power-pill').style.setProperty('--tint', def.tint);
-  showHowto(def, fx);
+  if (!quietSwitch) showHowto(def, fx);
   document.querySelectorAll('.fx-chip').forEach((c) => {
     const on = c.dataset.id === id;
     c.classList.toggle('active', on);
@@ -904,6 +907,26 @@ function coach(now) {
   else if (farHand >= 3) say('far', '🚶 Approche-toi un peu : ta main est trop petite pour être bien suivie.');
 }
 
+// Parade: a new power every 4 s with a flash, like an automatic montage.
+let paradeTimer = 0;
+$('btn-parade').addEventListener('click', () => {
+  if (paradeTimer) {
+    clearInterval(paradeTimer);
+    paradeTimer = 0;
+    $('btn-parade').classList.remove('on');
+    showChip('Défilé arrêté');
+    return;
+  }
+  paradeTimer = setInterval(() => (studioOpen ? magicSwitch() : stopParade()), 4000);
+  $('btn-parade').classList.add('on');
+  showChip('Défilé : un pouvoir toutes les 4 s');
+});
+function stopParade() {
+  clearInterval(paradeTimer);
+  paradeTimer = 0;
+  $('btn-parade').classList.remove('on');
+}
+
 function magicSwitch() {
   // Next favourite, or another power you own (not the free mode).
   const owned = EFFECTS.filter((d) => progress.owns(d.id) && d.id !== 'free' && d.id !== currentEffect);
@@ -911,7 +934,9 @@ function magicSwitch() {
   const pool = favList.length ? favList : owned;
   if (!pool.length) return;
   const next = pool[(Math.random() * pool.length) | 0].id;
+  quietSwitch = true;
   selectEffect(next);
+  quietSwitch = false;
   engine.flash([255, 255, 255], 0.9, 2.5);
   engine.punch(0.08);
   audio.play('teleport', 0.9);

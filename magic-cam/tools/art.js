@@ -296,6 +296,7 @@ function scene(id, W, H) {
       frames: 30,
     },
     firetornado: { hands: () => [], frames: 60, person: true },
+    glass: { hands: one('fist', 0.5, 0.85), frames: 12, trigger: 3 },
     disco: { hands: one('open', 0.7, 0.6), frames: 40 },
     neonline: { hands: () => [], frames: 20, person: true },
     rain: { hands: one('open', 0.62, 0.5, { roll: 0.2 }), frames: 50, person: true },

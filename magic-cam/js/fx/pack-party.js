@@ -178,3 +178,110 @@ function hsl(h) {
   };
   return [f(0), f(8), f(4)];
 }
+
+// ---------- Écran brisé ----------
+// Punch towards the camera (a fist that comes closer fast) or a fast punch:
+// the screen cracks like glass where you hit, then the cracks fade.
+export function glassEffect() {
+  let cracks = [];
+  const sizes = new Map();
+  let cool = 0;
+
+  const crack = (e, x, y) => {
+    const R = Math.max(e.W, e.H) * rand(0.35, 0.6);
+    const rays = [];
+    const n = 9 + ((Math.random() * 5) | 0);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU + rand(-0.2, 0.2);
+      const pts = [[x, y]];
+      let r = 0;
+      let ang = a;
+      while (r < R) {
+        r += rand(0.06, 0.14) * R;
+        ang += rand(-0.35, 0.35);
+        const off = rand(-0.04, 0.04) * r;
+        pts.push([x + Math.cos(a) * r - Math.sin(a) * off, y + Math.sin(a) * r + Math.cos(a) * off]);
+      }
+      rays.push(pts);
+    }
+    // Short broken links between neighbouring rays (not full rings), more
+    // of them near the impact, like real cracked glass.
+    const links = [];
+    for (let i = 0; i < rays.length; i++) {
+      const a = rays[i];
+      const b = rays[(i + 1) % rays.length];
+      const count = 1 + ((Math.random() * 3) | 0);
+      for (let k = 0; k < count; k++) {
+        const ja = Math.min(a.length - 1, 1 + ((Math.random() ** 2 * (a.length - 1)) | 0));
+        const jb = Math.min(b.length - 1, Math.max(1, ja + ((Math.random() * 3) | 0) - 1));
+        const mid = [(a[ja][0] + b[jb][0]) / 2 + rand(-8, 8), (a[ja][1] + b[jb][1]) / 2 + rand(-8, 8)];
+        links.push([a[ja], mid, b[jb]]);
+      }
+    }
+    cracks.push({ x, y, rays, links, t: 0 });
+    if (cracks.length > 4) cracks.shift();
+    e.flash([255, 255, 255], 0.35, 6);
+    e.shake(18);
+    e.audio.play('crack', 1);
+    e.audio.play('boom', 0.4);
+  };
+
+  return {
+    id: 'glass',
+    name: 'Écran brisé',
+    hint: 'Donne un coup de poing vers la caméra : l’écran se fissure comme du verre, là où tu frappes. Les fissures disparaissent au bout de quelques secondes.',
+    needs: { seg: false },
+    start() {
+      cracks = [];
+    },
+    trigger(e) {
+      crack(e, e.W / 2, e.H / 2);
+    },
+    update(dt, hands, e) {
+      cool -= dt;
+      for (const c of cracks) c.t += dt;
+      cracks = cracks.filter((c) => c.t < 5);
+      for (const h of hands) {
+        if (h.presence < 0.5) continue;
+        const prev = sizes.get(h.id) ?? h.size;
+        sizes.set(h.id, h.size);
+        const towards = (h.size - prev) / dt > h.size * 1.6;
+        const fast = h.speed > Math.min(e.W, e.H) * 2.2;
+        if (h.fist && (towards || fast) && cool <= 0) {
+          cool = 0.5;
+          crack(e, h.palm.x, h.palm.y);
+        }
+      }
+    },
+    drawOver(ctx, e) {
+      for (const c of cracks) {
+        const a = c.t < 4 ? 1 : 1 - (c.t - 4);
+        ctx.save();
+        ctx.lineJoin = 'round';
+        // Dark edge then bright line: looks like a real crack in glass.
+        for (const [w, col] of [
+          [3.2, `rgba(0,0,0,${0.35 * a})`],
+          [1.3, `rgba(255,255,255,${0.9 * a})`],
+        ]) {
+          ctx.strokeStyle = col;
+          ctx.lineWidth = w * e.unit;
+          ctx.beginPath();
+          for (const p of c.rays) {
+            ctx.moveTo(p[0][0], p[0][1]);
+            for (let i = 1; i < p.length; i++) ctx.lineTo(p[i][0], p[i][1]);
+          }
+          for (const [p, m, q] of c.links) {
+            ctx.moveTo(p[0], p[1]);
+            ctx.lineTo(m[0], m[1]);
+            ctx.lineTo(q[0], q[1]);
+          }
+          ctx.stroke();
+        }
+        // Crushed glass at the impact.
+        ctx.globalCompositeOperation = 'lighter';
+        drawGlow(ctx, [220, 240, 255], c.x, c.y, Math.min(e.W, e.H) * 0.08, 0.6 * a, 0.3);
+        ctx.restore();
+      }
+    },
+  };
+}
