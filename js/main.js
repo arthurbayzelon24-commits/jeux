@@ -1631,7 +1631,8 @@ document.addEventListener('keydown', (e) => {
     const i = EFFECTS.findIndex((d) => d.id === currentEffect);
     selectEffect(EFFECTS[(i + (e.key === 'ArrowRight' ? 1 : EFFECTS.length - 1)) % EFFECTS.length].id, true);
   }
-  // + / − zoom, 0 back to 1×, P photo, C colour, R slow motion.
+  // + / − zoom, 0 back to 1×, P photo, C colour, R slow motion, H clean
+  // screen, M music.
   const k = e.key.toLowerCase();
   if (k === '+' || k === '=') zoomZ *= 1.25;
   else if (k === '-' || k === '_') zoomZ /= 1.25;
@@ -1640,6 +1641,8 @@ document.addEventListener('keydown', (e) => {
   if (k === 'p') $('btn-photo').click();
   if (k === 'c') $('btn-color').click();
   if (k === 'r') $('btn-slowmo').click();
+  if (k === 'h') document.body.classList.toggle('clean');
+  if (k === 'm') $('btn-music').click();
 });
 // Pause the camera when the tab is hidden (saves battery), resume after.
 document.addEventListener('visibilitychange', () => {

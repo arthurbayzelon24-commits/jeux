@@ -90,7 +90,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Ombre vivante** (Héros) : ton ombre apparaît sur le mur derrière toi, décalée et en retard de 0,6 s, avec deux yeux qui brillent ; poing serré = elle grandit.
 - **Mode portrait** (Paramètres > Affichage) : l’IA détoure ta silhouette, l’arrière-plan est flouté et toi tu restes net, avec n’importe quel pouvoir et dans les vidéos.
 - **Traînées de couleur** (Paramètres > Affichage) : le bout de chaque doigt laisse une courte traînée arc-en-ciel, avec n’importe quel pouvoir (aussi dans les vidéos).
-- **Raccourcis clavier** (ordinateur) : Espace = filmer, ← → = pouvoir précédent / suivant, + / − = zoom, 0 = 1×, P = photo, C = couleur, R = ralenti, Échap = retour.
+- **Raccourcis clavier** (ordinateur) : Espace = filmer, ← → = pouvoir précédent / suivant, + / − = zoom, 0 = 1×, P = photo, C = couleur, R = ralenti, H = écran propre, M = musique, Échap = retour.
 - **Écran propre** (bouton œil du studio) : cache tous les boutons, pratique pour filmer avec l’enregistreur d’écran du téléphone ; un toucher sur l’image les fait revenir.
 - **Favoris rapides** : un appui long sur un pouvoir de la rangée du studio l’ajoute aux favoris (petite étoile) ou l’en retire.
 - **Remettre les réglages par défaut** (en bas des Paramètres) : tes vidéos, favoris et défis sont gardés.
