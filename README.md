@@ -81,6 +81,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Écran brisé** : un coup de poing vers la caméra fissure l’écran comme du verre, là où tu frappes.
 - **Ombre vivante** (Héros) : ton ombre apparaît sur le mur derrière toi, décalée et en retard de 0,6 s, avec deux yeux qui brillent ; poing serré = elle grandit.
 - **Traînées de couleur** (Paramètres > Affichage) : le bout de chaque doigt laisse une courte traînée arc-en-ciel, avec n’importe quel pouvoir (aussi dans les vidéos).
+- **Raccourcis clavier** (ordinateur) : Espace = filmer, ← → = pouvoir précédent / suivant, + / − = zoom, 0 = 1×, P = photo, C = couleur, R = ralenti, Échap = retour.
 - **Recherche** : une barre sur l’accueil trouve un pouvoir par son nom, son geste ou sa catégorie (sans tenir compte des accents).
 - **Pouvoir du jour** : sur l’accueil, un pouvoir mis en avant, différent chaque jour, avec un bouton Essayer.
 - **Coach caméra** (Paramètres, activé par défaut) : une bulle à l’écran, jamais dans les vidéos, prévient quand il fait trop sombre, quand ta main n’est pas vue ou quand tu es trop loin.
