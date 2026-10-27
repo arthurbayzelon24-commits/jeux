@@ -27,6 +27,7 @@ import { hudEffect } from './fx/hud.js';
 import { runesEffect } from './fx/runes.js';
 import { freeModeEffect } from './fx/free.js';
 import { crownEffect, heroMaskEffect } from './fx/pack-face.js';
+import { fireFingersEffect, gauntletEffect } from './fx/pack-hands.js';
 import { stringsEffect, fireTornadoEffect, whipEffect } from './fx/pack-energy2.js';
 import { discoEffect, neonOutlineEffect, glassEffect } from './fx/pack-party.js';
 import { rainEffect, snowfallEffect, electroEffect } from './fx/pack-weather.js';
@@ -130,6 +131,7 @@ export const EFFECTS = [
   { id: 'lava', cat: 'feu', make: lavaEffect, tint: '#ff5a14', gesture: 'Main ouverte', charge: 'open' },
   { id: 'sun', cat: 'feu', make: sunEffect, tint: '#ffc850', gesture: 'Main ouverte', charge: 'open' },
   { id: 'firetornado', cat: 'feu', make: fireTornadoEffect, tint: '#ff6a2d', gesture: 'Levez les bras pour l’agrandir' },
+  { id: 'firefingers', cat: 'feu', make: fireFingersEffect, tint: '#ff8a2d', gesture: 'Ouvrez la main' },
   { id: 'sonic', cat: 'energie', make: sonicEffect, tint: '#dcebff', gesture: 'Tapez dans vos mains' },
   { id: 'electro', cat: 'energie', make: electroEffect, tint: '#6ebeff', gesture: 'Serrez les poings, puis ouvrez' },
   { id: 'strings', cat: 'energie', make: stringsEffect, tint: '#50dcff', gesture: 'Deux mains ouvertes face à face' },
@@ -159,6 +161,7 @@ export const EFFECTS = [
   { id: 'glass', cat: 'fun', make: glassEffect, tint: '#dcefff', gesture: 'Coup de poing vers la caméra' },
   { id: 'crown', cat: 'fun', make: crownEffect, tint: '#f2c14e', gesture: 'Regardez la caméra' },
   { id: 'heromask', cat: 'heros', make: heroMaskEffect, tint: '#c4161c', gesture: 'Regardez la caméra' },
+  { id: 'gauntlet', cat: 'heros', make: gauntletEffect, tint: '#e3b23c', gesture: 'Montrez la main, claquez des doigts' },
 ];
 
 const instances = new Map();
