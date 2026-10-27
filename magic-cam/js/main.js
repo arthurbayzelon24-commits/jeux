@@ -1756,10 +1756,10 @@ function coverRatio() {
   return Math.max(a, b) / Math.min(a, b);
 }
 // Smallest size of you in the image when zoomed out all the way.
-const MIN_SHRINK = 0.22;
+const MIN_SHRINK = 0.075;
 function zoomRange() {
   const hwMin = Math.min(zoomCaps?.min ?? 1, 1);
-  return [Math.max(0.1, hwMin * MIN_SHRINK), 10];
+  return [Math.max(0.03, hwMin * MIN_SHRINK), 10];
 }
 function applyZoom() {
   const [lo, hi] = zoomRange();
@@ -1838,9 +1838,9 @@ async function maybeSwitchLens() {
   }
 }
 
-// Zoom pills over the record button (0,5 · 1× · 2 · 5), like a phone camera.
+// Zoom pills over the record button (0,1 · 0,5 · 1× · 2 · 5), like a phone camera.
 // Touch one to jump there, or slide along them to zoom smoothly.
-const PILLS = [0.5, 1, 2, 5];
+const PILLS = [0.1, 0.5, 1, 2, 5];
 function updatePills() {
   const box = $('zoom-pills');
   if (!box.children.length)
