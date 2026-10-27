@@ -2882,3 +2882,8 @@ body.clean #btn-action {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.reset-settings {
+  display: flex;
+  margin: 12px auto 0;
+}

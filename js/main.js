@@ -2159,6 +2159,23 @@ function showNews() {
   $('news').hidden = false;
 }
 $('news-again').addEventListener('click', () => ($('news').hidden = false));
+// Settings back to the defaults (favourites, videos and challenges are kept).
+$('reset-settings').addEventListener('click', () => {
+  if (!confirm('Remettre tous les réglages par défaut ? Tes vidéos, favoris et défis sont gardés.')) return;
+  const keep = { pointsAsked: settings.pointsAsked, points: settings.points };
+  Object.assign(settings, DEFAULTS, keep);
+  saveSettings();
+  syncForm();
+  applyTheme();
+  updateToggles();
+  trails.on = !!settings.trails;
+  audio.setEnabled(settings.sound);
+  quality.particles = PARTICLES[settings.fxQuality] || 1;
+  engine.maxSide = renderSide();
+  const b = $('reset-settings');
+  b.textContent = 'Réglages remis ✓';
+  setTimeout(() => (b.textContent = 'Remettre les réglages par défaut'), 2000);
+});
 $('news-ok').addEventListener('click', () => {
   $('news').hidden = true;
   try {
