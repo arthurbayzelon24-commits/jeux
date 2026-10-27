@@ -1,3 +1,4 @@
+import { Trails } from './mech/trails.js';
 import { HINTS } from './hints.js';
 import { EFFECTS, CATEGORIES, getEffect } from './effects.js';
 import { Engine } from './engine.js';
@@ -87,6 +88,7 @@ const DEFAULTS = {
   voiceBoost: true,
   cineSlow: true,
   coach: true,
+  trails: false,
   format: 'auto',
   fillLight: false,
   fades: true,
@@ -1580,6 +1582,7 @@ form.addEventListener('change', (e) => {
   settings[el.name] = el.type === 'checkbox' ? el.checked : el.value;
   if (el.name === 'points') settings.pointsAsked = true;
   if (el.name === 'format') updateFormatGuide();
+  if (el.name === 'trails') trails.on = el.checked;
   saveSettings();
   audio.setEnabled(settings.sound);
   quality.particles = PARTICLES[settings.fxQuality] || 1;
@@ -1934,6 +1937,10 @@ engine.on('freePower', (id) => progress.freePower(id));
 const secrets = new Secrets();
 secrets.onFound = () => progress.secret();
 engine.addMechanic(secrets);
+// Colour trails behind the fingertips (Paramètres).
+const trails = new Trails();
+trails.on = !!settings.trails;
+engine.addMechanic(trails);
 
 function challengeRows(list) {
   return list
