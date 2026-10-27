@@ -951,6 +951,8 @@ const BODY_ONLY = [
 let coachAt = 0;
 let noHand = 0;
 let farHand = 0;
+let noBody = 0;
+let bigBody = 0;
 let dark = 0;
 const coachSaid = {};
 function coach(now) {
@@ -965,6 +967,10 @@ function coach(now) {
   const handsNeeded = !BODY_ONLY.includes(currentEffect);
   noHand = handsNeeded && !hands.length ? noHand + 1 : 0;
   farHand = hands.length && hands.every((h) => h.size < Math.min(engine.W, engine.H) * 0.055) ? farHand + 1 : 0;
+  // Body powers: is enough of you in the picture?
+  const fxNow = getEffect(currentEffect);
+  noBody = fxNow?.needs?.seg && (!engine.seg?.present || engine.seg.area < 0.05) ? noBody + 1 : 0;
+  bigBody = fxNow?.needs?.seg && engine.seg?.present && engine.seg.area > 0.7 ? bigBody + 1 : 0;
   const say = (key, text) => {
     if (coachSaid[key] && now - coachSaid[key] < 25000) return;
     coachSaid[key] = now;
@@ -978,6 +984,8 @@ function coach(now) {
     coach.timer = setTimeout(() => (el.hidden = true), 4000);
   };
   if (dark >= 2) say('dark', '💡 Il fait sombre : allume la lumière ou tourne-toi vers une fenêtre, la détection marchera mieux.');
+  else if (noBody >= 4) say('body', '🧍 Mets-toi bien dans l’image : ce pouvoir a besoin de voir ton corps.');
+  else if (bigBody >= 4) say('close', '↔️ Recule un peu : on doit voir un peu de décor autour de toi.');
   else if (noHand >= 4) say('hand', '✋ Montre ta main à la caméra, bien ouverte et en entier.');
   else if (farHand >= 3) say('far', '🚶 Approche-toi un peu : ta main est trop petite pour être bien suivie.');
 }
