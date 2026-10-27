@@ -461,6 +461,13 @@ export class Engine {
     // A finger snap heard by the microphone counts for a hand that was just
     // holding the snap pose (thumb on the middle finger).
     if (input.micSnap) for (const h of this.hands) if (h.snapPrime && now - h.snapPrime < 700) h.events = { ...h.events, snap: true };
+    // A snap was seen: a small ring of light at the fingers and a buzz, so
+    // you know it worked (whatever the power).
+    for (const h of this.hands)
+      if (h.events?.snap) {
+        (this.snapRings ||= []).push({ x: h.lm[4].x, y: h.lm[4].y, t: 0, r: h.size });
+        this.buzz?.(15);
+      }
     if (input.pose !== undefined) this.body.update(input.pose, { width: W, height: H, mirror: input.mirror, dt });
     else this.body.advance(dt);
 
@@ -633,6 +640,21 @@ export class Engine {
       for (const h of this.hands) drawHandSkeleton(ctx, h);
     }
     this.#runMechanics('draw', ctx, this);
+    if (this.snapRings?.length) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const r of this.snapRings) {
+        r.t += dt;
+        const k = r.t / 0.35;
+        ctx.strokeStyle = `rgba(255,240,200,${0.9 * (1 - k)})`;
+        ctx.lineWidth = 3 * this.unit * (1 - k) + 0.5;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.r * (0.3 + k * 1.2), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+      this.snapRings = this.snapRings.filter((r) => r.t < 0.35);
+    }
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     for (const fl of this.flashes) {
