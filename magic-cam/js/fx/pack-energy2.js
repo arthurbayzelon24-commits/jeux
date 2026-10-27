@@ -120,7 +120,10 @@ export function fireTornadoEffect() {
     { name: 'Feu vert', rgb: [90, 255, 130] },
   ];
   let scheme = COLORS[0];
-  const fire = new Particles(1400);
+  const fire = new Particles(900);
+  // Flames split into back and front, in arrays kept from frame to frame.
+  const back = [];
+  const front = [];
   let power = 0.4;
 
   return {
@@ -152,7 +155,7 @@ export function fireTornadoEffect() {
       const cx = s.centroid.x;
       const top = s.top;
       const width = Math.max(e.W * 0.15, (e.H - top) * 0.35) * (0.8 + power * 0.5);
-      const n = Math.round(30 * power);
+      const n = Math.round(22 * power);
       for (let i = 0; i < n; i++) {
         const y = rand(top - e.H * 0.1 * power, e.H);
         // Wider at the top, like a tornado.
@@ -179,18 +182,21 @@ export function fireTornadoEffect() {
     },
     // Flames behind you (the far side of the spiral).
     drawBehind(ctx) {
-      const keep = fire.list;
-      fire.list = keep.filter((p) => p.depth < 0);
+      back.length = 0;
+      front.length = 0;
+      for (const p of fire.list) (p.depth < 0 ? back : front).push(p);
+      const all = fire.list;
+      fire.list = back;
       fire.draw(ctx);
-      fire.list = keep;
+      fire.list = all;
       return false;
     },
     // Flames in front of you.
     draw(ctx) {
-      const keep = fire.list;
-      fire.list = keep.filter((p) => p.depth >= 0);
+      const all = fire.list;
+      fire.list = front;
       fire.draw(ctx);
-      fire.list = keep;
+      fire.list = all;
     },
   };
 }
