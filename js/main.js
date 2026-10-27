@@ -41,6 +41,7 @@ const ICONS = {
   scissors: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1 20 20M8.1 15.9 20 4"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   play: '<path d="M7 5l12 7-12 7z"/>',
+  eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   shuffle: '<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
   slow: '<path d="M7 3h10M7 21h10M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9"/>',
   music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
@@ -695,6 +696,7 @@ async function closeStudio() {
   music.stop();
   $('view-studio').hidden = true;
   document.body.classList.remove('in-studio');
+  document.body.classList.remove('clean');
   renderHub();
   flushUnlocks();
 }
@@ -1440,6 +1442,17 @@ $('btn-record').addEventListener('click', () => {
   if (recorder.recording) stopRecording();
   else if ($('btn-record').classList.contains('arming')) cancelCountdown();
   else startRecording();
+});
+// Clean screen: every button hidden (for the phone's own screen recorder);
+// a touch on the picture brings them back.
+$('btn-clean').addEventListener('click', (ev) => {
+  ev.stopPropagation();
+  document.body.classList.add('clean');
+  showChip('Touche l’écran pour revoir les boutons', 1600);
+});
+$('view-studio').addEventListener('pointerup', (ev) => {
+  if (!document.body.classList.contains('clean') || ev.target.closest('#btn-clean')) return;
+  document.body.classList.remove('clean');
 });
 // Magic slow motion: the powers slow down for a few seconds (you do not).
 let slowTimer = 0;
