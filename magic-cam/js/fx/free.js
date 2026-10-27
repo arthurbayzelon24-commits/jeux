@@ -11,6 +11,7 @@
 //   both fists closed            -> shadow magic
 //   one big sweep of the hand    -> a fireball thrown that way
 //   both hands open, apart       -> energy strings between the fingers
+//   a finger snap                -> shock wave
 import { magicCircleEffect } from './magiccircle.js';
 import { blackholeEffect } from './blackhole.js';
 import { lightningEffect } from './lightning.js';
@@ -22,6 +23,7 @@ import { fireworksEffect } from './fireworks.js';
 import { shadowEffect } from './shadow.js';
 import { fireballEffect } from './fireball.js';
 import { stringsEffect } from './pack-energy2.js';
+import { shockwaveEffect } from './pack-physics.js';
 import { Particles, rand, TAU, drawGlow } from './util.js';
 
 export const FREE_MOVES = [
@@ -35,6 +37,7 @@ export const FREE_MOVES = [
   ['fireworks', 'Signe V', 'Feu d’artifice'],
   ['shadow', 'Les deux poings fermés', 'Magie des ombres'],
   ['strings', 'Deux mains ouvertes, écartées', 'Fils d’énergie'],
+  ['shockwave', 'Claque des doigts', 'Onde de choc'],
   ['fireball', 'Un grand geste de la main', 'Boule de feu lancée'],
 ];
 
@@ -51,6 +54,7 @@ export function freeModeEffect() {
     shadow: shadowEffect,
     fireball: fireballEffect,
     strings: stringsEffect,
+    shockwave: shockwaveEffect,
   };
   const fx = {};
   let current = null;
@@ -61,6 +65,7 @@ export function freeModeEffect() {
   let waveUntil = -1;
   let sweepUntil = -1;
   let throwBall = null;
+  let snapUntil = -1;
   // Combo: three different powers within 4 s set off a burst of every colour.
   let recent = [];
   let comboWave = null;
@@ -156,7 +161,18 @@ export function freeModeEffect() {
       candidate = null;
     },
     update(dt, hands, e) {
-      const want = pick(hands, e);
+      // A snap: a shock wave right away, whatever the hands do next.
+      if (hands.some((h) => h.presence > 0.5 && h.events.snap)) {
+        if (current !== 'shockwave') {
+          e.audio.stopLoops?.();
+          current = 'shockwave';
+          e.emit?.('freePower', current);
+          get(current).start?.(e);
+        }
+        get('shockwave').trigger(e);
+        snapUntil = e.t + 1.2;
+      }
+      const want = e.t < snapUntil ? 'shockwave' : pick(hands, e);
       if (want !== candidate) {
         candidate = want;
         since = 0;
