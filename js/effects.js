@@ -30,7 +30,7 @@ import { crownEffect, heroMaskEffect } from './fx/pack-face.js';
 import { fireFingersEffect, gauntletEffect } from './fx/pack-hands.js';
 import { stringsEffect, fireTornadoEffect, whipEffect } from './fx/pack-energy2.js';
 import { discoEffect, neonOutlineEffect, glassEffect } from './fx/pack-party.js';
-import { rainEffect, snowfallEffect, electroEffect } from './fx/pack-weather.js';
+import { rainEffect, snowfallEffect, electroEffect, frostEffect } from './fx/pack-weather.js';
 import { clonesEffect, invisibleEffect, sizeEffect, livingShadowEffect, dustEffect, speedEffect, hologramEffect } from './fx/pack-body.js';
 import { mindGrabEffect, shockwaveEffect, magnetEffect, chronoEffect, gravityEffect, ripplesEffect } from './fx/pack-physics.js';
 import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
@@ -155,6 +155,7 @@ export const EFFECTS = [
   { id: 'fireflies', cat: 'nature', make: firefliesEffect, tint: '#d2ff5a', gesture: 'Ouvrez les mains' },
   { id: 'rain', cat: 'nature', make: rainEffect, tint: '#9fc4ff', gesture: 'Main ouverte au-dessus = parapluie' },
   { id: 'snowfall', cat: 'nature', make: snowfallEffect, tint: '#f0f8ff', gesture: 'Restez immobile, la neige se pose' },
+  { id: 'frost', cat: 'nature', make: frostEffect, tint: '#bee8ff', gesture: 'Serrez les poings, puis ouvrez' },
   { id: 'wisps', cat: 'fun', make: wispsEffect, tint: '#5ac8ff', gesture: 'Main ouverte' },
   { id: 'disco', cat: 'fun', make: discoEffect, tint: '#ff3d8b', gesture: 'Levez vite la main pour le beat' },
   { id: 'neonline', cat: 'fun', make: neonOutlineEffect, tint: '#3fd0ff', gesture: 'Votre contour brille en néon' },

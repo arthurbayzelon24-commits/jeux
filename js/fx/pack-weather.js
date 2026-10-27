@@ -281,3 +281,105 @@ export function electroEffect() {
     },
   };
 }
+
+// ---------- Corps de glace ----------
+// Frost crystals grow all over your outline while you clench your fists;
+// open your hands at once: the ice shatters into shards.
+export function frostEffect() {
+  const COLORS = [
+    { name: 'Glace', rgb: [190, 235, 255] },
+    { name: 'Glace bleue', rgb: [90, 170, 255] },
+  ];
+  let rgb = COLORS[0].rgb;
+  let level = 0.25;
+  let crystals = []; // { x, y, a, len, br }
+  const shards = new Particles(500);
+  let since = 0;
+
+  return {
+    id: 'frost',
+    name: 'Corps de glace',
+    hint: 'Du givre couvre ton contour. Serre les poings : la glace pousse et te recouvre. Ouvre les mains d’un coup : elle éclate en morceaux.',
+    colors: COLORS,
+    needs: { seg: true },
+    setColor(i) {
+      rgb = COLORS[i].rgb;
+    },
+    start() {
+      level = 0.25;
+      crystals = [];
+      shards.clear();
+    },
+    update(dt, hands, e) {
+      shards.update(dt);
+      const L = live(hands);
+      const fists = L.some((h) => h.fist);
+      level = Math.min(1, Math.max(0.15, level + (fists ? dt * 0.5 : -dt * 0.05)));
+      if (L.some((h) => h.events.release) && level > 0.4) {
+        // Shatter: every crystal becomes a flying shard.
+        for (const c of crystals.slice(0, 250))
+          shards.add({
+            x: c.x,
+            y: c.y,
+            vx: rand(-500, 500) * e.unit,
+            vy: rand(-600, 100) * e.unit,
+            g: 1400 * e.unit,
+            life: rand(0.5, 1),
+            size: rand(3, 7) * e.unit,
+            rgb,
+            core: 0.6,
+          });
+        e.flash(rgb, 0.4, 4);
+        e.shake(16);
+        e.audio.play('crack', 1);
+        level = 0.15;
+      }
+      // New crystals sit on the outline, a few each frame.
+      since += dt;
+      const edges = e.seg?.present ? e.seg.edges : [];
+      if (edges.length && since > 0.12) {
+        since = 0;
+        crystals = [];
+        const n = Math.min(edges.length, Math.round(40 + level * 200));
+        for (let i = 0; i < n; i++) {
+          const p = edges[(i * 7919) % edges.length];
+          crystals.push({
+            x: p.x,
+            y: p.y,
+            a: ((i * 2.399) % TAU) - Math.PI,
+            len: (6 + ((i * 13) % 10)) * e.unit * (0.6 + level * 1.6),
+            br: i % 3,
+          });
+        }
+      }
+      e.audio.loop('wind', level * 0.15);
+    },
+    draw(ctx, e) {
+      shards.draw(ctx);
+      if (!crystals.length) return;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineCap = 'round';
+      for (const [w, a] of [
+        [3, 0.25],
+        [1.2, 0.9],
+      ]) {
+        ctx.strokeStyle = `rgba(${rgb.join(',')},${a})`;
+        ctx.lineWidth = w * e.unit;
+        ctx.beginPath();
+        for (const c of crystals) {
+          // A little six-branch star, longer as the frost grows.
+          for (let k = 0; k < 3; k++) {
+            const ang = c.a + (k * Math.PI) / 3;
+            const dx = Math.cos(ang) * c.len;
+            const dy = Math.sin(ang) * c.len;
+            ctx.moveTo(c.x - dx, c.y - dy);
+            ctx.lineTo(c.x + dx, c.y + dy);
+          }
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    },
+  };
+}
