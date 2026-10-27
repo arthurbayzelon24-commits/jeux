@@ -465,127 +465,113 @@ export function renderHeader(W = 1400, H = 560) {
   return c.toDataURL('image/jpeg', 0.88);
 }
 
-// App icon: a white open hand holding a blazing fireball, on the app's
-// gradient (fire orange, pink, violet), with a red "recording" dot. Flat
-// shapes so it reads at any size. Full-bleed: the phone rounds the corners.
+// App icon: a glowing magic circle (runes in fire orange and pink) around a
+// big white "play" sign, on a deep night violet. Bold and readable small.
 export function renderIcon(size = 1024) {
   const S = size;
   const c = makeCanvas(S, S);
   const g = c.getContext('2d');
   const u = S / 1024;
-  const bg = g.createLinearGradient(0, S, S, 0);
-  bg.addColorStop(0, '#ffb238');
-  bg.addColorStop(0.3, '#ff6a3d');
-  bg.addColorStop(0.6, '#ff3d8b');
-  bg.addColorStop(0.85, '#a43dff');
-  bg.addColorStop(1, '#4f7bff');
+  const cx = S / 2;
+  const cy = S / 2;
+  const bg = g.createRadialGradient(cx, cy, 0, cx, cy, S * 0.75);
+  bg.addColorStop(0, '#3a0f6e');
+  bg.addColorStop(0.6, '#1a0638');
+  bg.addColorStop(1, '#0a0216');
   g.fillStyle = bg;
   g.fillRect(0, 0, S, S);
-  const shade = g.createRadialGradient(S * 0.5, S * 0.45, S * 0.2, S * 0.5, S * 0.5, S * 0.75);
-  shade.addColorStop(0, 'rgba(0,0,0,0)');
-  shade.addColorStop(1, 'rgba(30,0,40,0.35)');
-  g.fillStyle = shade;
-  g.fillRect(0, 0, S, S);
-  const round = (x, y, w, h, r) => {
+  for (let i = 0; i < 90; i++) {
+    g.fillStyle = `rgba(255,255,255,${0.15 + Math.random() * 0.5})`;
     g.beginPath();
-    g.moveTo(x + r, y);
-    g.arcTo(x + w, y, x + w, y + h, r);
-    g.arcTo(x + w, y + h, x, y + h, r);
-    g.arcTo(x, y + h, x, y, r);
-    g.arcTo(x, y, x + w, y, r);
-    g.closePath();
-  };
-  // The fireball floating above the palm: glow, flames, bright core.
-  const fx = S * 0.5;
-  const fy = S * 0.4;
-  const R = S * 0.2;
-  const halo = g.createRadialGradient(fx, fy, 0, fx, fy, R * 2.2);
-  halo.addColorStop(0, 'rgba(255,230,120,0.9)');
-  halo.addColorStop(0.4, 'rgba(255,140,40,0.45)');
-  halo.addColorStop(1, 'rgba(255,90,40,0)');
-  g.fillStyle = halo;
-  g.fillRect(0, 0, S, S);
-  // Flame tongues around the ball, licking upwards.
-  for (let k = 0; k < 9; k++) {
-    const a = -Math.PI / 2 + (k - 4) * 0.27 + Math.sin(k * 2.3) * 0.05;
-    const len = R * (1.2 + (k % 2 ? 0.35 : 0.8) * (1 - Math.abs(k - 4) / 5));
-    const flame = g.createLinearGradient(fx, fy, fx + Math.cos(a) * len, fy + Math.sin(a) * len);
-    flame.addColorStop(0, '#ffcf3d');
-    flame.addColorStop(1, 'rgba(255,70,40,0.9)');
-    g.fillStyle = flame;
-    g.beginPath();
-    const w = 0.28;
-    g.moveTo(fx + Math.cos(a - w) * R * 0.8, fy + Math.sin(a - w) * R * 0.8);
-    g.quadraticCurveTo(
-      fx + Math.cos(a - w * 0.3) * len * 0.9,
-      fy + Math.sin(a - w * 0.3) * len * 0.9,
-      fx + Math.cos(a) * len,
-      fy + Math.sin(a) * len,
-    );
-    g.quadraticCurveTo(
-      fx + Math.cos(a + w * 0.3) * len * 0.9,
-      fy + Math.sin(a + w * 0.3) * len * 0.9,
-      fx + Math.cos(a + w) * R * 0.8,
-      fy + Math.sin(a + w) * R * 0.8,
-    );
+    g.arc(Math.random() * S, Math.random() * S, (0.8 + Math.random() * 2) * u, 0, Math.PI * 2);
     g.fill();
   }
-  // White open hand, palm up, at the bottom.
-  g.save();
-  g.shadowColor = 'rgba(60,0,60,0.45)';
-  g.shadowBlur = 40 * u;
-  g.shadowOffsetY = 14 * u;
-  g.fillStyle = '#ffffff';
-  const px = S * 0.5;
-  const py = S * 0.78;
-  round(px - S * 0.17, py - S * 0.1, S * 0.34, S * 0.3, 90 * u);
-  g.fill();
-  const finger = (x, y, w, h, a) => {
+  // Glow behind the circle.
+  const glow = g.createRadialGradient(cx, cy, S * 0.2, cx, cy, S * 0.5);
+  glow.addColorStop(0, 'rgba(255,110,60,0.45)');
+  glow.addColorStop(1, 'rgba(255,60,140,0)');
+  g.fillStyle = glow;
+  g.fillRect(0, 0, S, S);
+  g.globalCompositeOperation = 'lighter';
+  const ring = (r, w, col, blur) => {
     g.save();
-    g.translate(x, y);
-    g.rotate(a);
-    round(-w / 2, -h, w, h, w / 2);
-    g.fill();
+    g.shadowColor = col;
+    g.shadowBlur = blur * u;
+    g.strokeStyle = col;
+    g.lineWidth = w * u;
+    g.beginPath();
+    g.arc(cx, cy, r, 0, Math.PI * 2);
+    g.stroke();
     g.restore();
   };
-  const fw = S * 0.075;
-  finger(px - S * 0.12, py + S * 0.02, fw, S * 0.26, -0.3);
-  finger(px - S * 0.04, py + S * 0.02, fw, S * 0.31, -0.1);
-  finger(px + S * 0.045, py + S * 0.02, fw, S * 0.3, 0.1);
-  finger(px + S * 0.125, py + S * 0.02, fw, S * 0.24, 0.3);
-  finger(px - S * 0.12, py + S * 0.1, fw * 1.1, S * 0.2, -1.0);
-  g.restore();
-  const ball = g.createRadialGradient(fx - R * 0.25, fy - R * 0.25, R * 0.05, fx, fy, R);
-  ball.addColorStop(0, '#ffffff');
-  ball.addColorStop(0.3, '#fff3a0');
-  ball.addColorStop(0.65, '#ffa531');
-  ball.addColorStop(1, '#ff4a1f');
-  g.fillStyle = ball;
-  g.beginPath();
-  g.arc(fx, fy, R, 0, Math.PI * 2);
-  g.fill();
-  // Sparkles and the red recording dot.
-  g.fillStyle = '#fffbe8';
-  const star = (x, y, r) => {
+  const grad = g.createLinearGradient(0, 0, S, S);
+  grad.addColorStop(0, '#ffb238');
+  grad.addColorStop(0.5, '#ff5a3d');
+  grad.addColorStop(1, '#ff3d8b');
+  ring(S * 0.4, 18, '#ff8a3d', 40);
+  ring(S * 0.34, 8, '#ff3d8b', 30);
+  // Runes between the two rings: ticks and small diamonds.
+  g.save();
+  g.translate(cx, cy);
+  g.strokeStyle = '#ffd27a';
+  g.fillStyle = '#ffd27a';
+  g.lineWidth = 6 * u;
+  for (let k = 0; k < 24; k++) {
+    g.save();
+    g.rotate((k / 24) * Math.PI * 2);
+    if (k % 3 === 0) {
+      g.beginPath();
+      g.moveTo(0, -S * 0.385);
+      g.lineTo(S * 0.012, -S * 0.37);
+      g.lineTo(0, -S * 0.355);
+      g.lineTo(-S * 0.012, -S * 0.37);
+      g.closePath();
+      g.fill();
+    } else {
+      g.beginPath();
+      g.moveTo(0, -S * 0.38);
+      g.lineTo(0, -S * 0.36);
+      g.stroke();
+    }
+    g.restore();
+  }
+  // Two squares turned 45° (an eight-point star) inside, like a spell circle.
+  g.strokeStyle = 'rgba(255,170,90,0.85)';
+  g.lineWidth = 6 * u;
+  for (const off of [0, Math.PI / 4]) {
     g.beginPath();
-    for (let k = 0; k < 8; k++) {
-      const a = (k * Math.PI) / 4 - Math.PI / 2;
-      const rr = k % 2 ? r * 0.2 : r;
-      g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    for (let k = 0; k < 4; k++) {
+      const a = off - Math.PI / 2 + (k * Math.PI) / 2;
+      const x = Math.cos(a) * S * 0.32;
+      const y = Math.sin(a) * S * 0.32;
+      k ? g.lineTo(x, y) : g.moveTo(x, y);
     }
     g.closePath();
-    g.fill();
-  };
-  star(S * 0.2, S * 0.2, S * 0.05);
-  star(S * 0.82, S * 0.3, S * 0.04);
-  star(S * 0.16, S * 0.6, S * 0.03);
+    g.stroke();
+  }
+  g.restore();
+  g.globalCompositeOperation = 'source-over';
+  // Big white play sign in the middle, with a soft shadow.
+  g.save();
+  g.shadowColor = 'rgba(255,80,120,0.9)';
+  g.shadowBlur = 50 * u;
   g.fillStyle = '#ffffff';
+  const r = S * 0.17;
   g.beginPath();
-  g.arc(S * 0.82, S * 0.16, S * 0.065, 0, Math.PI * 2);
+  g.moveTo(cx - r * 0.6, cy - r);
+  g.lineTo(cx + r * 1.05, cy);
+  g.lineTo(cx - r * 0.6, cy + r);
+  g.closePath();
+  g.lineJoin = 'round';
+  g.lineWidth = 40 * u;
+  g.strokeStyle = '#ffffff';
+  g.stroke();
   g.fill();
+  g.restore();
+  // Recording dot.
   g.fillStyle = '#ff1e4d';
   g.beginPath();
-  g.arc(S * 0.82, S * 0.16, S * 0.045, 0, Math.PI * 2);
+  g.arc(S * 0.83, S * 0.17, S * 0.05, 0, Math.PI * 2);
   g.fill();
   return c.toDataURL('image/png');
 }

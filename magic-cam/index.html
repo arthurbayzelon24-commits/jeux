@@ -3,18 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Magic Cam</title>
+    <title>Magic Cam (Démo)</title>
     <meta
       name="description"
       content="Magic Cam : choisissez un pouvoir et filmez-vous avec des effets de magie en temps réel (rayon de feu, kamehameha, sabre laser, portail, éclairs…). Gratuit, dans le navigateur."
     />
     <meta name="theme-color" content="#0b0a0f" />
-    <link rel="icon" href="assets/icon3-64.png" type="image/png" />
-    <link rel="apple-touch-icon" href="assets/icon3-180.png" />
+    <link rel="icon" href="assets/icon4-64.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/icon4-180.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Magic Cam" />
+    <meta name="apple-mobile-web-app-title" content="Magic Cam (Démo)" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,7 +25,7 @@
     <!-- Powers: choose your magic -->
     <main class="home" id="view-home">
       <header class="banner">
-        <h1 class="title">Magic<br />Cam</h1>
+        <h1 class="title">Magic<br />Cam <span class="demo-tag">(Démo)</span></h1>
         <p class="tagline" id="tagline"></p>
         <button class="quick-film" id="quick-film"><i></i>Filmer en Mode libre</button>
         <button class="install-btn" id="install-btn" hidden><span data-icon="download"></span>Installer</button>
@@ -332,6 +332,7 @@
       <div class="fill-light" id="fill-light" hidden></div>
       <div class="look-chip" id="look-chip" hidden></div>
       <div class="studio-bottom">
+        <div class="zoom-pills" id="zoom-pills" aria-label="Zoom"></div>
         <div class="carousel" id="carousel" role="listbox" aria-label="Pouvoirs"></div>
         <div class="controls">
           <button class="mini-thumb" id="btn-gallery" aria-label="Mes vidéos"><span data-icon="video"></span></button>
@@ -384,6 +385,11 @@
       <div class="modal-card ask-card news-card">
         <h2>Quoi de neuf ? ✨</h2>
         <ul class="news-list">
+          <li>
+            <b>🔍 Zoom comme l’appareil photo</b> : pastilles <b>,5 · 1 · 2 · 5</b> au-dessus du bouton rouge, glisse dessus pour zoomer en
+            douceur, ou pince l’écran. À l’arrière, ,5 passe sur l’objectif ultra grand-angle quand le téléphone en a un.
+          </li>
+          <li><b>✨ Nouvelle icône</b> : un cercle magique avec un bouton lecture.</li>
           <li><b>🪩 Disco</b> (projecteurs, boule à facettes, beat de la musique) et <b>💡 Contour néon</b> arc-en-ciel.</li>
           <li><b>🌈 Mode Arc-en-ciel</b> : touche le bouton couleur jusqu’au bout, ton pouvoir change de couleur tout seul.</li>
           <li><b>🎞️ 2 filtres colorés</b> : Pop et Coucher de soleil (bouton pellicule).</li>
@@ -394,12 +400,6 @@
             <b>🌈 Interface en couleurs</b> : orange de feu, rose, violet et bleu ; chaque catégorie a sa couleur. (L’ancien style doré
             reste dans Paramètres.)
           </li>
-          <li>
-            <b>🔥 Boule de feu instantanée</b> : plus de charge. Tends la main vers la caméra et elle part droit sur l’écran, ou lance-la
-            d’un geste.
-          </li>
-          <li><b>🖐️ Nouvelle icône</b> : une main et sa boule de feu.</li>
-          <li><b>🔍 Zoom doublé</b> : jusqu’à 10× pour le visage, et un dézoom deux fois plus fort.</li>
         </ul>
         <button class="btn btn-gold" id="news-ok">C’est parti !</button>
       </div>

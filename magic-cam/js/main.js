@@ -163,6 +163,10 @@ let stream = null;
 let facing = 'user';
 // The side the camera really looks at (the browser may not give the one asked).
 let camFacing = 'user';
+// Ultra-wide lens chosen when zooming out below 1× (like the 0.5 of phone
+// cameras), or null for the normal camera; lensBase is its zoom (0.5).
+let lensDevice = null;
+let lensBase = 1;
 let loopId = 0;
 let lastVideoTime = -1;
 let camFrameNo = 0;
@@ -386,7 +390,7 @@ document.querySelectorAll('.tab').forEach((t) =>
 // ---------- First launch: tracking points? ----------
 function askPoints() {
   if (settings.pointsAsked) return;
-  $('ask-visual').innerHTML = '<img src="assets/icon3-192.png" alt="">';
+  $('ask-visual').innerHTML = '<img src="assets/icon4-192.png" alt="">';
   $('points-ask').hidden = false;
 }
 function answerPoints(yes) {
@@ -501,7 +505,7 @@ async function startCamera() {
   const short = Math.round((long * 9) / 16);
   // "ideal" values: the camera gives its best resolution up to the chosen one.
   const videoC = {
-    facingMode: facing,
+    ...(lensDevice ? { deviceId: { exact: lensDevice } } : { facingMode: facing }),
     width: { ideal: portrait ? short : long },
     height: { ideal: portrait ? long : short },
     frameRate: { ideal: cameraFps() },
@@ -1324,6 +1328,8 @@ $('btn-gallery').addEventListener('click', () => showPage('gallery'));
 $('btn-flip').addEventListener('click', async () => {
   if (recorder.recording) return;
   facing = facing === 'user' ? 'environment' : 'user';
+  lensDevice = null;
+  lensBase = 1;
   try {
     await startCamera();
     engine.tracker.reset();
@@ -1562,7 +1568,8 @@ function applyZoom() {
         );
       }, 120);
   }
-  const rest = zoomZ / (zoomCaps ? hw : 1);
+  const rest = zoomZ / ((zoomCaps ? hw : 1) * lensBase);
+  maybeSwitchLens();
   // The screen always stays filled. In: digital zoom drawn by the engine.
   // Out: the engine makes the filmed image smaller, the edges filled with a
   // soft blur: you get smaller in the frame, in the videos too.
@@ -1578,7 +1585,104 @@ function applyZoom() {
   zoomOne.style.bottom = `calc(11px + (100% - 24px) * ${pos(1).toFixed(3)})`;
   $('zoom-out').disabled = zoomZ <= lo + 0.001;
   $('zoom-in').disabled = zoomZ >= hi - 0.001;
+  updatePills();
   updateFormatGuide();
+}
+
+// ---------- Lenses: ultra-wide for zooming out, like phone cameras ----------
+// The back of many phones has an ultra-wide camera. Browsers show it as a
+// separate camera: when you zoom out below 0.75× on the back camera, the app
+// switches to it (a real, optical zoom out), and back above 0.95×.
+let lensBusy = false;
+async function findUltraWide() {
+  const list = await navigator.mediaDevices?.enumerateDevices?.().catch(() => []);
+  const cams = (list || []).filter((d) => d.kind === 'videoinput');
+  return (
+    cams.find((d) => /ultra|0[.,]5|grand[- ]angle|wide angle/i.test(d.label) && !/dual|triple|front|avant|user/i.test(d.label)) || null
+  );
+}
+async function maybeSwitchLens() {
+  if (lensBusy || recorder.recording || camFacing !== 'environment') return;
+  const wantWide = zoomZ < 0.75 && !lensDevice;
+  const wantMain = zoomZ > 0.95 && lensDevice;
+  if (!wantWide && !wantMain) return;
+  lensBusy = true;
+  try {
+    if (wantWide) {
+      const wide = await findUltraWide();
+      if (!wide) return;
+      lensDevice = wide.deviceId;
+      lensBase = 0.5;
+    } else {
+      lensDevice = null;
+      lensBase = 1;
+    }
+    await startCamera();
+    engine.tracker.reset();
+    showChip(lensDevice ? 'Objectif ultra grand-angle' : 'Objectif principal');
+  } catch {
+    lensDevice = null;
+    lensBase = 1;
+    startCamera().catch(showError);
+  } finally {
+    lensBusy = false;
+  }
+}
+
+// Zoom pills over the record button (0,5 · 1× · 2 · 5), like a phone camera.
+// Touch one to jump there, or slide along them to zoom smoothly.
+const PILLS = [0.5, 1, 2, 5];
+function updatePills() {
+  const box = $('zoom-pills');
+  if (!box.children.length)
+    for (const v of PILLS) {
+      const b = document.createElement('button');
+      b.className = 'zoom-pill';
+      b.dataset.z = v;
+      box.append(b);
+    }
+  // The pill closest to the zoom shows the exact value (like 1,4×).
+  let near = null;
+  for (const b of box.children) {
+    const v = Number(b.dataset.z);
+    if (!near || Math.abs(Math.log(zoomZ / v)) < Math.abs(Math.log(zoomZ / Number(near.dataset.z)))) near = b;
+  }
+  for (const b of box.children) {
+    const v = Number(b.dataset.z);
+    const on = b === near;
+    b.classList.toggle('on', on);
+    const shown = on ? Math.round(zoomZ * 10) / 10 : v;
+    b.textContent = `${String(shown).replace('.', ',').replace(/^0,/, ',')}${on ? '×' : ''}`;
+  }
+}
+{
+  const box = $('zoom-pills');
+  let drag = null;
+  box.addEventListener('pointerdown', (ev) => {
+    drag = { x: ev.clientX, z: zoomZ, moved: false };
+    box.setPointerCapture(ev.pointerId);
+  });
+  box.addEventListener('pointermove', (ev) => {
+    if (!drag) return;
+    const dx = ev.clientX - drag.x;
+    if (Math.abs(dx) > 6) drag.moved = true;
+    if (!drag.moved) return;
+    // Right = zoom in, left = zoom out; one pill width doubles the zoom.
+    zoomZ = drag.z * 2 ** (dx / 60);
+    applyZoom();
+  });
+  box.addEventListener('pointerup', (ev) => {
+    if (drag && !drag.moved) {
+      const b = document.elementsFromPoint(ev.clientX, ev.clientY).find((el) => el.classList?.contains('zoom-pill'));
+      if (b) {
+        zoomZ = Number(b.dataset.z);
+        applyZoom();
+        if (settings.haptics) navigator.vibrate?.(10);
+      }
+    }
+    drag = null;
+  });
+  box.addEventListener('pointercancel', () => (drag = null));
 }
 // Two-finger pinch anywhere on the camera image.
 let pinch0 = null;
@@ -1841,7 +1945,7 @@ function flushUnlocks() {
 }
 
 // "What's new" once per big update (after the first-launch question).
-const NEWS_KEY = 'magic-cam-news-9';
+const NEWS_KEY = 'magic-cam-news-10';
 function showNews() {
   try {
     if (localStorage.getItem(NEWS_KEY) || !settings.pointsAsked) return;

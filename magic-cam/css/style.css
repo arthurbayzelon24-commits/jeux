@@ -2574,3 +2574,59 @@ body.is-recording .rec-btn::before {
   border: 2px solid color-mix(in srgb, var(--tint, #fff) 70%, transparent);
   box-shadow: 0 0 10px color-mix(in srgb, var(--tint, #fff) 35%, transparent);
 }
+
+/* "(Démo)" next to the title */
+.demo-tag {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.28em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  -webkit-text-fill-color: #fff;
+  color: #fff;
+  background: rgba(10, 6, 24, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+/* Zoom pills over the record button, like a phone camera */
+.zoom-pills {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  width: fit-content;
+  margin: 0 auto 8px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(12, 10, 18, 0.45);
+  backdrop-filter: blur(10px);
+  touch-action: none;
+  user-select: none;
+}
+.zoom-pill {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  transition:
+    transform 0.15s,
+    background 0.2s;
+}
+.zoom-pill.on {
+  min-width: 44px;
+  color: #1a0d00;
+  background: var(--gold-1);
+  transform: scale(1.08);
+  box-shadow: 0 0 14px rgba(var(--acc-glow), 0.6);
+}
+/* The pills replace the side zoom bar and the 1× button */
+.zoom-bar,
+#btn-zoom {
+  display: none;
+}
