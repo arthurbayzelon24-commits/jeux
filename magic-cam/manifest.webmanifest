@@ -1,0 +1,17 @@
+{
+  "name": "Magic Cam (Démo)",
+  "short_name": "Magic Cam (Démo)",
+  "description": "Choisissez un pouvoir et filmez-vous avec des effets de magie en temps réel.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0a0f",
+  "theme_color": "#0b0a0f",
+  "icons": [
+    { "src": "assets/icon4-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon4-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon4-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Magic Cam (Démo)</title>
+    <meta
+      name="description"
+      content="Magic Cam : choisissez un pouvoir et filmez-vous avec des effets de magie en temps réel (rayon de feu, kamehameha, sabre laser, portail, éclairs…). Gratuit, dans le navigateur."
+    />
+    <meta name="theme-color" content="#0b0a0f" />
+    <link rel="icon" href="assets/icon4-64.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/icon4-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Magic Cam (Démo)" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Powers: choose your magic -->
+    <main class="home" id="view-home">
+      <header class="banner">
+        <h1 class="title">Magic<br />Cam <span class="demo-tag">(Démo)</span></h1>
+        <p class="tagline" id="tagline"></p>
+        <button class="quick-film" id="quick-film"><i></i>Filmer en Mode libre</button>
+        <button class="install-btn" id="install-btn" hidden><span data-icon="download"></span>Installer</button>
+      </header>
+      <section class="hub">
+        <button class="wallet-card" id="wallet-card" aria-label="Défis">
+          <span class="wallet-gem">🏆</span>
+          <span class="lvl-info"
+            ><strong><span id="wallet-num">0</span> défis réussis</strong><small id="wallet-streak"></small
+          ></span>
+          <span class="wallet-shop">Défis ›</span>
+        </button>
+        <div class="challenges-card">
+          <div class="ch-head"><strong>Défis du jour</strong><small id="hub-done">0/3</small></div>
+          <div id="hub-challenges"></div>
+        </div>
+      </section>
+      <button class="daily" id="daily" aria-label="Pouvoir du jour">
+        <img id="daily-img" alt="" />
+        <span class="daily-text"><small>⭐ Pouvoir du jour</small><strong id="daily-name"></strong><span id="daily-gesture"></span></span>
+        <span class="daily-go">Essayer</span>
+      </button>
+      <section class="recent" id="recent" hidden>
+        <h2 class="shelf-title">Récents</h2>
+        <div class="recent-row"></div>
+      </section>
+      <label class="search">
+        <span aria-hidden="true">🔎</span
+        ><input id="power-search" type="search" placeholder="Chercher un pouvoir (feu, clones, portail…)" autocomplete="off" />
+      </label>
+      <nav class="cats" id="cats" aria-label="Catégories"></nav>
+      <p class="muted search-empty" id="search-empty" hidden>Aucun pouvoir trouvé.</p>
+      <div class="powers" id="powers"></div>
+    </main>
+
+    <!-- Progress: level, stats, achievements -->
+    <main class="view" id="view-progress">
+      <header class="page-head">
+        <button class="btn btn-ghost back-cam" data-back><span data-icon="back"></span>Retour</button>
+        <h1 class="page-title">Défis</h1>
+      </header>
+      <div class="progress-page">
+        <h2 class="sub-title">Défis du jour</h2>
+        <p class="muted">Trois nouveaux défis chaque jour. Reviens tous les jours pour allonger ta série.</p>
+        <div class="challenges-card" id="shop-challenges"></div>
+        <h2 class="sub-title">Gestes du Mode libre</h2>
+        <div class="ach-list" id="free-moves"></div>
+        <div class="shop-list" id="shop-list"></div>
+      </div>
+    </main>
+
+    <!-- Gallery -->
+    <main class="view" id="view-gallery">
+      <header class="page-head">
+        <button class="btn btn-ghost back-cam" data-back><span data-icon="back"></span>Retour</button>
+        <h1 class="page-title">Mes vidéos</h1>
+        <button class="btn btn-ghost" id="gallery-select">Sélectionner</button>
+      </header>
+      <div class="gallery-bar">
+        <div class="seg" id="gallery-kind">
+          <button data-kind="all" class="active">Tout</button><button data-kind="video">Vidéos</button
+          ><button data-kind="photo">Photos</button>
+        </div>
+        <select id="gallery-sort" aria-label="Trier">
+          <option value="new">Plus récentes</option>
+          <option value="old">Plus anciennes</option>
+          <option value="long">Plus longues</option>
+          <option value="power">Par pouvoir</option>
+        </select>
+      </div>
+      <p class="gallery-usage" id="gallery-usage"></p>
+      <div class="grid media-grid" id="gallery-grid"></div>
+      <div class="select-bar" id="select-bar" hidden>
+        <span id="select-count">0 sélectionnée</span>
+        <button class="btn btn-ghost" id="select-all">Tout</button>
+        <button class="btn btn-danger" id="select-delete"><span data-icon="trash"></span>Supprimer</button>
+      </div>
+      <div class="empty" id="gallery-empty" hidden>
+        <span data-icon="video"></span>
+        <p>Aucune vidéo pour l’instant.</p>
+        <button class="quick-film" id="empty-film"><i></i>Filmer ma première vidéo</button>
+      </div>
+    </main>
+
+    <!-- Settings -->
+    <main class="view" id="view-settings">
+      <header class="page-head">
+        <button class="btn btn-ghost back-cam" data-back><span data-icon="back"></span>Retour</button>
+        <h1 class="page-title">Paramètres</h1>
+      </header>
+      <form class="settings" id="settings-form">
+        <fieldset>
+          <legend>Affichage</legend>
+          <label class="row toggle"
+            ><span>Coach caméra<small>Des conseils à l’écran (lumière, distance, mains) quand la détection a du mal</small></span
+            ><input type="checkbox" name="coach"
+          /></label>
+          <label class="row toggle"
+            ><span
+              >Mode portrait<small
+                >L’arrière-plan est flouté, toi tu restes net, comme sur les téléphones récents (aussi dans les vidéos)</small
+              ></span
+            ><input type="checkbox" name="bokeh"
+          /></label>
+          <label class="row toggle"
+            ><span>Traînées de couleur<small>Le bout de tes doigts laisse une traînée arc-en-ciel, avec tous les pouvoirs</small></span
+            ><input type="checkbox" name="trails"
+          /></label>
+          <label class="row toggle"
+            ><span>Afficher les points<small>Les points qui suivent tes mains et ton corps (aussi dans les vidéos)</small></span
+            ><input type="checkbox" name="points"
+          /></label>
+          <label class="row">
+            <span>Couleur de l’application<small>Boutons, cadres et menus</small></span>
+            <span class="theme-swatches" id="theme-swatches"></span>
+            <select name="theme" class="theme-select">
+              <option value="couleurs">Couleurs (orange, rose, violet)</option>
+              <option value="or">Or</option>
+              <option value="violet">Violet</option>
+              <option value="cyan">Cyan</option>
+              <option value="rose">Rose</option>
+              <option value="vert">Vert</option>
+              <option value="rouge">Rouge</option>
+            </select>
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>Image</legend>
+          <label class="row">
+            <span
+              >Priorité<small
+                >Les caméras ne filment qu’à 30 i/s en 4K : la fluidité baisse un peu la définition pour aller jusqu’à 60, 120 ou 240
+                i/s</small
+              ></span
+            >
+            <select name="priority">
+              <option value="smooth">Fluidité maximale (recommandé)</option>
+              <option value="sharp">Netteté maximale</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Définition<small>Utilisée en « Netteté maximale » : la caméra donne le mieux qu’elle peut</small></span>
+            <select name="quality">
+              <option value="32k">32K · maximum (recommandé)</option>
+              <option value="16k">16K</option>
+              <option value="4320">8K</option>
+              <option value="2160">4K</option>
+              <option value="1080">Full HD 1080p</option>
+              <option value="720">HD 720p</option>
+              <option value="smooth">Définition de l’écran</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Images par seconde<small>Demandées à la caméra ; l’affichage suit la fréquence de l’écran</small></span>
+            <select name="fpsTarget">
+              <option value="250">250 i/s · maximum</option>
+              <option value="240">240 i/s</option>
+              <option value="144">144 i/s</option>
+              <option value="120">120 i/s</option>
+              <option value="60">60 i/s</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Taille des pouvoirs</span>
+            <select name="powerSize">
+              <option value="0.75">Petite</option>
+              <option value="1">Normale</option>
+              <option value="1.3">Grande</option>
+              <option value="1.7">Énorme</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Qualité des effets</span>
+            <select name="fxQuality">
+              <option value="ultra">Ultra</option>
+              <option value="high">Haute</option>
+              <option value="eco">Économie</option>
+            </select>
+          </label>
+          <label class="row toggle"
+            ><span>Halo lumineux (bloom)<small>Lueur cinéma autour des effets</small></span
+            ><input type="checkbox" name="bloom"
+          /></label>
+          <label class="row toggle"
+            ><span>Vibrations<small>Le téléphone vibre aux impacts, aux finals et aux cibles touchées</small></span
+            ><input type="checkbox" name="haptics"
+          /></label>
+          <label class="row toggle"
+            ><span
+              >Transition douce entre les images<small
+                >Quand la caméra est plus lente que l’écran, votre image glisse au lieu de sauter</small
+              ></span
+            ><input type="checkbox" name="frameBlend"
+          /></label>
+          <label class="row toggle"><span>Effet miroir (caméra avant)</span><input type="checkbox" name="mirror" /></label>
+          <label class="row toggle"><span>Vignette cinéma</span><input type="checkbox" name="cinema" /></label>
+          <label class="row toggle"
+            ><span>Afficher les images par seconde<small>Compteur en haut de l’écran de la caméra</small></span
+            ><input type="checkbox" name="fps"
+          /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Enregistrement</legend>
+          <label class="row">
+            <span>Format de la vidéo<small>9:16 pour TikTok, Reels et Shorts</small></span>
+            <select name="format">
+              <option value="auto">Comme la caméra</option>
+              <option value="9:16">9:16 vertical (TikTok)</option>
+              <option value="1:1">1:1 carré</option>
+              <option value="16:9">16:9 horizontal</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Compte à rebours</span>
+            <select name="countdown">
+              <option value="0">Aucun</option>
+              <option value="3">3, 2, 1</option>
+              <option value="5">5 secondes</option>
+              <option value="10">10 secondes</option>
+            </select>
+          </label>
+          <label class="row">
+            <span>Durée maximale</span>
+            <select name="maxDuration">
+              <option value="15">15 secondes</option>
+              <option value="30">30 secondes</option>
+              <option value="60">60 secondes</option>
+              <option value="180">3 minutes</option>
+            </select>
+          </label>
+          <label class="row toggle"><span>Garder dans Mes vidéos</span><input type="checkbox" name="autosave" /></label>
+          <label class="row toggle"
+            ><span
+              >Lumière d’appoint<small
+                >Un bord blanc lumineux sur l’écran éclaire ton visage dans le noir (caméra avant). Il n’apparaît pas dans les vidéos</small
+              ></span
+            ><input type="checkbox" name="fillLight"
+          /></label>
+          <label class="row toggle"
+            ><span>Grille de cadrage<small>Règle des tiers, pour bien placer ton sujet (pas dans les vidéos)</small></span
+            ><input type="checkbox" name="grid"
+          /></label>
+          <label class="row toggle"
+            ><span>Fondu au noir<small>Les vidéos commencent et finissent par un fondu, comme au cinéma</small></span
+            ><input type="checkbox" name="fades"
+          /></label>
+          <label class="row toggle"
+            ><span
+              >Flou de mouvement<small>Traînée des effets rapides. Désactivé par défaut sur téléphone pour plus de fluidité</small></span
+            ><input type="checkbox" name="motionBlur"
+          /></label>
+          <label class="row toggle"
+            ><span
+              >Transition magique<small
+                >Cache la caméra avec ta main puis enlève-la : tu changes de pouvoir avec un flash (tes favoris d’abord)</small
+              ></span
+            ><input type="checkbox" name="transition"
+          /></label>
+          <label class="row toggle"
+            ><span
+              >Filmer sans les mains<small>Montre tes deux paumes, immobiles, 1,5 s pour lancer ou arrêter l’enregistrement</small></span
+            ><input type="checkbox" name="handsFree"
+          /></label>
+          <label class="row toggle"><span>Micro dans les vidéos</span><input type="checkbox" name="mic" /></label>
+          <label class="row toggle"
+            ><span>Ralenti cinéma<small>Les coups finaux passent au ralenti un instant, comme dans un film</small></span
+            ><input type="checkbox" name="cineSlow"
+          /></label>
+          <label class="row toggle"
+            ><span>Cri de pouvoir<small>Plus tu cries fort, plus les pouvoirs sont gros (micro)</small></span
+            ><input type="checkbox" name="voiceBoost"
+          /></label>
+          <label class="row toggle"><span>Sons des pouvoirs</span><input type="checkbox" name="sound" /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Application</legend>
+          <button type="button" class="btn btn-gold" id="install-settings" hidden>
+            <span data-icon="download"></span>Installer Magic Cam
+          </button>
+          <p class="muted small" id="install-help">
+            Installez Magic Cam sur l’écran d’accueil : sur Android et ordinateur, menu du navigateur › « Installer l’application » ; sur
+            iPhone, bouton Partager › « Sur l’écran d’accueil ». Une fois installée, elle se met à jour toute seule.
+          </p>
+        </fieldset>
+        <fieldset>
+          <legend>Données</legend>
+          <button type="button" class="btn btn-ghost danger" id="clear-gallery">Supprimer toutes mes vidéos</button>
+          <p class="muted small">
+            Tout fonctionne dans votre navigateur : aucune image n’est envoyée. Les modèles de détection (MediaPipe, Google) sont
+            téléchargés une fois au premier lancement.
+          </p>
+        </fieldset>
+        <button type="button" class="quick-film news-again" id="news-again"><i></i>Voir les nouveautés</button>
+        <button type="button" class="btn btn-ghost reset-settings" id="reset-settings">Remettre les réglages par défaut</button>
+      </form>
+    </main>
+
+    <!-- Camera -->
+    <section class="studio" id="view-studio" hidden>
+      <video id="cam" playsinline muted autoplay></video>
+      <canvas id="stage"></canvas>
+      <div class="vignette" id="vignette"></div>
+      <div class="flash" id="shutter-flash"></div>
+
+      <div class="studio-top">
+        <button class="icon-btn" id="btn-back" aria-label="Choisir un autre pouvoir"><span data-icon="grid"></span></button>
+        <div class="power-pill" id="power-pill" role="button" tabindex="0" aria-label="Comment utiliser ce pouvoir"></div>
+        <div class="rec-chip" id="rec-chip" hidden><i></i><span id="rec-time">00:00</span></div>
+        <div class="fps" id="fps" hidden></div>
+      </div>
+
+      <div class="studio-side">
+        <button class="icon-btn" id="btn-flip" aria-label="Changer de caméra"><span data-icon="flip"></span></button>
+        <button class="icon-btn zoom-btn" id="btn-zoom" aria-label="Zoom (pince l’écran avec deux doigts)">1×</button>
+        <button class="icon-btn" id="btn-color" aria-label="Changer la couleur"><span class="swatch" id="swatch"></span></button>
+        <button class="icon-btn" id="btn-dual" aria-label="Double pouvoir"><span data-icon="hands"></span></button>
+        <button class="icon-btn" id="btn-look" aria-label="Filtre d’image"><span data-icon="film"></span></button>
+        <button class="icon-btn" id="btn-points" aria-label="Points de suivi"><span data-icon="points"></span></button>
+        <button class="icon-btn" id="btn-parade" aria-label="Défilé de pouvoirs"><span data-icon="shuffle"></span></button>
+        <button class="icon-btn" id="btn-clean" aria-label="Écran propre (cacher les boutons)"><span data-icon="eye"></span></button>
+        <button class="icon-btn" id="btn-slowmo" aria-label="Ralenti magique"><span data-icon="slow"></span></button>
+        <button class="icon-btn" id="btn-music" aria-label="Musique de fond"><span data-icon="music"></span></button>
+        <button class="icon-btn" id="btn-sound" aria-label="Sons"><span data-icon="sound"></span></button>
+      </div>
+
+      <div class="zoom-bar" id="zoom-bar">
+        <button class="icon-btn zoom-step" id="zoom-in" aria-label="Zoomer">+</button>
+        <div class="zoom-track" id="zoom-track" aria-label="Niveau de zoom"><i id="zoom-fill"></i><b id="zoom-knob"></b></div>
+        <button class="icon-btn zoom-step" id="zoom-out" aria-label="Dézoomer">−</button>
+      </div>
+
+      <button class="action-btn" id="btn-action" hidden></button>
+      <div class="countdown" id="countdown" hidden></div>
+      <div class="coach" id="coach" hidden></div>
+      <div class="howto" id="howto" hidden><b id="howto-title"></b><span id="howto-text"></span></div>
+      <div class="format-guide" id="format-guide" hidden></div>
+      <div class="frame-grid" id="frame-grid" hidden></div>
+      <div class="fill-light" id="fill-light" hidden></div>
+      <div class="look-chip" id="look-chip" hidden></div>
+      <div class="studio-bottom">
+        <div class="zoom-pills" id="zoom-pills" aria-label="Zoom"></div>
+        <div class="carousel" id="carousel" role="listbox" aria-label="Pouvoirs"></div>
+        <div class="controls">
+          <button class="mini-thumb" id="btn-gallery" aria-label="Mes vidéos"><span data-icon="video"></span></button>
+          <button class="rec-btn" id="btn-record" aria-label="Enregistrer">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="rec-ring" cx="50" cy="50" r="46" />
+              <circle class="rec-progress" id="rec-progress" cx="50" cy="50" r="46" />
+            </svg>
+            <span class="rec-core"></span>
+          </button>
+          <button class="icon-btn big" id="btn-photo" aria-label="Photo"><span data-icon="camera"></span></button>
+          <button class="icon-btn big" id="btn-pause" aria-label="Pause"><span data-icon="pause"></span></button>
+        </div>
+      </div>
+
+      <div class="loading" id="loading" hidden>
+        <div class="loading-card">
+          <div class="orb"></div>
+          <div class="bar"><i id="loading-bar"></i></div>
+        </div>
+      </div>
+
+      <div class="error" id="error" hidden>
+        <div class="error-card">
+          <span data-icon="camera"></span>
+          <h2 id="error-title">Caméra indisponible</h2>
+          <p id="error-text"></p>
+          <div class="error-actions">
+            <button class="btn btn-gold" id="error-retry">Activer la caméra</button>
+            <button class="btn btn-ghost" id="error-back">Retour</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- First launch: tracking points? -->
+    <div class="modal" id="buy" hidden>
+      <div class="modal-card ask-card">
+        <img class="buy-img" id="buy-img" alt="" />
+        <h2 id="buy-name"></h2>
+        <p id="buy-text"></p>
+        <div class="ask-actions">
+          <button class="btn btn-gold" id="buy-ok">Débloquer</button>
+          <button class="btn btn-ghost" id="buy-cancel">Plus tard</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="news" hidden>
+      <div class="modal-card ask-card news-card">
+        <h2>Quoi de neuf ? ✨</h2>
+        <ul class="news-list">
+          <li><b>🔍 Dézoom 3 fois plus fort</b> : nouvelle pastille <b>,1</b>, ou glisse vers la gauche sur les pastilles.</li>
+          <li><b>👩‍🚀 Casque d’astronaute</b> : une bulle de verre autour de ta tête.</li>
+          <li><b>⭐ Attrape-étoiles</b> et <b>🔦 Projecteur</b> de scène qui te suit.</li>
+          <li><b>🫰 Mode libre</b> : un claquement de doigts déclenche une onde de choc.</li>
+          <li><b>❄️ Corps de glace</b> : le givre pousse sur ton contour, et éclate quand tu ouvres les mains.</li>
+          <li><b>🕘 Récents</b> : tes derniers pouvoirs en haut de l’accueil.</li>
+          <li>
+            <b>👁️ Écran propre</b> (bouton œil) : cache tous les boutons pour filmer avec l’enregistreur d’écran ; touche l’image pour les
+            revoir.
+          </li>
+          <li><b>🕯️ Doigts de feu</b> et <b>🧤 Gant aux 6 pierres</b> (claque des doigts pour l’éclat).</li>
+          <li><b>★ Favoris rapides</b> : appui long sur un pouvoir dans le studio pour le mettre en favori.</li>
+          <li><b>🪢 Fouet d’énergie</b> : une corde de lumière qui suit ta main et claque quand tu fouettes.</li>
+          <li>
+            <b>⚡ Super vitesse</b> (images rémanentes quand tu bouges) et <b>💠 Hologramme</b> (tu deviens un hologramme qui grésille).
+          </li>
+          <li><b>👑 Couronne royale</b> et <b>🦸 Masque de héros</b> qui suivent ta tête.</li>
+          <li><b>📷 Mode portrait</b> (Paramètres) : arrière-plan flouté, toi net, avec tous les pouvoirs.</li>
+          <li><b>🫰 Désintégration</b> : claque des doigts, tu pars en poussière comme dans le film ; reclaque pour revenir.</li>
+          <li><b>👤 Ombre vivante</b> : ton ombre aux yeux brillants te suit sur le mur, avec un temps de retard.</li>
+        </ul>
+        <button class="btn btn-gold" id="news-ok">C’est parti !</button>
+      </div>
+    </div>
+
+    <div class="modal" id="points-ask" hidden>
+      <div class="modal-card ask-card">
+        <div class="ask-visual" id="ask-visual"></div>
+        <h2>Voulez-vous les points ?</h2>
+        <p>
+          Des points s’affichent sur vos mains et votre corps pour voir ce que la caméra suit. Vous pourrez changer dans les Paramètres.
+        </p>
+        <div class="ask-actions">
+          <button class="btn btn-gold" id="ask-yes">Oui, afficher les points</button>
+          <button class="btn btn-ghost" id="ask-no">Non</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="modal" id="result" hidden>
+      <div class="modal-card result-card">
+        <button class="icon-btn close" data-close aria-label="Fermer"><span data-icon="close"></span></button>
+        <div class="result-media" id="result-media"></div>
+        <div class="trim-panel" id="trim-panel" hidden>
+          <label>Début <b id="trim-a-v">0,0 s</b><input type="range" id="trim-a" min="0" max="10" step="0.1" value="0" /></label>
+          <label>Fin <b id="trim-b-v">0,0 s</b><input type="range" id="trim-b" min="0" max="10" step="0.1" value="10" /></label>
+          <button class="btn btn-gold" id="trim-ok"><span class="lbl">Couper la vidéo</span></button>
+        </div>
+        <div class="result-actions">
+          <button class="btn btn-gold" id="res-share"><span data-icon="share"></span>Partager</button>
+          <button class="btn btn-ghost" id="res-download"><span data-icon="download"></span>Télécharger</button>
+          <button class="btn btn-ghost" id="res-save"><span data-icon="video"></span>Garder</button>
+          <button class="btn btn-ghost" id="res-slow"><span data-icon="slow"></span><span class="lbl">Ralenti</span></button>
+          <button class="btn btn-ghost" id="res-trim"><span data-icon="scissors"></span><span class="lbl">Couper</span></button>
+          <button class="btn btn-ghost" id="res-fast"><span data-icon="fast"></span><span class="lbl">Accéléré</span></button>
+          <button class="btn btn-ghost" id="res-boom"><span data-icon="boomerang"></span><span class="lbl">Boomerang</span></button>
+          <button class="btn btn-ghost" id="res-retake"><span data-icon="video"></span>Refaire</button>
+          <button class="btn btn-ghost danger" id="res-delete"><span data-icon="trash"></span>Supprimer</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="unlock" id="unlock" hidden>
+      <span class="unlock-icon" id="unlock-icon"></span><span><strong id="unlock-title"></strong><small id="unlock-text"></small></span>
+    </div>
+
+    <nav class="tabbar" id="tabbar">
+      <button class="tab active" data-tab="home"><span data-icon="sparkle"></span>Pouvoirs</button>
+      <button class="tab" data-tab="gallery"><span data-icon="folder"></span>Mes vidéos</button>
+      <button class="tab" data-tab="progress"><span data-icon="trophy"></span>Défis</button>
+      <button class="tab" data-tab="settings"><span data-icon="gear"></span>Paramètres</button>
+    </nav>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
