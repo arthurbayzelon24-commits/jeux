@@ -2759,3 +2759,22 @@ body.is-recording .coach {
   border: 1.5px solid color-mix(in srgb, var(--tint, #ff9a3d) 60%, transparent);
   box-shadow: 0 6px 20px color-mix(in srgb, var(--tint, #ff9a3d) 22%, transparent);
 }
+
+/* Favourite powers in the studio row: a small star */
+.fx-chip {
+  position: relative;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+.fx-chip img {
+  -webkit-user-drag: none;
+}
+.fx-chip.fav::after {
+  content: '★';
+  position: absolute;
+  right: -2px;
+  top: -4px;
+  font-size: 14px;
+  color: #ffd23d;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
