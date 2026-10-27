@@ -2,6 +2,7 @@
 // ears and the eyes give the size and the tilt of the head).
 //   Couronne royale   a golden crown with gems and sparkles
 //   Masque de héros   a superhero mask over the eyes
+//   Casque d'astronaute  a glass bubble helmet around the head
 import { Particles, drawGlow, rand, TAU } from './util.js';
 
 // Head position, size and tilt from the body points, smoothed so it does
@@ -181,6 +182,93 @@ export function heroMaskEffect() {
         ctx.stroke();
       }
       ctx.restore();
+    },
+  };
+}
+
+// ---------- Casque d'astronaute ----------
+// A glass bubble helmet around your head, with reflections, a metal collar
+// and little lights; bubbles of air rise inside it.
+export function helmetEffect() {
+  const head = headTracker();
+  let hd = null;
+  const bubbles = new Particles(60);
+
+  return {
+    id: 'helmet',
+    name: 'Casque d’astronaute',
+    hint: 'Regarde la caméra : un casque de verre se pose sur ta tête, avec ses reflets et ses petites lumières.',
+    needs: { seg: false, pose: true },
+    start() {
+      bubbles.clear();
+    },
+    update(dt, hands, e) {
+      bubbles.update(dt);
+      hd = head(e);
+      if (hd && Math.random() < 0.15)
+        bubbles.add({
+          x: hd.x + rand(-0.5, 0.5) * hd.w,
+          y: hd.y + hd.w * 0.6,
+          vx: rand(-10, 10),
+          vy: -rand(30, 70) * e.unit,
+          life: rand(1, 2),
+          size: rand(2, 5) * e.unit,
+          rgb: [200, 240, 255],
+          core: 0.2,
+          alpha: 0.5,
+        });
+    },
+    drawOver(ctx, e) {
+      if (!hd) return;
+      const { x, y, w, tilt } = hd;
+      const R = w * 1.05;
+      const cy = y - w * 0.15;
+      ctx.save();
+      // Glass: a light tint, brighter on the rim.
+      const glass = ctx.createRadialGradient(x - R * 0.3, cy - R * 0.35, R * 0.1, x, cy, R);
+      glass.addColorStop(0, 'rgba(255,255,255,0.12)');
+      glass.addColorStop(0.7, 'rgba(170,220,255,0.06)');
+      glass.addColorStop(1, 'rgba(170,220,255,0.35)');
+      ctx.fillStyle = glass;
+      ctx.beginPath();
+      ctx.arc(x, cy, R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(220,240,255,0.7)';
+      ctx.lineWidth = 3 * e.unit;
+      ctx.stroke();
+      // Reflections.
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = R * 0.06;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(x, cy, R * 0.82, Math.PI * 1.1, Math.PI * 1.4);
+      ctx.stroke();
+      ctx.lineWidth = R * 0.03;
+      ctx.beginPath();
+      ctx.arc(x, cy, R * 0.82, Math.PI * 1.5, Math.PI * 1.58);
+      ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
+      // Metal collar under the chin, tilted with the head.
+      ctx.translate(x, cy);
+      ctx.rotate(tilt);
+      const collar = ctx.createLinearGradient(0, R * 0.8, 0, R * 1.15);
+      collar.addColorStop(0, '#e9eef5');
+      collar.addColorStop(1, '#7d8696');
+      ctx.fillStyle = collar;
+      ctx.beginPath();
+      ctx.ellipse(0, R * 0.95, R * 0.95, R * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Little lights on the collar.
+      ctx.globalCompositeOperation = 'lighter';
+      for (const [dx, col] of [
+        [-0.5, [255, 60, 60]],
+        [0, [80, 255, 140]],
+        [0.5, [80, 180, 255]],
+      ])
+        drawGlow(ctx, col, R * dx, R * 0.95, R * 0.08, 0.6 + 0.4 * Math.sin(e.t * 4 + dx * 5), 0.5);
+      ctx.restore();
+      bubbles.draw(ctx);
     },
   };
 }
