@@ -89,6 +89,7 @@ const DEFAULTS = {
   cineSlow: true,
   coach: true,
   trails: false,
+  bokeh: false,
   format: 'auto',
   fillLight: false,
   fades: true,
@@ -691,7 +692,7 @@ function loop(now) {
   const fx = engine.effect;
   // A body power needs the silhouette every frame; the point cloud alone
   // only every third camera frame (the segmentation is the heaviest model).
-  const needSeg = !!fx?.needs?.seg;
+  const needSeg = !!fx?.needs?.seg || !!settings.bokeh;
   const wantSeg = needSeg || settings.points;
   // Each new camera frame goes to the detection worker; rendering never waits
   // for it, and the engine predicts the hands' motion in between.

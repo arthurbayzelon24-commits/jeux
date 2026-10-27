@@ -81,6 +81,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Écran brisé** : un coup de poing vers la caméra fissure l’écran comme du verre, là où tu frappes.
 - **Désintégration** (Héros) : claquement de doigts, tu pars en poussière de la tête aux pieds, emporté par le vent ; un second claquement te reforme. Le décor mémorisé apparaît derrière.
 - **Ombre vivante** (Héros) : ton ombre apparaît sur le mur derrière toi, décalée et en retard de 0,6 s, avec deux yeux qui brillent ; poing serré = elle grandit.
+- **Mode portrait** (Paramètres > Affichage) : l’IA détoure ta silhouette, l’arrière-plan est flouté et toi tu restes net, avec n’importe quel pouvoir et dans les vidéos.
 - **Traînées de couleur** (Paramètres > Affichage) : le bout de chaque doigt laisse une courte traînée arc-en-ciel, avec n’importe quel pouvoir (aussi dans les vidéos).
 - **Raccourcis clavier** (ordinateur) : Espace = filmer, ← → = pouvoir précédent / suivant, + / − = zoom, 0 = 1×, P = photo, C = couleur, R = ralenti, Échap = retour.
 - **Recherche** : une barre sur l’accueil trouve un pouvoir par son nom, son geste ou sa catégorie (sans tenir compte des accents).
