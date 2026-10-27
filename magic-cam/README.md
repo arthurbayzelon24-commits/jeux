@@ -83,6 +83,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Ondes d’eau** (Physique) : l’image devient la surface de l’eau ; ton index crée des vagues qui déforment l’image, une main ouverte qui frappe fait une grosse vague.
 - **Défilé** (bouton flèches croisées du studio) : un nouveau pouvoir (tes favoris d’abord) toutes les 4 s, avec flash, comme un montage automatique.
 - **Écran brisé** : un coup de poing vers la caméra fissure l’écran comme du verre, là où tu frappes.
+- **Casque d’astronaute** (Fun) : une bulle de verre avec reflets, un col en métal et ses petites lumières autour de ta tête.
 - **Couronne royale** (Fun) et **Masque de héros** (Héros) : posés sur ta tête et tes yeux grâce au suivi du corps, ils suivent la position, la taille et l’inclinaison de ta tête.
 - **Super vitesse** (Héros) : quand tu bouges vite, des images de toi en couleur restent derrière, avec des étincelles sur ton contour. **Hologramme** (Héros) : tu deviens transparent et coloré, avec des lignes de balayage, un scintillement et des parasites (claquement de doigts = gros bug).
 - **Désintégration** (Héros) : claquement de doigts, tu pars en poussière de la tête aux pieds, emporté par le vent ; un second claquement te reforme. Le décor mémorisé apparaît derrière.

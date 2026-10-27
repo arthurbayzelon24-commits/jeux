@@ -26,7 +26,7 @@ import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
 import { runesEffect } from './fx/runes.js';
 import { freeModeEffect } from './fx/free.js';
-import { crownEffect, heroMaskEffect } from './fx/pack-face.js';
+import { crownEffect, heroMaskEffect, helmetEffect } from './fx/pack-face.js';
 import { fireFingersEffect, gauntletEffect } from './fx/pack-hands.js';
 import { stringsEffect, fireTornadoEffect, whipEffect } from './fx/pack-energy2.js';
 import { discoEffect, neonOutlineEffect, glassEffect, starCatchEffect, spotlightEffect } from './fx/pack-party.js';
@@ -163,6 +163,7 @@ export const EFFECTS = [
   { id: 'neonline', cat: 'fun', make: neonOutlineEffect, tint: '#3fd0ff', gesture: 'Votre contour brille en néon' },
   { id: 'glass', cat: 'fun', make: glassEffect, tint: '#dcefff', gesture: 'Coup de poing vers la caméra' },
   { id: 'crown', cat: 'fun', make: crownEffect, tint: '#f2c14e', gesture: 'Regardez la caméra' },
+  { id: 'helmet', cat: 'fun', make: helmetEffect, tint: '#aadcff', gesture: 'Regardez la caméra' },
   { id: 'heromask', cat: 'heros', make: heroMaskEffect, tint: '#c4161c', gesture: 'Regardez la caméra' },
   { id: 'gauntlet', cat: 'heros', make: gauntletEffect, tint: '#e3b23c', gesture: 'Montrez la main, claquez des doigts' },
 ];

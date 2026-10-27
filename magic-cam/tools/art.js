@@ -287,6 +287,7 @@ function scene(id, W, H) {
     sakura: { hands: one('open', 0.62, 0.95, { roll: 0.3 }), frames: 150 },
     aura: { hands: one('open', 0.8, 0.62, { roll: 0.2 }), frames: 50, person: true },
     teleport: { hands: one('open', 0.8, 0.62, { roll: 0.2 }), frames: 50, person: true, trigger: 38 },
+    helmet: { hands: () => [], frames: 20, person: true, pose: true },
     crown: { hands: () => [], frames: 30, person: true, pose: true },
     heromask: { hands: () => [], frames: 10, person: true, pose: true },
     speed: { hands: () => [], frames: 30, person: true, trigger: 2 },
