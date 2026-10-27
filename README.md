@@ -79,6 +79,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Ondes d’eau** (Physique) : l’image devient la surface de l’eau ; ton index crée des vagues qui déforment l’image, une main ouverte qui frappe fait une grosse vague.
 - **Défilé** (bouton flèches croisées du studio) : un nouveau pouvoir (tes favoris d’abord) toutes les 4 s, avec flash, comme un montage automatique.
 - **Écran brisé** : un coup de poing vers la caméra fissure l’écran comme du verre, là où tu frappes.
+- **Recherche** : une barre sur l’accueil trouve un pouvoir par son nom, son geste ou sa catégorie (sans tenir compte des accents).
 - **Pouvoir du jour** : sur l’accueil, un pouvoir mis en avant, différent chaque jour, avec un bouton Essayer.
 - **Coach caméra** (Paramètres, activé par défaut) : une bulle à l’écran, jamais dans les vidéos, prévient quand il fait trop sombre, quand ta main n’est pas vue ou quand tu es trop loin.
 - **Zoom comme l’appareil photo** : pastilles ,5 · 1 · 2 · 5 au-dessus du bouton d’enregistrement (touche pour sauter, glisse pour zoomer en douceur), pincement à deux doigts ou molette. Avec la caméra arrière, sous 0,75× l’application passe sur l’objectif ultra grand-angle du téléphone quand le navigateur le propose (vrai dézoom optique), et revient à l’objectif principal au-dessus de 0,95×.
