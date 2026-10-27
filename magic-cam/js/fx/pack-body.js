@@ -4,6 +4,7 @@
 //                  both sides, a little late; a snap dispels them
 //   Invisibilité   snap (or fist -> open): you vanish, only a shimmer is left
 //   Taille         snap (or fist -> open): mini you, giant you, back to normal
+//   Désintégration snap: you crumble into dust, snap again to come back
 import { Particles, rand, TAU, clamp, makeCanvas, noise1, drawGlow } from './util.js';
 
 const live = (hands) => hands.filter((h) => h.presence > 0.5);
@@ -485,6 +486,156 @@ export function livingShadowEffect() {
       for (const sx of [-1, 1]) drawGlow(ctx, scheme.eye, ex + sx * gap, ey, 10 * e.unit * k, 0.9, 0.5);
       ctx.globalCompositeOperation = 'source-over';
       return false;
+    },
+  };
+}
+
+// ---------- Désintégration ----------
+// Snap your fingers: you crumble into dust that the wind carries away, from
+// the top of your head down. Snap again: the dust flies back and you are
+// whole again. (Fist then open hand works too.)
+export function dustEffect() {
+  const COLORS = [
+    { name: 'Cendres', tint: null },
+    { name: 'Poussière dorée', tint: [255, 200, 90] },
+    { name: 'Particules bleues', tint: [90, 200, 255] },
+  ];
+  let scheme = COLORS[0];
+  let state = 'whole'; // whole | going | gone | coming
+  let t = 0;
+  let cool = 0;
+  let dust = [];
+  let plate = null;
+  let plateAge = 1;
+  let sample = null;
+  let top = 0;
+  let bottom = 1;
+  const mask = { c: null };
+
+  // Grains taken from your own colours, each with the moment it leaves
+  // (higher on the body = earlier).
+  const grains = (e) => {
+    const sw = Math.round(e.W / 8);
+    const sh = Math.round(e.H / 8);
+    if (!sample || sample.width !== sw) sample = makeCanvas(sw, sh);
+    const g = sample.getContext('2d', { willReadFrequently: true });
+    g.clearRect(0, 0, sw, sh);
+    g.drawImage(e.layers.person, 0, 0, sw, sh);
+    const d = g.getImageData(0, 0, sw, sh).data;
+    const out = [];
+    top = e.H;
+    bottom = 0;
+    for (let y = 0; y < sh; y++)
+      for (let x = 0; x < sw; x++) {
+        const i = (y * sw + x) * 4;
+        if (d[i + 3] < 150) continue;
+        const px = (x / sw) * e.W;
+        const py = (y / sh) * e.H;
+        top = Math.min(top, py);
+        bottom = Math.max(bottom, py);
+        const col = scheme.tint ? scheme.tint : [d[i], d[i + 1], d[i + 2]];
+        out.push({ hx: px, hy: py, x: px, y: py, col, s: rand(2, 5) * e.unit, vx: 0, vy: 0, ph: rand(TAU) });
+      }
+    for (const p of out) p.delay = ((p.hy - top) / Math.max(1, bottom - top)) * 1.2 + rand(0, 0.3);
+    return out;
+  };
+
+  const go = (e) => {
+    if (cool > 0 || !e.seg?.present) return;
+    cool = 0.8;
+    if (state === 'whole') {
+      dust = grains(e);
+      state = 'going';
+      t = 0;
+      e.audio.play('sizzle', 0.5);
+      e.audio.play('whoosh', 0.6);
+    } else if (state === 'gone') {
+      state = 'coming';
+      t = 0;
+      e.audio.play('teleport', 0.7);
+    }
+  };
+
+  return {
+    id: 'dust',
+    name: 'Désintégration',
+    hint: 'Reste quelques secondes en entier dans l’image, puis claque des doigts : tu pars en poussière, de la tête aux pieds. Claque encore pour revenir.',
+    colors: COLORS,
+    needs: { seg: true, plate: true },
+    action: { label: 'Clac !', run: (e) => go(e) },
+    trigger(e) {
+      go(e);
+    },
+    setColor(i) {
+      scheme = COLORS[i];
+    },
+    start() {
+      state = 'whole';
+      dust = [];
+    },
+    update(dt, hands, e) {
+      cool -= dt;
+      t += dt;
+      if (live(hands).some((h) => h.events.snap || h.events.release)) go(e);
+      const wind = 260 * e.unit;
+      for (const p of dust) {
+        if (state === 'going' && t > p.delay) {
+          // Carried away to the side and up, swirling a little.
+          p.vx += (wind + Math.sin(e.t * 2 + p.ph) * 80 * e.unit - p.vx * 0.5) * dt;
+          p.vy += (-120 * e.unit + Math.cos(e.t * 3 + p.ph) * 60 * e.unit - p.vy * 0.5) * dt;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+        } else if (state === 'coming') {
+          // Back home, the last ones first.
+          const k = clamp((t - (1.5 - p.delay)) / 0.6);
+          p.x += (p.hx - p.x) * Math.min(1, k * dt * 8);
+          p.y += (p.hy - p.y) * Math.min(1, k * dt * 8);
+        }
+      }
+      if (state === 'going' && t > 3) state = 'gone';
+      if (state === 'coming' && t > 2.1) {
+        state = 'whole';
+        dust = [];
+      }
+    },
+    drawBackground(ctx, e) {
+      if (state === 'whole' || !e.segActive) return false;
+      plateAge += e.dt;
+      if (!plate || plateAge > 0.4) {
+        plate = e.backgroundPlate();
+        plateAge = 0;
+      }
+      ctx.drawImage(plate, 0, 0, e.W, e.H);
+      // What is left of you: the part below the line that eats you away.
+      let line = null;
+      if (state === 'going') line = top + (bottom - top + e.H * 0.1) * clamp(t / 1.5) - e.H * 0.05;
+      if (state === 'coming') line = bottom - (bottom - top + e.H * 0.1) * clamp((t - 0.8) / 1.2);
+      if (line !== null && state !== 'gone') {
+        if (!mask.c || mask.c.width !== e.W || mask.c.height !== e.H) mask.c = makeCanvas(e.W, e.H);
+        const g = mask.c.getContext('2d');
+        g.globalCompositeOperation = 'copy';
+        g.drawImage(e.layers.person, 0, 0);
+        g.globalCompositeOperation = 'destination-in';
+        const grad = g.createLinearGradient(0, line - e.H * 0.04, 0, line + e.H * 0.04);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,1)');
+        g.fillStyle = grad;
+        g.fillRect(0, 0, e.W, e.H);
+        ctx.drawImage(mask.c, 0, 0);
+      }
+      return true;
+    },
+    draw(ctx, e) {
+      if (!dust.length) return;
+      ctx.save();
+      for (const p of dust) {
+        const away = state === 'going' ? clamp((t - p.delay) / 1.6) : state === 'coming' ? 1 - clamp((t - (1.5 - p.delay)) / 0.8) : 1;
+        if (state === 'going' && t < p.delay) continue;
+        ctx.globalAlpha = state === 'gone' ? 0 : 1 - away * 0.85;
+        ctx.fillStyle = `rgb(${p.col[0]},${p.col[1]},${p.col[2]})`;
+        ctx.fillRect(p.x, p.y, p.s, p.s);
+      }
+      ctx.restore();
     },
   };
 }
