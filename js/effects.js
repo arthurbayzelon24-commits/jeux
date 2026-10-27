@@ -29,7 +29,7 @@ import { freeModeEffect } from './fx/free.js';
 import { stringsEffect, fireTornadoEffect } from './fx/pack-energy2.js';
 import { discoEffect, neonOutlineEffect, glassEffect } from './fx/pack-party.js';
 import { rainEffect, snowfallEffect, electroEffect } from './fx/pack-weather.js';
-import { clonesEffect, invisibleEffect, sizeEffect } from './fx/pack-body.js';
+import { clonesEffect, invisibleEffect, sizeEffect, livingShadowEffect } from './fx/pack-body.js';
 import { mindGrabEffect, shockwaveEffect, magnetEffect, chronoEffect, gravityEffect, ripplesEffect } from './fx/pack-physics.js';
 import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
 import { planetEffect, crystalBallEffect, auroraEffect, starsEffect, cometEffect, rainbowEffect } from './fx/pack-cosmic.js';
@@ -117,6 +117,7 @@ export const EFFECTS = [
   { id: 'clones', cat: 'heros', make: clonesEffect, tint: '#e6e6f0', gesture: 'Mains jointes, index levés (ninja)' },
   { id: 'invisible', cat: 'heros', make: invisibleEffect, tint: '#c8e6ff', gesture: 'Paumes jointes devant vous' },
   { id: 'size', cat: 'heros', make: sizeEffect, tint: '#ff4646', gesture: 'Bras écartés = géant, double pince = mini' },
+  { id: 'livingshadow', cat: 'heros', make: livingShadowEffect, tint: '#7a3cff', gesture: 'Bougez : votre ombre vous suit' },
   { id: 'telekinesis', cat: 'heros', make: telekinesisEffect, tint: '#3fc1ff', gesture: 'Main ouverte, pincez pour attraper' },
   { id: 'floating', cat: 'heros', make: floatingEffect, tint: '#8fb8ff', gesture: 'Paume vers le haut' },
   { id: 'dragon', cat: 'feu', make: dragonEffect, tint: '#ff7020', gesture: 'Guidez-le avec l’index' },

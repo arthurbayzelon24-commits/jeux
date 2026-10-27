@@ -79,6 +79,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Ondes d’eau** (Physique) : l’image devient la surface de l’eau ; ton index crée des vagues qui déforment l’image, une main ouverte qui frappe fait une grosse vague.
 - **Défilé** (bouton flèches croisées du studio) : un nouveau pouvoir (tes favoris d’abord) toutes les 4 s, avec flash, comme un montage automatique.
 - **Écran brisé** : un coup de poing vers la caméra fissure l’écran comme du verre, là où tu frappes.
+- **Ombre vivante** (Héros) : ton ombre apparaît sur le mur derrière toi, décalée et en retard de 0,6 s, avec deux yeux qui brillent ; poing serré = elle grandit.
 - **Traînées de couleur** (Paramètres > Affichage) : le bout de chaque doigt laisse une courte traînée arc-en-ciel, avec n’importe quel pouvoir (aussi dans les vidéos).
 - **Recherche** : une barre sur l’accueil trouve un pouvoir par son nom, son geste ou sa catégorie (sans tenir compte des accents).
 - **Pouvoir du jour** : sur l’accueil, un pouvoir mis en avant, différent chaque jour, avec un bouton Essayer.
