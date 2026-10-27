@@ -76,6 +76,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Portail façon Doctor Strange** : fais des cercles avec la main ; le portail montre ton propre paysage vu d’ailleurs (sans toi dedans). Tourne encore dessus pour l’agrandir.
 - **Téléportation au claquement de doigts** (comme Thanos) : pouce et majeur collés, puis clac.
 - **Musique de fond** (bouton ♪ dans la caméra) : Épique, Mystère ou Électro, composées en direct par l’application (aucun fichier, aucun droit d’auteur) et mixées dans les vidéos.
+- **Ondes d’eau** (Physique) : l’image devient la surface de l’eau ; ton index crée des vagues qui déforment l’image, une main ouverte qui frappe fait une grosse vague.
 - **Défilé** (bouton flèches croisées du studio) : un nouveau pouvoir (tes favoris d’abord) toutes les 4 s, avec flash, comme un montage automatique.
 - **Écran brisé** : un coup de poing vers la caméra fissure l’écran comme du verre, là où tu frappes.
 - **Pouvoir du jour** : sur l’accueil, un pouvoir mis en avant, différent chaque jour, avec un bouton Essayer.
