@@ -466,6 +466,7 @@ export class Engine {
     for (const h of this.hands)
       if (h.events?.snap) {
         (this.snapRings ||= []).push({ x: h.lm[4].x, y: h.lm[4].y, t: 0, r: h.size });
+        this.emit?.('snap');
         this.buzz?.(15);
       }
     if (input.pose !== undefined) this.body.update(input.pose, { width: W, height: H, mirror: input.mirror, dt });

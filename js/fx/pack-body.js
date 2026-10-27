@@ -134,6 +134,7 @@ export function clonesEffect() {
         sealT = -1; // once per seal: separate the hands to do it again
         scheme = COLORS[kind];
         set(e, Math.min(4, count + 2));
+        if (count >= 4) e.emit?.('clones');
         e.flash([255, 255, 255], 0.25, 4);
         e.shake(8);
       }

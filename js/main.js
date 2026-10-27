@@ -1446,6 +1446,7 @@ let slowTimer = 0;
 $('btn-slowmo').addEventListener('click', () => {
   const on = engine.slowTarget === 1;
   engine.slowTarget = on ? 0.3 : 1;
+  if (on) progress.event('slowmo');
   $('btn-slowmo').classList.toggle('on', on);
   audio.play(on ? 'teleport' : 'whoosh', 0.5);
   clearTimeout(slowTimer);
@@ -1963,6 +1964,7 @@ engine.on('ultimate', () => {
   }, 1300);
 });
 engine.on('freePower', (id) => progress.freePower(id));
+for (const kind of ['combo', 'snap', 'clones']) engine.on(kind, () => progress.event(kind));
 // Secret moves work with every power.
 const secrets = new Secrets();
 secrets.onFound = () => progress.secret();
@@ -1976,7 +1978,7 @@ function challengeRows(list) {
   return list
     .map(
       (c) =>
-        `<div class="challenge${c.done ? ' done' : ''}" data-power="${c.power || ''}"><span class="ch-check">${c.done ? '✓' : '○'}</span><span class="ch-text">${c.text}${c.goal > 1 && !c.done && c.progress.length ? ` (${c.progress.length}/${c.goal})` : ''}</span></div>`,
+        `<div class="challenge${c.done ? ' done' : ''}" data-power="${c.power || ''}" data-kind="${c.kind}"><span class="ch-check">${c.done ? '✓' : '○'}</span><span class="ch-text">${c.text}${c.goal > 1 && !c.done && c.progress.length ? ` (${c.progress.length}/${c.goal})` : ''}</span></div>`,
     )
     .join('');
 }
@@ -2012,7 +2014,7 @@ $('empty-film').addEventListener('click', () => openStudio('free'));
 $('hub-challenges').addEventListener('click', (ev) => {
   const row = ev.target.closest('.challenge');
   if (row && !row.classList.contains('done'))
-    openStudio(row.dataset.power || (row.textContent.includes('Mode libre') ? 'free' : currentEffect));
+    openStudio(row.dataset.power || { combo: 'free', free: 'free', snap: 'dust', clones: 'clones' }[row.dataset.kind] || currentEffect);
 });
 $('wallet-card').addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === 'progress'));

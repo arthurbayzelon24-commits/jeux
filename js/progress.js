@@ -26,6 +26,10 @@ const TEMPLATES = [
   { kind: 'free', reward: 70, goal: 3, text: () => 'Fais 3 pouvoirs différents en Mode libre' },
   { kind: 'dual', reward: 60, text: () => 'Filme avec un pouvoir dans chaque main' },
   { kind: 'secret', reward: 90, text: () => 'Trouve un geste secret (applaudis deux fois…)' },
+  { kind: 'combo', reward: 80, text: () => 'Fais un combo en Mode libre (3 pouvoirs en 4 s)' },
+  { kind: 'snap', reward: 60, text: () => 'Réussis un claquement de doigts (Téléportation, Désintégration…)' },
+  { kind: 'clones', reward: 70, text: () => 'Fais apparaître 4 clones avec la technique des mains jointes' },
+  { kind: 'slowmo', reward: 50, text: () => 'Utilise le ralenti magique (bouton sablier)' },
 ];
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -166,6 +170,10 @@ export class Progress {
   }
   freePower(power) {
     this.#step('free', { power });
+  }
+  // Other moments: 'combo', 'snap', 'clones', 'slowmo'.
+  event(kind) {
+    this.#step(kind);
   }
   secret() {
     this.#step('secret');

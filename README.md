@@ -26,7 +26,7 @@ Magic Cam est une application pour **filmer des vidéos où l’on semble avoir 
 - **Plus de 100 000 points sur le corps** (option « Points de suivi ») : en plus des 220 points par main et du maillage du squelette, un nuage de points couvre toute ta silhouette (détourée par l’IA), avec un balayage lumineux. Le nombre exact s’affiche dans le compteur (Paramètres › compteur d’images) ; il dépend de la place que tu occupes dans l’image.
 - **Double pouvoir** (bouton deux mains) : un pouvoir dans chaque main ; joins les mains pour une **Fusion**.
 - **Gestes secrets** avec tous les pouvoirs : double applaudissement, mains au ciel, poing/main ouverte ×3 (final immédiat), tour de main, main immobile.
-- **Défis du jour** 🏆 : trois défis par jour (filmer avec un pouvoir, déclencher un final, une vidéo de 15 s, 3 pouvoirs en Mode libre…), et une série de jours d’affilée. Tous les pouvoirs sont gratuits.
+- **Défis du jour** 🏆 : trois défis par jour (filmer avec un pouvoir, déclencher un final, une vidéo de 15 s, 3 pouvoirs en Mode libre, un combo, un claquement de doigts, 4 clones, le ralenti magique…) ; toucher un défi ouvre le bon pouvoir, et une série de jours d’affilée. Tous les pouvoirs sont gratuits.
 
 ## Interface holographique (style armure high-tech)
 
