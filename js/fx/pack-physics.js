@@ -827,3 +827,76 @@ export function gravityEffect() {
     },
   };
 }
+
+// ---------- Ondes d'eau ----------
+// The image is the surface of water: your fingertip touches it and rings of
+// waves spread out, bending the picture as they pass.
+export function ripplesEffect() {
+  const COLORS = [
+    { name: 'Eau', rgb: [170, 220, 255] },
+    { name: 'Lagon', rgb: [90, 255, 210] },
+  ];
+  let rgb = COLORS[0].rgb;
+  let waves = [];
+  const last = new Map();
+
+  return {
+    id: 'ripples',
+    name: 'Ondes d’eau',
+    hint: 'Pointe l’index et touche l’image : des vagues partent de ton doigt comme sur l’eau. Main ouverte qui frappe vite : grosse vague.',
+    colors: COLORS,
+    needs: { seg: false },
+    setColor(i) {
+      rgb = COLORS[i].rgb;
+    },
+    start() {
+      waves = [];
+    },
+    update(dt, hands, e) {
+      for (const w of waves) w.t += dt;
+      waves = waves.filter((w) => w.t < 1.6);
+      for (const h of live(hands)) {
+        const tip = h.point ? h.lm[8] : h.palm;
+        const prev = last.get(h.id);
+        last.set(h.id, { x: tip.x, y: tip.y, t: e.t });
+        // A new ring each time the finger has moved a little (or every 0.4 s).
+        const moved = !prev || Math.hypot(tip.x - prev.x, tip.y - prev.y) > h.size * 0.6;
+        const slam = h.open && h.speed > Math.min(e.W, e.H) * 1.8;
+        if ((h.point && (moved || waves.every((w) => w.t > 0.4))) || slam) {
+          if (waves.length >= 6) waves.shift();
+          waves.push({ x: tip.x, y: tip.y, t: 0, big: slam ? 1.8 : 1 });
+          if (slam) e.audio.play('drop', 0.8);
+          else if (Math.random() < 0.3) e.audio.play('drop', 0.25);
+        } else last.set(h.id, prev || { x: tip.x, y: tip.y });
+      }
+    },
+    draw(ctx, e) {
+      const M = Math.min(e.W, e.H);
+      for (const w of waves) {
+        const t = w.t / 1.6;
+        const r = t * M * 0.55 * w.big;
+        const band = M * 0.03 * w.big;
+        const a = 1 - t;
+        // Refraction band: the picture slightly magnified inside the ring.
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(w.x, w.y, r + band, 0, TAU);
+        ctx.arc(w.x, w.y, Math.max(0, r - band), 0, TAU, true);
+        ctx.clip();
+        const k = 1 + 0.035 * a * w.big;
+        ctx.translate(w.x, w.y);
+        ctx.scale(k, k);
+        ctx.translate(-w.x, -w.y);
+        drawCamera(ctx, e);
+        ctx.restore();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = `rgba(${rgb.join(',')},${0.45 * a})`;
+        ctx.lineWidth = 2 * e.unit;
+        ctx.beginPath();
+        ctx.arc(w.x, w.y, r + band * 0.6, 0, TAU);
+        ctx.stroke();
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    },
+  };
+}

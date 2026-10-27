@@ -1538,8 +1538,15 @@ document.addEventListener('keydown', (e) => {
 // Pause the camera when the tab is hidden (saves battery), resume after.
 document.addEventListener('visibilitychange', () => {
   if (!studioOpen) return;
-  if (document.hidden && !recorder.recording) stopCamera();
-  else if (!document.hidden && !stream) startCamera().catch(showError);
+  if (document.hidden && !recorder.recording) {
+    stopCamera();
+    // No music playing in the background either.
+    music.stop();
+    audio.stopLoops();
+  } else if (!document.hidden && !stream) {
+    startCamera().catch(showError);
+    if (settings.music !== 'off') music.play(settings.music);
+  }
 });
 
 // ---------- Settings form ----------

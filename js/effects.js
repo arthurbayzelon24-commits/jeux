@@ -30,7 +30,7 @@ import { stringsEffect, fireTornadoEffect } from './fx/pack-energy2.js';
 import { discoEffect, neonOutlineEffect, glassEffect } from './fx/pack-party.js';
 import { rainEffect, snowfallEffect, electroEffect } from './fx/pack-weather.js';
 import { clonesEffect, invisibleEffect, sizeEffect } from './fx/pack-body.js';
-import { mindGrabEffect, shockwaveEffect, magnetEffect, chronoEffect, gravityEffect } from './fx/pack-physics.js';
+import { mindGrabEffect, shockwaveEffect, magnetEffect, chronoEffect, gravityEffect, ripplesEffect } from './fx/pack-physics.js';
 import { dragonEffect, tornadoEffect, meteorEffect, lavaEffect, sunEffect, sonicEffect } from './fx/pack-elements.js';
 import { planetEffect, crystalBallEffect, auroraEffect, starsEffect, cometEffect, rainbowEffect } from './fx/pack-cosmic.js';
 import { bubblesEffect, confettiEffect, coinsEffect, snowEffect, firefliesEffect, wispsEffect } from './fx/pack-fun.js';
@@ -88,6 +88,7 @@ export const EFFECTS = [
   { id: 'magnet', cat: 'physique', make: magnetEffect, tint: '#c8d7eb', gesture: 'Chaque main est un aimant' },
   { id: 'chrono', cat: 'physique', make: chronoEffect, tint: '#78c8ff', gesture: 'Claquez des doigts' },
   { id: 'gravity', cat: 'physique', make: gravityEffect, tint: '#ffc846', gesture: 'Pincez pour créer une balle' },
+  { id: 'ripples', cat: 'physique', make: ripplesEffect, tint: '#aadcff', gesture: 'Touchez l’image avec l’index' },
   { id: 'kamehameha', cat: 'energie', make: kamehamehaEffect, tint: '#4aa3ff', gesture: 'Mains jointes, puis poussez', charge: 'open' },
   { id: 'runes', cat: 'fun', make: runesEffect, tint: '#ffc86e', gesture: 'Pincez, dessinez ○ △ □ ⚡ ／ V, lâchez' },
   { id: 'hud', cat: 'heros', make: hudEffect, tint: '#50dcff', gesture: 'Tapez sur le clavier holographique' },
