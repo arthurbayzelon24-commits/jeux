@@ -288,6 +288,14 @@ function scene(id, W, H) {
     aura: { hands: one('open', 0.8, 0.62, { roll: 0.2 }), frames: 50, person: true },
     teleport: { hands: one('open', 0.8, 0.62, { roll: 0.2 }), frames: 50, person: true, trigger: 38 },
     clones: { hands: () => [], frames: 40, person: true, trigger: 5 },
+    strings: {
+      hands: () => [
+        hand('open', W * 0.28, H * 0.8, L, W, H, { roll: -0.9 }),
+        hand('open', W * 0.72, H * 0.8, L, W, H, { roll: 0.9, flip: true }),
+      ],
+      frames: 30,
+    },
+    firetornado: { hands: () => [], frames: 60, person: true },
     disco: { hands: one('open', 0.7, 0.6), frames: 40 },
     neonline: { hands: () => [], frames: 20, person: true },
     rain: { hands: one('open', 0.62, 0.5, { roll: 0.2 }), frames: 50, person: true },

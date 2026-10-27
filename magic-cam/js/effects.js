@@ -26,6 +26,7 @@ import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
 import { runesEffect } from './fx/runes.js';
 import { freeModeEffect } from './fx/free.js';
+import { stringsEffect, fireTornadoEffect } from './fx/pack-energy2.js';
 import { discoEffect, neonOutlineEffect } from './fx/pack-party.js';
 import { rainEffect, snowfallEffect, electroEffect } from './fx/pack-weather.js';
 import { clonesEffect, invisibleEffect, sizeEffect } from './fx/pack-body.js';
@@ -122,8 +123,10 @@ export const EFFECTS = [
   { id: 'meteor', cat: 'feu', make: meteorEffect, tint: '#ff8c32', gesture: 'Levez la main', charge: 'raised' },
   { id: 'lava', cat: 'feu', make: lavaEffect, tint: '#ff5a14', gesture: 'Main ouverte', charge: 'open' },
   { id: 'sun', cat: 'feu', make: sunEffect, tint: '#ffc850', gesture: 'Main ouverte', charge: 'open' },
+  { id: 'firetornado', cat: 'feu', make: fireTornadoEffect, tint: '#ff6a2d', gesture: 'Levez les bras pour l’agrandir' },
   { id: 'sonic', cat: 'energie', make: sonicEffect, tint: '#dcebff', gesture: 'Tapez dans vos mains' },
   { id: 'electro', cat: 'energie', make: electroEffect, tint: '#6ebeff', gesture: 'Serrez les poings, puis ouvrez' },
+  { id: 'strings', cat: 'energie', make: stringsEffect, tint: '#50dcff', gesture: 'Deux mains ouvertes face à face' },
   { id: 'shield', cat: 'heros', make: shieldEffect, tint: '#50beff', gesture: 'Paume face à la caméra', charge: 'open' },
   { id: 'lasereyes', cat: 'heros', make: laserEyesEffect, tint: '#ff2828', gesture: 'Regardez, visez avec l’index' },
   { id: 'web', cat: 'heros', make: webEffect, tint: '#e6e6f0', gesture: 'Pointez l’index pour tirer' },
