@@ -2747,3 +2747,9 @@ body.is-recording .coach {
 .search-empty {
   text-align: center;
 }
+
+.news-again {
+  display: flex;
+  margin: 18px auto 0;
+  animation: none;
+}

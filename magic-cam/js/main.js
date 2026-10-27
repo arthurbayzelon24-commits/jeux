@@ -2087,6 +2087,7 @@ function showNews() {
   }
   $('news').hidden = false;
 }
+$('news-again').addEventListener('click', () => ($('news').hidden = false));
 $('news-ok').addEventListener('click', () => {
   $('news').hidden = true;
   try {
