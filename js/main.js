@@ -276,6 +276,34 @@ function shelfRow(cat) {
 }
 const powerWraps = () => $('powers').querySelectorAll('.power-wrap');
 
+// Recent powers: the last ones you used, at the top of the home screen.
+const RECENT_KEY = 'magic-cam-recent';
+let recent = [];
+try {
+  recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+} catch {
+  /* private mode */
+}
+function rememberRecent(id) {
+  recent = [id, ...recent.filter((x) => x !== id)].slice(0, 8);
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+  } catch {
+    /* not saved */
+  }
+}
+function renderRecent() {
+  const box = $('recent');
+  const list = recent.filter((id) => EFFECTS.some((d) => d.id === id));
+  box.hidden = list.length < 2;
+  box.querySelector('.recent-row').innerHTML = list
+    .map((id) => {
+      const d = EFFECTS.find((x) => x.id === id);
+      return `<button class="recent-item" data-id="${id}" style="--tint:${d.tint}"><img src="${art(id)}" alt="" loading="lazy"><span>${getEffect(id).name}</span></button>`;
+    })
+    .join('');
+}
+
 // Power of the day: a different one each day, the same for everyone.
 function renderDaily() {
   const pool = EFFECTS.filter((d) => d.id !== 'free');
@@ -290,6 +318,11 @@ function renderDaily() {
 
 function buildPowers() {
   renderDaily();
+  renderRecent();
+  $('recent').addEventListener('click', (ev) => {
+    const b = ev.target.closest('.recent-item');
+    if (b) openStudio(b.dataset.id);
+  });
   $('tagline').textContent = `${EFFECTS.length} pouvoirs · filme-toi comme un héros`;
   shelfRow('fav');
   for (const c of CATEGORIES) shelfRow(c.id);
@@ -487,6 +520,7 @@ function selectEffect(id, fromUser = false) {
     /* ignore */
   }
   const def = EFFECTS.find((d) => d.id === id) || EFFECTS[0];
+  rememberRecent(def.id);
   // Double power: picking a power while choosing the second one.
   if (dualPicking && id !== dualMain) {
     dualPicking = false;
@@ -687,6 +721,7 @@ async function openStudio(id) {
 }
 
 async function closeStudio() {
+  renderRecent();
   cancelCountdown();
   if (recorder.recording) await stopRecording(false);
   studioOpen = false;

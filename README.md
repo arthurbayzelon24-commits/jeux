@@ -90,6 +90,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Raccourcis clavier** (ordinateur) : Espace = filmer, ← → = pouvoir précédent / suivant, + / − = zoom, 0 = 1×, P = photo, C = couleur, R = ralenti, Échap = retour.
 - **Écran propre** (bouton œil du studio) : cache tous les boutons, pratique pour filmer avec l’enregistreur d’écran du téléphone ; un toucher sur l’image les fait revenir.
 - **Favoris rapides** : un appui long sur un pouvoir de la rangée du studio l’ajoute aux favoris (petite étoile) ou l’en retire.
+- **Récents** : les 8 derniers pouvoirs utilisés, en ronds, en haut de l’accueil.
 - **Recherche** : une barre sur l’accueil trouve un pouvoir par son nom, son geste ou sa catégorie (sans tenir compte des accents).
 - **Pouvoir du jour** : sur l’accueil, un pouvoir mis en avant, différent chaque jour, avec un bouton Essayer.
 - **Coach caméra** (Paramètres, activé par défaut) : une bulle à l’écran, jamais dans les vidéos, prévient quand il fait trop sombre, quand ta main n’est pas vue ou quand tu es trop loin.
