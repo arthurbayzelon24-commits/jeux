@@ -263,7 +263,7 @@ function shelfRow(cat) {
     sec.className = 'shelf';
     sec.dataset.cat = cat;
     if (CAT_COLORS[cat]) sec.style.setProperty('--c', CAT_COLORS[cat]);
-    const name = cat === 'fav' ? '★ Favoris' : CATEGORIES.find((c) => c.id === cat)?.name || cat;
+    const name = cat === 'fav' ? '★ Favoris' : cat === 'search' ? 'Résultats' : CATEGORIES.find((c) => c.id === cat)?.name || cat;
     sec.innerHTML = `<h2 class="shelf-title">${name}<small></small></h2><div class="shelf-row"></div>`;
     if (cat === 'fav') grid.prepend(sec);
     else grid.append(sec);
@@ -335,6 +335,7 @@ function buildPowers() {
     b.textContent = c.name;
     b.addEventListener('click', () => {
       category = c.id;
+      $('power-search').value = '';
       filterPowers();
       b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
       // Back to the top of the list when the user had scrolled past it.
@@ -363,11 +364,26 @@ function filterPowers() {
   const order = (a, b) => EFFECTS.findIndex((d) => d.id === a.dataset.id) - EFFECTS.findIndex((d) => d.id === b.dataset.id);
   const carousel = $('carousel');
   carousel.append(...[...carousel.children].sort((a, b) => favs.has(b.dataset.id) - favs.has(a.dataset.id) || order(a, b)));
+  // Search: the matching powers in one "Résultats" shelf shown as a grid.
+  const norm = (t) =>
+    t
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  const q = norm($('power-search').value.trim());
   // Favourites move to their own shelf at the top.
-  const single = category !== 'all';
+  const single = category !== 'all' || !!q;
   for (const w of [...powerWraps()].sort(order)) {
     const fav = favs.has(w.dataset.id);
     w.classList.toggle('fav', fav);
+    const text = norm(`${w.querySelector('.power-name').textContent} ${w.querySelector('.power-gesture').textContent} ${w.dataset.cat}`);
+    if (q) {
+      w.hidden = !text.includes(q);
+      if (!w.hidden) shelfRow('search').append(w);
+      else shelfRow(w.dataset.cat).append(w);
+      continue;
+    }
+    w.hidden = false;
     // In one category, its favourites stay with it.
     shelfRow(fav && (!single || category === 'fav') ? 'fav' : w.dataset.cat).append(w);
   }
@@ -375,8 +391,9 @@ function filterPowers() {
   for (const sec of $('powers').querySelectorAll('.shelf')) {
     const n = sec.querySelector('.shelf-row').children.length;
     sec.querySelector('small').textContent = n ? ` ${n}` : '';
-    sec.hidden = single ? sec.dataset.cat !== category : !n;
+    sec.hidden = q ? sec.dataset.cat !== 'search' : single ? sec.dataset.cat !== category : !n;
   }
+  $('search-empty').hidden = !q || !!shelfRow('search').children.length;
   $('cats').querySelector('[data-cat="fav"]').hidden = !favs.size;
 }
 
@@ -1953,6 +1970,7 @@ function renderHub() {
   document.querySelector('.challenges-card').style.setProperty('--p', list.filter((c) => c.done).length / 3);
 }
 $('quick-film').addEventListener('click', () => openStudio('free'));
+$('power-search').addEventListener('input', () => filterPowers());
 $('empty-film').addEventListener('click', () => openStudio('free'));
 $('hub-challenges').addEventListener('click', (ev) => {
   const row = ev.target.closest('.challenge');

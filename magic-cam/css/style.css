@@ -2716,3 +2716,34 @@ body.is-recording .coach {
   color: var(--on-grad);
   background: var(--grad);
 }
+
+/* Power search */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  max-width: 1068px;
+  margin: 0 auto 6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--acc-line), 0.35);
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+}
+.search:focus-within {
+  border-color: var(--gold-2);
+  box-shadow: 0 0 14px rgba(var(--acc-glow), 0.35);
+}
+.search-empty {
+  text-align: center;
+}

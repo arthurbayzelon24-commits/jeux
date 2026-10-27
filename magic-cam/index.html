@@ -48,7 +48,12 @@
         <span class="daily-text"><small>⭐ Pouvoir du jour</small><strong id="daily-name"></strong><span id="daily-gesture"></span></span>
         <span class="daily-go">Essayer</span>
       </button>
+      <label class="search">
+        <span aria-hidden="true">🔎</span
+        ><input id="power-search" type="search" placeholder="Chercher un pouvoir (feu, clones, portail…)" autocomplete="off" />
+      </label>
       <nav class="cats" id="cats" aria-label="Catégories"></nav>
+      <p class="muted search-empty" id="search-empty" hidden>Aucun pouvoir trouvé.</p>
       <div class="powers" id="powers"></div>
     </main>
 
@@ -396,6 +401,7 @@
       <div class="modal-card ask-card news-card">
         <h2>Quoi de neuf ? ✨</h2>
         <ul class="news-list">
+          <li><b>🔎 Recherche</b> de pouvoirs sur l’accueil (« feu », « clones », « portail »…).</li>
           <li><b>💧 Ondes d’eau</b> : touche l’image du doigt, des vagues déforment ce qu’on voit.</li>
           <li>
             <b>🔀 Défilé</b> (bouton flèches croisées) : un nouveau pouvoir toutes les 4 s, montage automatique. Et <b>💥 Écran brisé</b> :
