@@ -2778,3 +2778,26 @@ body.is-recording .coach {
   color: #ffd23d;
   text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
 }
+
+/* Short screens (small phones): a more compact side column */
+@media (max-height: 740px) {
+  .studio-side {
+    gap: 2px;
+    padding: 4px;
+    top: calc(64px + var(--safe-t));
+  }
+  .studio-side .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .studio-side .icon-btn [data-icon] {
+    width: 20px;
+    height: 20px;
+  }
+}
+@media (max-height: 620px) {
+  .studio-side .icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+}
