@@ -76,6 +76,8 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Portail façon Doctor Strange** : fais des cercles avec la main ; le portail montre ton propre paysage vu d’ailleurs (sans toi dedans). Tourne encore dessus pour l’agrandir.
 - **Téléportation au claquement de doigts** (comme Thanos) : pouce et majeur collés, puis clac.
 - **Musique de fond** (bouton ♪ dans la caméra) : Épique, Mystère ou Électro, composées en direct par l’application (aucun fichier, aucun droit d’auteur) et mixées dans les vidéos.
+- **Défilé** (bouton flèches croisées du studio) : un nouveau pouvoir (tes favoris d’abord) toutes les 4 s, avec flash, comme un montage automatique.
+- **Écran brisé** : un coup de poing vers la caméra fissure l’écran comme du verre, là où tu frappes.
 - **Pouvoir du jour** : sur l’accueil, un pouvoir mis en avant, différent chaque jour, avec un bouton Essayer.
 - **Coach caméra** (Paramètres, activé par défaut) : une bulle à l’écran, jamais dans les vidéos, prévient quand il fait trop sombre, quand ta main n’est pas vue ou quand tu es trop loin.
 - **Zoom comme l’appareil photo** : pastilles ,5 · 1 · 2 · 5 au-dessus du bouton d’enregistrement (touche pour sauter, glisse pour zoomer en douceur), pincement à deux doigts ou molette. Avec la caméra arrière, sous 0,75× l’application passe sur l’objectif ultra grand-angle du téléphone quand le navigateur le propose (vrai dézoom optique), et revient à l’objectif principal au-dessus de 0,95×.
