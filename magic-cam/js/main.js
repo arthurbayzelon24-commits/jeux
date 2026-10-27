@@ -326,7 +326,24 @@ function buildPowers() {
     chip.setAttribute('aria-label', fx.name);
     chip.style.setProperty('--tint', def.tint);
     chip.innerHTML = `<div class="thumb"><img src="${art(def.id)}" alt="" loading="lazy"></div>`;
-    chip.addEventListener('click', () => selectEffect(def.id, true));
+    // Long press: add to / remove from the favourites (a star appears).
+    // (The picture must not be dragged, or the press is cancelled.)
+    chip.querySelector('img').draggable = false;
+    let press = 0;
+    let longDone = false;
+    chip.addEventListener('pointerdown', () => {
+      longDone = false;
+      clearTimeout(press);
+      press = setTimeout(() => {
+        longDone = true;
+        toggleFav(def.id);
+        if (settings.haptics) navigator.vibrate?.(20);
+        showChip(favs.has(def.id) ? `★ ${fx.name} en favori` : `${fx.name} retiré des favoris`);
+      }, 550);
+    });
+    for (const type of ['pointerup', 'pointerleave', 'pointercancel']) chip.addEventListener(type, () => clearTimeout(press));
+    chip.addEventListener('contextmenu', (ev) => ev.preventDefault());
+    chip.addEventListener('click', () => !longDone && selectEffect(def.id, true));
     carousel.append(chip);
   }
   const cats = $('cats');
@@ -398,6 +415,7 @@ function filterPowers() {
   }
   $('search-empty').hidden = !q || !!shelfRow('search').children.length;
   $('cats').querySelector('[data-cat="fav"]').hidden = !favs.size;
+  document.querySelectorAll('.fx-chip').forEach((c) => c.classList.toggle('fav', favs.has(c.dataset.id)));
 }
 
 // ---------- Pages over the app ----------
