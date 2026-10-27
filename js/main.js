@@ -269,7 +269,20 @@ function shelfRow(cat) {
 }
 const powerWraps = () => $('powers').querySelectorAll('.power-wrap');
 
+// Power of the day: a different one each day, the same for everyone.
+function renderDaily() {
+  const pool = EFFECTS.filter((d) => d.id !== 'free');
+  const day = Math.floor(Date.now() / 86400000);
+  const def = pool[(day * 7919) % pool.length];
+  $('daily-img').src = art(def.id);
+  $('daily-name').textContent = getEffect(def.id).name;
+  $('daily-gesture').textContent = def.gesture;
+  $('daily').style.setProperty('--tint', def.tint);
+  $('daily').onclick = () => openStudio(def.id);
+}
+
 function buildPowers() {
+  renderDaily();
   $('tagline').textContent = `${EFFECTS.length} pouvoirs · filme-toi comme un héros`;
   shelfRow('fav');
   for (const c of CATEGORIES) shelfRow(c.id);

@@ -1,7 +1,7 @@
 // How to use each power, shown in the bubble when it is chosen (for the
 // powers whose effect does not explain itself).
 export const HINTS = {
-  free: 'Main ouverte = cercle, deux mains en boule = trou noir, agite la main = éclairs, grand geste = boule de feu, poing = sabre, index = rayon… Enchaîne trois pouvoirs en 4 s pour un combo !',
+  free: 'Main ouverte = cercle, deux mains en boule = trou noir, agite la main = éclairs, grand geste = boule de feu, deux mains ouvertes écartées = fils d’énergie, poing = sabre, index = rayon… Enchaîne trois pouvoirs en 4 s pour un combo !',
   chidori:
     'Garde la main ouverte (ou le poing) : la foudre crépite et se charge. Tiens le geste jusqu’au bout de la charge pour le coup final.',
   genkidama: 'Lève la main bien haut et garde-la : la boule d’énergie grossit au-dessus de toi. Puis abaisse vite la main pour la lancer.',

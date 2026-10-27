@@ -2662,3 +2662,57 @@ body.is-recording .rec-btn::before {
 body.is-recording .coach {
   display: none;
 }
+
+/* Power of the day */
+.daily {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: calc(100% - 32px);
+  max-width: 1068px;
+  margin: 0 auto 14px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  text-align: left;
+  border: 1.5px solid color-mix(in srgb, var(--tint, #ff9a3d) 70%, transparent);
+  background:
+    radial-gradient(100% 120% at 0% 50%, color-mix(in srgb, var(--tint, #ff9a3d) 30%, transparent), transparent 70%),
+    linear-gradient(160deg, #221a3a, #140f26);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--tint, #ff9a3d) 25%, transparent);
+}
+.daily img {
+  flex: none;
+  width: 74px;
+  height: 74px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+.daily-text {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.daily-text small {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--gold-2);
+  text-transform: uppercase;
+}
+.daily-text strong {
+  font-size: 1.1rem;
+}
+.daily-text span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.daily-go {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--on-grad);
+  background: var(--grad);
+}
