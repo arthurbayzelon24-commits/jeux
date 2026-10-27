@@ -639,3 +639,181 @@ export function dustEffect() {
     },
   };
 }
+
+// ---------- Super vitesse ----------
+// When you move, coloured after-images of you trail behind (like a speedster);
+// lightning sparks around the moving body. Stand still: they catch up.
+export function speedEffect() {
+  const COLORS = [
+    { name: 'Éclair rouge', tint: [255, 60, 40], spark: [255, 210, 80] },
+    { name: 'Éclair jaune', tint: [255, 200, 40], spark: [255, 250, 180] },
+    { name: 'Bleu', tint: [60, 140, 255], spark: [160, 220, 255] },
+  ];
+  let scheme = COLORS[0];
+  const ghosts = []; // { t, c, x }
+  let lastShot = 0;
+  let lastX = null;
+  let speed = 0;
+  let demo = 0;
+  const sparks = new Particles(300);
+
+  return {
+    id: 'speed',
+    name: 'Super vitesse',
+    hint: 'Bouge vite de gauche à droite : des images de toi restent derrière, en couleur, avec des éclairs. Arrête-toi et elles te rattrapent.',
+    colors: COLORS,
+    needs: { seg: true },
+    setColor(i) {
+      scheme = COLORS[i];
+    },
+    start() {
+      ghosts.length = 0;
+      sparks.clear();
+      lastX = null;
+    },
+    // Demo (power card): the after-images spread out as if you were running.
+    trigger() {
+      demo = 3;
+    },
+    update(dt, hands, e) {
+      sparks.update(dt);
+      const s = e.seg;
+      if (!e.segActive || !s?.present) return;
+      const x = s.centroid.x;
+      if (lastX !== null) speed += (Math.abs(x - lastX) / dt / e.W - speed) * Math.min(1, dt * 6);
+      lastX = x;
+      // Hands moving fast count too.
+      const handSpeed = Math.max(0, ...hands.map((h) => (h.presence > 0.5 ? h.speed / e.W : 0)));
+      demo = Math.max(0, demo - dt);
+      const fast = Math.max(speed, handSpeed * 0.5, demo > 0 ? 1 : 0);
+      if (e.t - lastShot > 0.06) {
+        lastShot = e.t;
+        const old = ghosts.length >= 6 ? ghosts.shift() : null;
+        const w = Math.round(e.W / 2);
+        const h = Math.round(e.H / 2);
+        const c = old?.c.width === w && old.c.height === h ? old.c : makeCanvas(w, h);
+        const g = c.getContext('2d');
+        g.globalCompositeOperation = 'copy';
+        g.drawImage(e.layers.person, 0, 0, w, h);
+        g.globalCompositeOperation = 'source-atop';
+        g.fillStyle = `rgba(${scheme.tint.join(',')},0.65)`;
+        g.fillRect(0, 0, w, h);
+        ghosts.push({ t: e.t, c, fast });
+      }
+      if (fast > 0.25 && s.edges.length)
+        for (let i = 0; i < 4; i++) {
+          const p = s.edges[(Math.random() * s.edges.length) | 0];
+          sparks.add({
+            x: p.x,
+            y: p.y,
+            vx: rand(-200, 200) * e.unit,
+            vy: rand(-200, 200) * e.unit,
+            drag: 3,
+            life: rand(0.15, 0.35),
+            size: rand(2, 4) * e.unit,
+            rgb: scheme.spark,
+            core: 0.7,
+          });
+        }
+      if (fast > 0.6) e.audio.loop('wind', Math.min(0.4, fast * 0.3));
+      else e.audio.loop('wind', 0);
+    },
+    drawBehind(ctx, e) {
+      // Oldest first, more transparent; only the ones taken while moving.
+      ghosts.forEach((g, i) => {
+        const a = ((i + 1) / ghosts.length) * 0.55 * Math.min(1, g.fast * 2.5);
+        if (a < 0.03) return;
+        ctx.globalAlpha = a;
+        ctx.globalCompositeOperation = 'lighter';
+        const dx = demo > 0 ? -(ghosts.length - i) * e.W * 0.06 : 0;
+        ctx.drawImage(g.c, dx, 0, e.W, e.H);
+      });
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      return false;
+    },
+    draw(ctx) {
+      sparks.draw(ctx);
+    },
+  };
+}
+
+// ---------- Hologramme ----------
+// You become a blue hologram: see-through, with scan lines, a flicker and the
+// odd glitch, standing on a glowing projector at the bottom.
+export function hologramEffect() {
+  const COLORS = [
+    { name: 'Bleu', rgb: [80, 200, 255] },
+    { name: 'Vert', rgb: [90, 255, 150] },
+    { name: 'Rose', rgb: [255, 90, 200] },
+  ];
+  let rgb = COLORS[0].rgb;
+  let tmp = null;
+  let plate = null;
+  let plateAge = 1;
+  let glitch = 0;
+
+  return {
+    id: 'hologram',
+    name: 'Hologramme',
+    hint: 'Reste quelques secondes en entier dans l’image : tu deviens un hologramme transparent, avec des lignes et des parasites. Claque des doigts pour un gros bug.',
+    colors: COLORS,
+    needs: { seg: true, plate: true },
+    setColor(i) {
+      rgb = COLORS[i].rgb;
+    },
+    trigger() {
+      glitch = 0.6;
+    },
+    update(dt, hands, e) {
+      glitch = Math.max(0, glitch - dt);
+      if (live(hands).some((h) => h.events.snap || h.events.release)) {
+        glitch = 0.6;
+        e.audio.play('zap', 0.6);
+      }
+      if (Math.random() < dt * 0.6) glitch = Math.max(glitch, 0.12);
+    },
+    drawBackground(ctx, e) {
+      if (!e.segActive) return false;
+      plateAge += e.dt;
+      if (!plate || plateAge > 0.4) {
+        plate = e.backgroundPlate();
+        plateAge = 0;
+      }
+      ctx.drawImage(plate, 0, 0, e.W, e.H);
+      if (!tmp || tmp.width !== e.W || tmp.height !== e.H) tmp = makeCanvas(e.W, e.H);
+      const g = tmp.getContext('2d');
+      g.globalCompositeOperation = 'copy';
+      g.drawImage(e.layers.person, 0, 0);
+      // Tinted, with scan lines.
+      g.globalCompositeOperation = 'source-atop';
+      g.fillStyle = `rgba(${rgb.join(',')},0.55)`;
+      g.fillRect(0, 0, e.W, e.H);
+      g.fillStyle = 'rgba(0,0,0,0.35)';
+      const step = Math.max(3, Math.round(4 * e.unit));
+      const off = (e.t * 40) % step;
+      for (let y = off; y < e.H; y += step) g.fillRect(0, y, e.W, step / 2);
+      const flick = 0.55 + 0.15 * noise1(e.t * 20);
+      ctx.globalCompositeOperation = 'lighter';
+      if (glitch > 0) {
+        // Glitch: the picture slides in slices.
+        const n = 10;
+        const hh = e.H / n;
+        for (let i = 0; i < n; i++) {
+          const dx = (Math.random() < 0.5 ? rand(-30, 30) : 0) * e.unit;
+          ctx.globalAlpha = flick;
+          ctx.drawImage(tmp, 0, i * hh, e.W, hh, dx, i * hh, e.W, hh);
+        }
+      } else {
+        ctx.globalAlpha = flick;
+        ctx.drawImage(tmp, 0, 0);
+      }
+      ctx.globalAlpha = 1;
+      // The projector light at your feet.
+      const cx = e.seg?.centroid.x ?? e.W / 2;
+      drawGlow(ctx, rgb, cx, e.H, e.W * 0.3, 0.5, 0.1);
+      ctx.globalCompositeOperation = 'source-over';
+      return true;
+    },
+  };
+}
