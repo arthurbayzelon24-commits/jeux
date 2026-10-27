@@ -85,6 +85,7 @@ const DEFAULTS = {
   music: 'off',
   voiceBoost: true,
   cineSlow: true,
+  coach: true,
   format: 'auto',
   fillLight: false,
   fades: true,
@@ -667,6 +668,7 @@ function loop(now) {
     lastCamFrame = now;
     camFrameNo++;
     coverTransition(now);
+    coach(now);
     tracker.request(video, needSeg || (settings.points && camFrameNo % 3 === 0), settings.points || !!fx?.needs?.pose);
   }
   const det = tracker.take(wantSeg);
@@ -837,6 +839,58 @@ function coverTransition(now) {
     magicSwitch();
   }
 }
+// ---------- Camera coach: tips on screen (never in the videos) ----------
+// Once a second it looks at the light, your hands and your distance, and
+// says what would make the powers work better. Each tip at most every 25 s.
+const BODY_ONLY = [
+  'wings',
+  'aura',
+  'sharingan',
+  'halo',
+  'supersaiyan',
+  'snowfall',
+  'rain',
+  'neonline',
+  'electro',
+  'invisible',
+  'size',
+  'teleport',
+  'disco',
+];
+let coachAt = 0;
+let noHand = 0;
+let farHand = 0;
+let dark = 0;
+const coachSaid = {};
+function coach(now) {
+  if (!settings.coach || now - coachAt < 1000 || recorder.recording || !tracker.ready) return;
+  coachAt = now;
+  lumCtx.drawImage(video, 0, 0, 16, 9);
+  const d = lumCtx.getImageData(0, 0, 16, 9).data;
+  let sum = 0;
+  for (let i = 0; i < d.length; i += 4) sum += d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+  dark = sum / (d.length / 4) < 45 ? dark + 1 : 0;
+  const hands = engine.hands.filter((h) => h.presence > 0.5);
+  const handsNeeded = !BODY_ONLY.includes(currentEffect);
+  noHand = handsNeeded && !hands.length ? noHand + 1 : 0;
+  farHand = hands.length && hands.every((h) => h.size < Math.min(engine.W, engine.H) * 0.055) ? farHand + 1 : 0;
+  const say = (key, text) => {
+    if (coachSaid[key] && now - coachSaid[key] < 25000) return;
+    coachSaid[key] = now;
+    const el = $('coach');
+    el.textContent = text;
+    el.hidden = false;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    clearTimeout(coach.timer);
+    coach.timer = setTimeout(() => (el.hidden = true), 4000);
+  };
+  if (dark >= 2) say('dark', '💡 Il fait sombre : allume la lumière ou tourne-toi vers une fenêtre, la détection marchera mieux.');
+  else if (noHand >= 4) say('hand', '✋ Montre ta main à la caméra, bien ouverte et en entier.');
+  else if (farHand >= 3) say('far', '🚶 Approche-toi un peu : ta main est trop petite pour être bien suivie.');
+}
+
 function magicSwitch() {
   // Next favourite, or another power you own (not the free mode).
   const owned = EFFECTS.filter((d) => progress.owns(d.id) && d.id !== 'free' && d.id !== currentEffect);
