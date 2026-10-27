@@ -294,6 +294,10 @@ function scene(id, W, H) {
     dust: { hands: () => [], frames: 45, person: true, trigger: 5 },
     livingshadow: { hands: () => [], frames: 40, person: true },
     clones: { hands: () => [], frames: 40, person: true, trigger: 5 },
+    whip: {
+      hands: (t) => [hand('fist', W * (0.3 + Math.sin(t * 5) * 0.15), H * (0.45 + Math.cos(t * 5) * 0.1), L * 0.9, W, H)],
+      frames: 50,
+    },
     strings: {
       hands: () => [
         hand('open', W * 0.28, H * 0.8, L, W, H, { roll: -0.9 }),
