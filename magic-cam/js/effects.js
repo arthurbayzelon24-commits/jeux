@@ -26,6 +26,7 @@ import { thunderEffect } from './fx/thunder.js';
 import { hudEffect } from './fx/hud.js';
 import { runesEffect } from './fx/runes.js';
 import { freeModeEffect } from './fx/free.js';
+import { crownEffect, heroMaskEffect } from './fx/pack-face.js';
 import { stringsEffect, fireTornadoEffect } from './fx/pack-energy2.js';
 import { discoEffect, neonOutlineEffect, glassEffect } from './fx/pack-party.js';
 import { rainEffect, snowfallEffect, electroEffect } from './fx/pack-weather.js';
@@ -153,6 +154,8 @@ export const EFFECTS = [
   { id: 'disco', cat: 'fun', make: discoEffect, tint: '#ff3d8b', gesture: 'Levez vite la main pour le beat' },
   { id: 'neonline', cat: 'fun', make: neonOutlineEffect, tint: '#3fd0ff', gesture: 'Votre contour brille en néon' },
   { id: 'glass', cat: 'fun', make: glassEffect, tint: '#dcefff', gesture: 'Coup de poing vers la caméra' },
+  { id: 'crown', cat: 'fun', make: crownEffect, tint: '#f2c14e', gesture: 'Regardez la caméra' },
+  { id: 'heromask', cat: 'heros', make: heroMaskEffect, tint: '#c4161c', gesture: 'Regardez la caméra' },
 ];
 
 const instances = new Map();
