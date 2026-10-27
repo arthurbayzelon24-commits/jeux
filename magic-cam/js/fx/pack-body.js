@@ -418,3 +418,73 @@ export function sizeEffect() {
     },
   };
 }
+
+// ---------- Ombre vivante ----------
+// Your shadow on the wall behind you, a little late and to the side, with two
+// glowing eyes. Close a fist: the shadow comes out of the wall (bigger).
+export function livingShadowEffect() {
+  const COLORS = [
+    { name: 'Ombre', eye: [255, 60, 60] },
+    { name: 'Spectre', eye: [80, 220, 255] },
+  ];
+  let scheme = COLORS[0];
+  const history = [];
+  let lastShot = 0;
+  let grow = 0;
+
+  return {
+    id: 'livingshadow',
+    name: 'Ombre vivante',
+    hint: 'Ton ombre apparaît sur le mur derrière toi et te suit avec un temps de retard. Serre le poing : elle grandit et sort du mur.',
+    colors: COLORS,
+    needs: { seg: true },
+    setColor(i) {
+      scheme = COLORS[i];
+    },
+    start() {
+      history.length = 0;
+      grow = 0;
+    },
+    update(dt, hands, e) {
+      grow += ((hands.some((h) => h.presence > 0.5 && h.fist) ? 1 : 0) - grow) * Math.min(1, dt * 3);
+      if (e.segActive && e.seg?.present && e.t - lastShot > 0.05) {
+        lastShot = e.t;
+        const old = history.length && e.t - history[0].t > 0.8 ? history.shift() : null;
+        const w = Math.round(e.W / 2);
+        const h = Math.round(e.H / 2);
+        const c = old?.c.width === w && old.c.height === h ? old.c : makeCanvas(w, h);
+        const g = c.getContext('2d');
+        g.globalCompositeOperation = 'copy';
+        g.drawImage(e.layers.person, 0, 0, w, h);
+        // Pure shadow: the shape only, very dark.
+        g.globalCompositeOperation = 'source-in';
+        g.fillStyle = 'rgba(8,4,16,0.88)';
+        g.fillRect(0, 0, w, h);
+        history.push({ t: e.t, c, top: e.seg.top, cx: e.seg.centroid.x });
+      }
+    },
+    drawBehind(ctx, e) {
+      if (!history.length) return false;
+      const want = e.t - 0.6;
+      let s = history[0];
+      for (const h of history) if (h.t <= want) s = h;
+      const k = 1.05 + grow * 0.35;
+      const dx = e.W * 0.12;
+      ctx.save();
+      ctx.translate(s.cx + dx, e.H);
+      ctx.scale(k, k);
+      ctx.translate(-s.cx, -e.H);
+      ctx.globalAlpha = 0.85;
+      ctx.drawImage(s.c, 0, 0, e.W, e.H);
+      ctx.restore();
+      // Two glowing eyes near the top of the head.
+      const ex = s.cx + dx;
+      const ey = e.H - (e.H - s.top) * k + (e.H - s.top) * k * 0.09;
+      const gap = e.W * 0.025 * k;
+      ctx.globalCompositeOperation = 'lighter';
+      for (const sx of [-1, 1]) drawGlow(ctx, scheme.eye, ex + sx * gap, ey, 10 * e.unit * k, 0.9, 0.5);
+      ctx.globalCompositeOperation = 'source-over';
+      return false;
+    },
+  };
+}
