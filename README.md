@@ -96,7 +96,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Récents** : les 8 derniers pouvoirs utilisés, en ronds, en haut de l’accueil.
 - **Recherche** : une barre sur l’accueil trouve un pouvoir par son nom, son geste ou sa catégorie (sans tenir compte des accents).
 - **Pouvoir du jour** : sur l’accueil, un pouvoir mis en avant, différent chaque jour, avec un bouton Essayer.
-- **Coach caméra** (Paramètres, activé par défaut) : une bulle à l’écran, jamais dans les vidéos, prévient quand il fait trop sombre, quand ta main n’est pas vue ou quand tu es trop loin.
+- **Coach caméra** (Paramètres, activé par défaut) : une bulle à l’écran, jamais dans les vidéos, prévient quand il fait trop sombre, quand ta main n’est pas vue, quand tu es trop loin, quand ton corps n’est pas dans l’image ou quand tu es trop près pour les pouvoirs qui ont besoin du décor.
 - **Zoom comme l’appareil photo** : pastilles ,5 · 1 · 2 · 5 au-dessus du bouton d’enregistrement (touche pour sauter, glisse pour zoomer en douceur), pincement à deux doigts ou molette. Avec la caméra arrière, sous 0,75× l’application passe sur l’objectif ultra grand-angle du téléphone quand le navigateur le propose (vrai dézoom optique), et revient à l’objectif principal au-dessus de 0,95×.
 - **Vrai dézoom** : sous 1×, l’image filmée rétrécit au milieu de l’écran (jusqu’à 0,22) et les bords sont remplis d’un flou, comme les bandes floues des applis vidéo : on te voit plus petit, dans les vidéos aussi.
 - **Couleur de l’application** (Paramètres > Affichage) : Couleurs (par défaut : orange de feu, rose, violet, bleu, avec une couleur par catégorie), Or, Violet, Cyan, Rose, Vert ou Rouge.
