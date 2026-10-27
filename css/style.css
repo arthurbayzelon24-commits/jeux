@@ -2801,3 +2801,30 @@ body.is-recording .coach {
     height: 34px;
   }
 }
+
+/* Landscape phones: smaller bubbles so the zoom pills stay visible */
+@media (max-height: 500px) {
+  .howto {
+    width: min(46vw, 380px);
+    font-size: 0.74rem;
+    padding: 8px 12px;
+  }
+  .coach {
+    bottom: calc(120px + var(--safe-b));
+    font-size: 0.78rem;
+  }
+  .unlock {
+    bottom: 12px;
+  }
+  .studio-side {
+    top: calc(8px + var(--safe-t));
+  }
+  .studio-side .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+/* The side buttons stay above the row of powers when they cross */
+.studio-side {
+  z-index: 5;
+}
