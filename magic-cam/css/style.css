@@ -2828,3 +2828,16 @@ body.is-recording .coach {
 .studio-side {
   z-index: 5;
 }
+
+/* Clean screen: only the picture */
+body.clean .studio-top,
+body.clean .studio-side,
+body.clean .studio-bottom,
+body.clean .zoom-pills,
+body.clean .howto,
+body.clean .coach,
+body.clean #btn-action {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}

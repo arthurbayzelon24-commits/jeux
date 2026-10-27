@@ -88,6 +88,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Mode portrait** (Paramètres > Affichage) : l’IA détoure ta silhouette, l’arrière-plan est flouté et toi tu restes net, avec n’importe quel pouvoir et dans les vidéos.
 - **Traînées de couleur** (Paramètres > Affichage) : le bout de chaque doigt laisse une courte traînée arc-en-ciel, avec n’importe quel pouvoir (aussi dans les vidéos).
 - **Raccourcis clavier** (ordinateur) : Espace = filmer, ← → = pouvoir précédent / suivant, + / − = zoom, 0 = 1×, P = photo, C = couleur, R = ralenti, Échap = retour.
+- **Écran propre** (bouton œil du studio) : cache tous les boutons, pratique pour filmer avec l’enregistreur d’écran du téléphone ; un toucher sur l’image les fait revenir.
 - **Favoris rapides** : un appui long sur un pouvoir de la rangée du studio l’ajoute aux favoris (petite étoile) ou l’en retire.
 - **Recherche** : une barre sur l’accueil trouve un pouvoir par son nom, son geste ou sa catégorie (sans tenir compte des accents).
 - **Pouvoir du jour** : sur l’accueil, un pouvoir mis en avant, différent chaque jour, avec un bouton Essayer.
