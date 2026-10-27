@@ -2841,3 +2841,44 @@ body.clean #btn-action {
   pointer-events: none;
   transition: opacity 0.3s;
 }
+
+/* Recent powers */
+.recent {
+  max-width: 1100px;
+  margin: 0 auto 12px;
+}
+.recent-row {
+  display: flex;
+  gap: 10px;
+  padding: 2px 16px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.recent-row::-webkit-scrollbar {
+  display: none;
+}
+.recent-item {
+  flex: none;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 72px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+}
+.recent-item img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid color-mix(in srgb, var(--tint, #ff9a3d) 80%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--tint, #ff9a3d) 40%, transparent);
+}
+.recent-item span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
