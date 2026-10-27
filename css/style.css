@@ -2753,3 +2753,9 @@ body.is-recording .coach {
   margin: 18px auto 0;
   animation: none;
 }
+
+/* Gallery tiles outlined in the colour of their power */
+.media-item {
+  border: 1.5px solid color-mix(in srgb, var(--tint, #ff9a3d) 60%, transparent);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--tint, #ff9a3d) 22%, transparent);
+}

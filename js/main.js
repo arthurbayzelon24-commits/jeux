@@ -1336,6 +1336,8 @@ async function renderGallery() {
   for (const item of items) {
     const el = document.createElement('button');
     el.className = 'media-item';
+    const tint = EFFECTS.find((d) => d.id === item.effect)?.tint;
+    if (tint) el.style.setProperty('--tint', tint);
     el.classList.toggle('selected', galleryView.selected.has(item.id));
     const fx = getEffect(item.effect);
     const date = new Date(item.created).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });

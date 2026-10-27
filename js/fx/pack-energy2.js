@@ -200,3 +200,127 @@ export function fireTornadoEffect() {
     },
   };
 }
+
+// ---------- Fouet d'énergie ----------
+// A rope of light hangs from your fist and follows it with real physics
+// (a chain of points). Whip it fast: the tip cracks with a bang and sparks.
+export function whipEffect() {
+  const COLORS = [
+    { name: 'Électrique', rgb: [110, 200, 255] },
+    { name: 'Feu', rgb: [255, 130, 40] },
+    { name: 'Rose', rgb: [255, 80, 200] },
+  ];
+  let rgb = COLORS[0].rgb;
+  const N = 26;
+  let chain = null; // [{ x, y, px, py }]
+  const sparks = new Particles(300);
+  let cool = 0;
+
+  return {
+    id: 'whip',
+    name: 'Fouet d’énergie',
+    hint: 'Ferme le poing (ou pointe l’index) : une corde de lumière pend de ta main. Fouette d’un coup sec : le bout claque avec des étincelles.',
+    colors: COLORS,
+    needs: { seg: false },
+    setColor(i) {
+      rgb = COLORS[i].rgb;
+    },
+    start() {
+      chain = null;
+      sparks.clear();
+    },
+    update(dt, hands, e) {
+      sparks.update(dt);
+      cool -= dt;
+      const h = live(hands).sort((a, b) => b.size - a.size)[0];
+      if (!h) return;
+      const anchor = h.point ? h.lm[8] : h.palm;
+      const seg = Math.min(e.W, e.H) * 0.03;
+      if (!chain)
+        chain = Array.from({ length: N }, (_, i) => ({ x: anchor.x, y: anchor.y + i * seg, px: anchor.x, py: anchor.y + i * seg }));
+      // Verlet: each point keeps its speed, falls, and the links pull together.
+      const g = 1500 * e.unit * dt * dt;
+      for (let i = 1; i < N; i++) {
+        const p = chain[i];
+        const vx = (p.x - p.px) * 0.985;
+        const vy = (p.y - p.py) * 0.985;
+        p.px = p.x;
+        p.py = p.y;
+        p.x += vx;
+        p.y += vy + g;
+      }
+      chain[0].x = anchor.x;
+      chain[0].y = anchor.y;
+      for (let k = 0; k < 6; k++)
+        for (let i = 1; i < N; i++) {
+          const a = chain[i - 1];
+          const b = chain[i];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 1;
+          const diff = (d - seg) / d;
+          if (i === 1) {
+            b.x -= dx * diff;
+            b.y -= dy * diff;
+          } else {
+            a.x += dx * diff * 0.5;
+            a.y += dy * diff * 0.5;
+            b.x -= dx * diff * 0.5;
+            b.y -= dy * diff * 0.5;
+          }
+        }
+      // The crack: the tip moving very fast.
+      const tip = chain[N - 1];
+      const v = Math.hypot(tip.x - tip.px, tip.y - tip.py) / dt;
+      if (v > Math.max(e.W, e.H) * 4 && cool <= 0) {
+        cool = 0.3;
+        for (let i = 0; i < 40; i++) {
+          const a = rand(TAU);
+          const s = rand(200, 800) * e.unit;
+          sparks.add({
+            x: tip.x,
+            y: tip.y,
+            vx: Math.cos(a) * s,
+            vy: Math.sin(a) * s,
+            drag: 3,
+            life: rand(0.2, 0.5),
+            size: rand(2, 5) * e.unit,
+            rgb,
+            core: 0.6,
+          });
+        }
+        e.flash(rgb, 0.15, 6);
+        e.shake(6);
+        e.audio.play('crack', 0.9);
+      }
+    },
+    draw(ctx, e) {
+      sparks.draw(ctx);
+      if (!chain || !live(e.hands).length) return;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      for (const [w, a] of [
+        [16, 0.12],
+        [6, 0.45],
+        [2, 1],
+      ]) {
+        ctx.strokeStyle = a === 1 ? 'rgba(255,255,255,0.95)' : `rgba(${rgb.join(',')},${a})`;
+        ctx.lineWidth = w * e.unit;
+        ctx.beginPath();
+        ctx.moveTo(chain[0].x, chain[0].y);
+        for (let i = 1; i < N - 1; i++) {
+          const mx = (chain[i].x + chain[i + 1].x) / 2;
+          const my = (chain[i].y + chain[i + 1].y) / 2;
+          ctx.quadraticCurveTo(chain[i].x, chain[i].y, mx, my);
+        }
+        ctx.lineTo(chain[N - 1].x, chain[N - 1].y);
+        ctx.stroke();
+      }
+      const tip = chain[N - 1];
+      drawGlow(ctx, rgb, tip.x, tip.y, 16 * e.unit, 0.9, 0.5);
+      ctx.restore();
+    },
+  };
+}
