@@ -98,6 +98,7 @@ export function freeModeEffect() {
     e.audio.play('combo', 1);
     e.audio.play('boom', 0.8);
     e.emit?.('ultimate', { id: 'free', combo: true });
+    e.emit?.('combo');
   };
 
   const pick = (hands, e) => {
