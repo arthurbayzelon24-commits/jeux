@@ -764,6 +764,7 @@ export function hologramEffect() {
   let plate = null;
   let plateAge = 1;
   let glitch = 0;
+  let lines = null;
 
   return {
     id: 'hologram',
@@ -793,7 +794,10 @@ export function hologramEffect() {
         plateAge = 0;
       }
       ctx.drawImage(plate, 0, 0, e.W, e.H);
-      if (!tmp || tmp.width !== e.W || tmp.height !== e.H) tmp = makeCanvas(e.W, e.H);
+      if (!tmp || tmp.width !== e.W || tmp.height !== e.H) {
+        tmp = makeCanvas(e.W, e.H);
+        lines = null;
+      }
       const g = tmp.getContext('2d');
       g.globalCompositeOperation = 'copy';
       g.drawImage(e.layers.person, 0, 0);
@@ -801,10 +805,20 @@ export function hologramEffect() {
       g.globalCompositeOperation = 'source-atop';
       g.fillStyle = `rgba(${rgb.join(',')},0.55)`;
       g.fillRect(0, 0, e.W, e.H);
-      g.fillStyle = 'rgba(0,0,0,0.35)';
+      // Scan lines as one repeated pattern (one fill instead of a hundred).
       const step = Math.max(3, Math.round(4 * e.unit));
-      const off = (e.t * 40) % step;
-      for (let y = off; y < e.H; y += step) g.fillRect(0, y, e.W, step / 2);
+      if (!lines || lines.step !== step) {
+        const c = makeCanvas(1, step);
+        const cg = c.getContext('2d');
+        cg.fillStyle = 'rgba(0,0,0,0.35)';
+        cg.fillRect(0, 0, 1, step / 2);
+        lines = { step, pattern: g.createPattern(c, 'repeat') };
+      }
+      g.save();
+      g.translate(0, (e.t * 40) % step);
+      g.fillStyle = lines.pattern;
+      g.fillRect(0, -step, e.W, e.H + step);
+      g.restore();
       const flick = 0.55 + 0.15 * noise1(e.t * 20);
       ctx.globalCompositeOperation = 'lighter';
       if (glitch > 0) {
