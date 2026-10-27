@@ -2064,6 +2064,8 @@ function renderHub() {
   $('hub-done').textContent = `${list.filter((c) => c.done).length}/3`;
   document.querySelector('.challenges-card').style.setProperty('--p', list.filter((c) => c.done).length / 3);
 }
+// On a computer, hovering a round button shows what it does.
+document.querySelectorAll('.icon-btn[aria-label]').forEach((b) => b.title || (b.title = b.getAttribute('aria-label')));
 $('quick-film').addEventListener('click', () => openStudio('free'));
 $('power-search').addEventListener('input', () => filterPowers());
 $('empty-film').addEventListener('click', () => openStudio('free'));
