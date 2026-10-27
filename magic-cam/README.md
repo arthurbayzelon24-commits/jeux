@@ -63,6 +63,7 @@ Magic Cam s’installe comme une application (bouton « Installer » sur Android
 - **Pause / reprise** pendant l’enregistrement (bouton pause à la place de l’appareil photo) : plusieurs plans dans une seule vidéo, comme sur TikTok.
 - **Lumière d’appoint** et **grille de cadrage** (Paramètres) : à l’écran seulement, jamais dans les vidéos.
 - **Flou de mouvement** désactivable (coupé par défaut sur téléphone pour la fluidité). Avec une musique, les effets pulsent légèrement sur le rythme.
+- **Corps de glace** (Nature) : des cristaux de givre poussent sur ton contour quand tu serres les poings ; mains ouvertes d’un coup, la glace éclate en morceaux.
 - **Météo magique** : **Pluie magique** (elle rebondit sur ta silhouette ; une main ouverte au-dessus de la tête sert de parapluie ; poing = tonnerre), **Neige qui tombe** (elle se pose sur ta tête et tes épaules, et tombe quand tu bouges vite), **Corps électrifié** (des arcs électriques courent sur ton contour ; poings serrés = charge, mains ouvertes d’un coup = décharge).
 - **Doigts de feu** (Feu) : une flamme au bout de chaque doigt tendu. **Gant aux 6 pierres** (Héros) : un gant doré recouvre ta main avec six pierres de couleur ; un claquement de doigts (ou poing puis main ouverte) les allume et fait éclater la lumière sur tout l’écran.
 - **Fouet d’énergie** (Énergie) : une corde de lumière pend de ton poing (ou de ton index) avec une vraie physique de corde ; un coup sec fait claquer le bout avec des étincelles.
