@@ -464,7 +464,7 @@ export class Engine {
     if (input.pose !== undefined) this.body.update(input.pose, { width: W, height: H, mirror: input.mirror, dt });
     else this.body.advance(dt);
 
-    this.segActive = !!(effect?.needs?.seg && input.mask);
+    this.segActive = !!((effect?.needs?.seg || this.settings.bokeh) && input.mask);
     // Points mode without a body power: the silhouette is still needed for
     // the point cloud.
     if (!this.segActive && this.settings.points && input.mask && input.maskFresh !== false)
@@ -530,7 +530,21 @@ export class Engine {
     this.zoom = 1 + (this.zoom - 1) * Math.exp(-dt * 5);
 
     const handled = this.#safe('drawBackground', ctx, this);
-    if (!handled && this.segActive) ctx.drawImage(this.layers.frame, 0, 0);
+    if (!handled && this.segActive && this.settings.bokeh) {
+      // Portrait mode: the room behind you softly blurred, you stay sharp.
+      const b = (this.bokehCanvas ||= makeCanvas(2, 2));
+      const bw = Math.max(16, Math.round(W / 10));
+      const bh = Math.max(9, Math.round(H / 10));
+      if (b.width !== bw || b.height !== bh) {
+        b.width = bw;
+        b.height = bh;
+      }
+      const bg = b.getContext('2d');
+      bg.drawImage(this.layers.frame, 0, 0, bw, bh);
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(b, 0, 0, W, H);
+      ctx.drawImage(this.layers.person, 0, 0);
+    } else if (!handled && this.segActive) ctx.drawImage(this.layers.frame, 0, 0);
     else if (!handled) {
       // No body effect: draw the camera straight in, without a copy.
       ctx.save();
