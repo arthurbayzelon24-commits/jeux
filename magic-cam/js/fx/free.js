@@ -10,6 +10,7 @@
 //   V sign                       -> fireworks
 //   both fists closed            -> shadow magic
 //   one big sweep of the hand    -> a fireball thrown that way
+//   both hands open, apart       -> energy strings between the fingers
 import { magicCircleEffect } from './magiccircle.js';
 import { blackholeEffect } from './blackhole.js';
 import { lightningEffect } from './lightning.js';
@@ -20,6 +21,7 @@ import { neonEffect } from './pack-tech.js';
 import { fireworksEffect } from './fireworks.js';
 import { shadowEffect } from './shadow.js';
 import { fireballEffect } from './fireball.js';
+import { stringsEffect } from './pack-energy2.js';
 import { Particles, rand, TAU, drawGlow } from './util.js';
 
 export const FREE_MOVES = [
@@ -32,6 +34,7 @@ export const FREE_MOVES = [
   ['neon', 'Pince les doigts', 'Dessin néon'],
   ['fireworks', 'Signe V', 'Feu d’artifice'],
   ['shadow', 'Les deux poings fermés', 'Magie des ombres'],
+  ['strings', 'Deux mains ouvertes, écartées', 'Fils d’énergie'],
   ['fireball', 'Un grand geste de la main', 'Boule de feu lancée'],
 ];
 
@@ -47,6 +50,7 @@ export function freeModeEffect() {
     fireworks: fireworksEffect,
     shadow: shadowEffect,
     fireball: fireballEffect,
+    strings: stringsEffect,
   };
   const fx = {};
   let current = null;
@@ -106,6 +110,7 @@ export function freeModeEffect() {
       if (d < (a.size + b.size) * 1.3 && !a.fist && !b.fist) return 'blackhole';
       if (a.palm.y < e.H * 0.35 && b.palm.y < e.H * 0.35 && a.openness > 0.6 && b.openness > 0.6) return 'thunder';
       if (a.fist && b.fist) return 'shadow';
+      if (a.open && b.open) return 'strings';
     }
     // Waving: the hand changes direction sideways several times, fast.
     for (const h of live) {
