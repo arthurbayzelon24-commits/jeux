@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#050505" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FAZNIGHT" />
+    <meta name="description" content="FAZNIGHT — collection d'horreur animatronique : survivez jusqu'à 6 h du matin." />
+    <title>FAZNIGHT</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Background canvas used by every menu screen -->
+      <canvas id="menuBg" aria-hidden="true"></canvas>
+
+      <!-- HOME -->
+      <section class="screen" id="home">
+        <div class="home-inner">
+          <h1 class="logo" id="logo"><span>FAZ</span><span class="logo-b">NIGHT</span></h1>
+          <p class="tagline" data-i18n="tagline"></p>
+          <nav class="menu" id="homeMenu">
+            <button class="mbtn" data-act="continue" id="btnContinue"></button>
+            <button class="mbtn" data-act="play" data-i18n="play"></button>
+            <button class="mbtn" data-act="collection" data-i18n="collection"></button>
+            <button class="mbtn" data-act="trophies" data-i18n="trophies"></button>
+            <button class="mbtn" data-act="custom" id="btnCustom" data-i18n="customNight"></button>
+            <button class="mbtn secret-btn hidden" data-act="extras" id="btnExtras" data-i18n="extras"></button>
+            <button class="mbtn" data-act="settings" data-i18n="settings"></button>
+            <button class="mbtn" data-act="credits" data-i18n="credits"></button>
+          </nav>
+          <div class="home-foot"><span id="profileLine"></span><span id="versionLine">v1.0</span></div>
+        </div>
+      </section>
+
+      <!-- NIGHT SELECT (per chapter) -->
+      <section class="screen" id="nights">
+        <header class="bar"><button class="back" data-back>‹</button><h2 id="nightsTitle"></h2></header>
+        <div class="scroll"><div class="night-grid" id="nightGrid"></div></div>
+      </section>
+
+      <!-- COLLECTION -->
+      <section class="screen" id="collection">
+        <header class="bar"><button class="back" data-back>‹</button><h2 data-i18n="collection"></h2></header>
+        <div class="scroll">
+          <div class="chapters" id="chapterList"></div>
+          <h3 class="sub" data-i18n="bestiary"></h3>
+          <div class="bestiary" id="bestiary"></div>
+        </div>
+      </section>
+
+      <!-- TROPHIES -->
+      <section class="screen" id="trophies">
+        <header class="bar"><button class="back" data-back>‹</button><h2 data-i18n="trophies"></h2></header>
+        <div class="scroll">
+          <div class="troph-summary" id="trophSummary"></div>
+          <div class="troph-grid" id="trophGrid"></div>
+        </div>
+      </section>
+
+      <!-- CUSTOM NIGHT -->
+      <section class="screen" id="custom">
+        <header class="bar"><button class="back" data-back>‹</button><h2 data-i18n="customNight"></h2></header>
+        <div class="scroll">
+          <div class="seg" id="customChapter"></div>
+          <div class="presets" id="presetList"></div>
+          <div class="sliders" id="sliderList"></div>
+          <div class="custom-foot">
+            <div id="customInfo"></div>
+            <button class="mbtn primary" id="customGo" data-i18n="start"></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="screen" id="settings">
+        <header class="bar"><button class="back" data-back>‹</button><h2 data-i18n="settings"></h2></header>
+        <div class="scroll"><div class="settings" id="settingsBody"></div></div>
+      </section>
+
+      <!-- CREDITS -->
+      <section class="screen" id="credits">
+        <header class="bar"><button class="back" data-back>‹</button><h2 data-i18n="credits"></h2></header>
+        <div class="scroll"><div class="credits" id="creditsBody"></div></div>
+      </section>
+
+      <!-- EXTRAS (secret menu) -->
+      <section class="screen" id="extras">
+        <header class="bar"><button class="back" data-back>‹</button><h2 data-i18n="extras"></h2></header>
+        <div class="scroll"><div id="extrasBody"></div></div>
+      </section>
+
+      <!-- GAME -->
+      <section class="screen" id="game">
+        <canvas id="gameCanvas"></canvas>
+        <div id="hud"></div>
+      </section>
+
+      <!-- Full screen overlays: intro, 6 AM, game over, pause, cinematics, terminal -->
+      <div id="overlay" class="hidden"></div>
+      <div id="rotateHint" class="hidden"></div>
+      <div id="toasts"></div>
+    </div>
+
+    <noscript>FAZNIGHT nécessite JavaScript.</noscript>
+    <script src="js/i18n.js"></script>
+    <script src="js/save.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/art.js"></script>
+    <script src="js/characters.js"></script>
+    <script src="js/rooms.js"></script>
+    <script src="js/trophies.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/chapter1.js"></script>
+    <script src="js/chapter2.js"></script>
+    <script src="js/minigame.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
