@@ -224,7 +224,7 @@
       // personalities
       if (id === 'gus' && c.room === '02' && Math.random() < 0.15) dest = '08';
       if (id === 'nora' && c.room === '02' && Math.random() < 0.3) dest = '10';
-      if (opts.includes('DOOR_L') || opts.includes('DOOR_R')) dest = Math.random() < 0.75 ? opts[0] : opts[1];
+      if (opts.length > 1 && (opts.includes('DOOR_L') || opts.includes('DOOR_R'))) dest = Math.random() < 0.75 ? opts[0] : opts[1];
       this.moveTo(id, dest);
     }
     moveTo(id, dest) {
