@@ -90,7 +90,7 @@
         requestAnimationFrame(loop);
         const perf = FN.Save.data.settings.perf;
         if (perf && now - this.lastFrame < 32) return;
-        const dt = Math.min(0.1, (now - this.lastFrame) / 1000);
+        const dt = Math.max(0, Math.min(0.1, (now - this.lastFrame) / 1000)); // rAF timestamps can precede lastFrame
         this.lastFrame = now;
         if (!this.paused && !this.over) this.step(dt * this.speed);
         if (!this.over || this.drawAfterOver) this.render(now / 1000);

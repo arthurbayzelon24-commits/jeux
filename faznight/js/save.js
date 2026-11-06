@@ -9,6 +9,7 @@
       v: 1,
       created: Date.now(),
       name: 'Gardien',
+      guard: { color: '#1f2a44', outfit: 'classic', acc: 'none', skin: '#c99a7a', hair: '#2a1d14' },
       settings: {
         quality: 'medium', shadows: true, render3d: true, perf: false, immersion: false, vibrate: true, subtitles: true,
         master: 0.9, music: 0.7, sfx: 0.9, amb: 0.8, voice: 0.9, sens: 1, duration: 6, lang: '',

@@ -399,8 +399,9 @@
     x.shadowBlur = 0;
     p.screen.tex.needsUpdate = true;
   }
-  G3.build = build;
-  G3.applyPose = applyPose;
+  // the master rebuild (models3d.js) replaces the first-generation rig when present
+  G3.build = (id) => (FN.Models ? FN.Models.build(id) : build(id));
+  G3.applyPose = (m, o) => (FN.Models ? FN.Models.pose(m, o) : applyPose(m, o));
 
   // ---------------------------------------------------------------- sprite renderer (3D model -> any 2D canvas)
   let R = null, scene, cam, key, rim, amb, fill, maxH = 768;
@@ -431,11 +432,11 @@
   G3.drawChar = function (ctx, id, x, y, h, o) {
     try {
       if (!R) initSprite();
-      const model = models[id] || (models[id] = build(id));
+      const model = models[id] || (models[id] = G3.build(id));
       const ph = Math.min(maxH, Math.max(16, Math.round((h * VH) / 4.4)));
       const pw = Math.ceil((ph * VW) / VH);
       scene.add(model);
-      applyPose(model, o);
+      G3.applyPose(model, FN.Models ? Object.assign({}, o, { unit: 2.0 }) : o);
       model.scale.x = (o.flip ? -1 : 1) * Math.abs(model.scale.x);
       const light = o.light ?? 1;
       amb.intensity = 0.18 * light; key.intensity = 1.6 * light; rim.intensity = 1.4 * light; fill.intensity = 0.25 * light;
@@ -472,6 +473,7 @@
     G3.enabled = gl && FN.Save.data.settings.render3d !== false;
   };
   /** Rebuild renderers after a quality change. */
+  G3.forget = function (id) { delete models[id]; };
   G3.reset = function () {
     if (R) { R.dispose(); R = null; }
     for (const k in models) delete models[k];

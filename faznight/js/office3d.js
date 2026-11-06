@@ -63,6 +63,32 @@
       this.pickables = [];
       this.ray = new T3.Raycaster();
       this.yawMax = 0.5;
+      // first-person arms of the guard, attached to the camera
+      if (FN.Models) {
+        this.fp = FN.Models.buildArms();
+        this.cam.add(this.fp.root);
+        this.scene.add(this.cam);
+        this.fpK = { L: 0, R: 0, tab: 0, fl: 0 };
+      }
+    }
+    /** Animate the guard's hands: reaching for door panels, holding the tablet, the flashlight or the mask. */
+    updateArms(t) {
+      const fp = this.fp; if (!fp) return;
+      const n = this.n, k = this.fpK;
+      const tg = this.armTargets ? this.armTargets(t) : { L: 0, R: 0, tab: 0, fl: 0 };
+      for (const key in k) k[key] += (tg[key] - k[key]) * 0.25;
+      const [aL, aR] = fp.arms;
+      const breathe = Math.sin(t * 1.4) * 0.01;
+      const reach = (a, v) => { a.a.rotation.set(0.3 + Math.max(v, k.tab) * 1.55 + breathe, 0, a.s * (0.05 + v * 0.25)); };
+      reach(aL, k.L); reach(aR, Math.max(k.R, k.fl * 1.1));
+      if (k.fl > 0.01 && tg.flDir != null) aR.a.rotation.y = tg.flDir;
+      fp.tab.visible = k.tab > 0.05;
+      fp.tab.position.y = -0.6 + k.tab * 0.42;
+      fp.fl.visible = k.fl > 0.05;
+      fp.lens.material.color.setHex(tg.lit ? 0xfffbe0 : 0x555544);
+      FN.Models.curl(aL.hand, k.tab > 0.3 ? 0.5 : 0.25 + k.L * 0.2);
+      FN.Models.curl(aR.hand, k.fl > 0.3 ? 0.95 : k.tab > 0.3 ? 0.5 : 0.25 + k.R * 0.2);
+      fp.root.visible = !(n.mask && n.maskA > 0.6);
     }
     model(id) {
       if (!this.models[id]) { const m = G3.build(id); m.visible = false; this.scene.add(m); this.models[id] = m; }
@@ -73,7 +99,7 @@
       const m = this.model(id);
       m.visible = true; m.position.set(x, y, z); m.rotation.set(0, ry, 0);
       G3.applyPose(m, Object.assign({ t: performance.now() / 1000 }, o));
-      m.scale.multiplyScalar(scale * 0.5); // rig is ~4.4 m tall: bring it to ~2 m
+      m.scale.multiplyScalar(scale); // models are built in metres (~2 m tall)
       m.userData.placed = true;
     }
     resize() {
@@ -103,6 +129,7 @@
       const sh = this.n.shake;
       if (sh) { this.cam.position.x = (Math.random() - 0.5) * sh * 0.06; this.cam.position.y = 1.35 + (Math.random() - 0.5) * sh * 0.06; } else { this.cam.position.x = 0; this.cam.position.y = 1.35; }
       this.update(t);
+      this.updateArms(t);
       for (const id in this.models) if (!this.models[id].userData.placed) this.models[id].visible = false;
       this.R.render(this.scene, this.cam);
       const ctx = this.n.ctx;
@@ -214,7 +241,7 @@
       plane(std('#d8d0c0', { side: T3.DoubleSide }), 0.3, 0.2, 0.15, 0.895, 0.05, 0, S, -Math.PI / 2).rotation.set(-Math.PI / 2, 0, 0.2);
       // tiny Bruno plush on the desk
       this.plush = G3.build('bruno'); G3.applyPose(this.plush, { t: 2, light: 1, eyes: 0.2 });
-      this.plush.scale.setScalar(0.05); this.plush.position.set(1.05, 0.9, -0.1); this.plush.rotation.y = -0.4; S.add(this.plush);
+      this.plush.scale.setScalar(0.12); this.plush.position.set(1.05, 0.9, -0.1); this.plush.rotation.y = -0.4; S.add(this.plush);
       // ceiling lamp
       const lampG = new T3.Group(); lampG.position.set(0, 3, -0.7); S.add(lampG);
       box(std('#111'), 0.01, 0.6, 0.01, 0, -0.3, 0, lampG, false);
@@ -268,6 +295,11 @@
         if (s < 0) R.poster(c, 380, 40, 110, 160, { title: 'RÈGLES', bg: '#2a2a40', seed: 8 }); else { R.kidDrawing(c, 300, 60, 100, 80, 31); R.kidDrawing(c, 560, 90, 90, 70, 33); }
         A.grime(c, 0, 0, W, H, 70 + s, 80, '#000', 0.35);
       });
+    }
+    armTargets() {
+      const n = this.n, now = performance.now();
+      const press = n._press && now - n._press.t < 420 ? n._press.side : null;
+      return { L: n.lights.L || press === 'L' ? 1 : 0, R: n.lights.R || press === 'R' ? 1 : 0, tab: n.camUp ? 1 : 0, fl: 0 };
     }
     update(t) {
       const n = this.n;
@@ -377,7 +409,7 @@
       const tablet = new T3.Group(); tablet.position.set(-0.4, 0.9, -0.1); tablet.rotation.x = -1.3; S.add(tablet);
       box(std('#1a1a1a', { roughness: 0.3 }), 0.5, 0.34, 0.03, 0, 0, 0, tablet);
       this.tabScreen = plane(new T3.MeshBasicMaterial({ map: screenTex('tab', ['FUN FACTORY', 'CAM 12', '♪ ...'], 'rgba(255,140,200,0.85)') }), 0.44, 0.28, 0, 0, 0.017, 0, tablet);
-      const mini = (id, x, ry) => { const m = G3.build(id); G3.applyPose(m, { t: 1, light: 1, eyes: 0.15 }); m.scale.setScalar(0.05); m.position.set(x, 0.9, -0.4); m.rotation.y = ry; S.add(m); };
+      const mini = (id, x, ry) => { const m = G3.build(id); G3.applyPose(m, { t: 1, light: 1, eyes: 0.15 }); m.scale.setScalar(0.12); m.position.set(x, 0.9, -0.4); m.rotation.y = ry; S.add(m); };
       mini('pepper', -1.05, 0.3); mini('rico', 1.1, -0.4);
       const conf = ['#ff66cc', '#66ccff', '#ffcc66'];
       for (let i = 0; i < 40; i++) { const r = A.rng(i + 9); const c = new T3.Mesh(new T3.PlaneGeometry(0.02, 0.012), new T3.MeshBasicMaterial({ color: conf[i % 3], side: T3.DoubleSide })); c.position.set((r() - 0.5) * 2.5, 0.895, -0.6 + r() * 0.8); c.rotation.set(-Math.PI / 2, 0, r() * 6); S.add(c); }
@@ -407,6 +439,11 @@
         R.kidDrawing(c, 900, 60, 90, 70, 51); R.kidDrawing(c, 1400, 50, 90, 70, 53);
         A.grime(c, 0, 0, W, H, 92, 100, '#000', 0.3);
       });
+    }
+    armTargets() {
+      const n = this.n;
+      const lit = n.flash || n.vent.L || n.vent.R;
+      return { L: 0, R: 0, tab: n.camUp ? 1 : 0, fl: n.camUp || n.mask ? 0 : lit ? 1 : 0.45, lit, flDir: n.vent.L ? 0.55 : n.vent.R ? -0.55 : 0 };
     }
     update(t) {
       const n = this.n;

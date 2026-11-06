@@ -245,16 +245,21 @@
     }));
     buildBestiary();
   }
+  let bestCat = 1;
   function buildBestiary() {
     const d = D();
-    const ids = [...FN.charsOf(1), ...FN.charsOf(2), 'hollow'];
+    const cats = { 1: FN.charsOf(1), 2: FN.charsOf(2), 0: ['hollow', 'endo', 'guard'] };
+    const ids = cats[bestCat];
     const el = $('#bestiary');
-    el.innerHTML = ids.map((id) => {
-      const c = FN.CHARS[id], seen = d.seen[id];
+    const known = (id) => d.seen[id] || FN.CHARS[id].player;
+    const segHtml = `<div class="seg" style="grid-column:1/-1">${[[1, T('chapter', { n: 1 })], [2, T('chapter', { n: 2 })], [0, FN.lang === 'en' ? 'Secrets & you' : 'Secrets et vous']].map(([k, n]) => `<button data-cat="${k}" class="${+k === bestCat ? 'on' : ''}">${esc(n)}</button>`).join('')}</div>`;
+    el.innerHTML = segHtml + ids.map((id) => {
+      const c = FN.CHARS[id], seen = known(id);
       return `<button class="beast" data-id="${id}"><canvas></canvas><div><b>${seen ? esc(FN.L(c.name)) : T('unknown')}</b><span>${seen ? esc(FN.L(c.role)) : T('notSeen')}</span></div></button>`;
     }).join('');
+    el.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { bestCat = +b.dataset.cat; AU.play('uiMove'); clearAnims($('#bestiary')); buildBestiary(); }));
     el.querySelectorAll('.beast').forEach((b) => {
-      const id = b.dataset.id, cv = b.querySelector('canvas'), seen = d.seen[id];
+      const id = b.dataset.id, cv = b.querySelector('canvas'), seen = known(id);
       fitCanvas(cv);
       animate(cv, (c, W, H, t) => {
         c.setTransform(1, 0, 0, 1, 0, 0);
@@ -263,7 +268,11 @@
         A.drawChar(c, id, W / 2, H * 1.25, H * 1.25, { t, pose: id === 'lumi' ? 'float' : 'idle', light: seen ? 0.95 : 0, eyes: seen ? 1 : 0.35 });
         A.staticFx(c, W, H, 0.06, t);
       });
-      b.onclick = () => { if (seen) beastDetail(id); else AU.play('denied'); };
+      b.onclick = () => {
+        if (!seen) { AU.play('denied'); return; }
+        AU.play('uiSelect');
+        if (!(FN.Gallery && FN.Gallery.open(id, ids.filter(known)))) beastDetail(id);
+      };
     });
   }
   function beastDetail(id) {
@@ -372,9 +381,23 @@
     const opts = (key, values, labels) => `<div class="opts" data-key="${key}">${values.map((v, i) => `<button data-v="${v}" class="${String(s[key]) === String(v) ? 'on' : ''}">${labels[i]}</button>`).join('')}</div>`;
     const range = (key, min = 0, max = 1, step = 0.05) => `<input type="range" data-key="${key}" min="${min}" max="${max}" step="${step}" value="${s[key]}" />`;
     const onoff = (key) => opts(key, ['true', 'false'], [T('on'), T('off')]);
+    const gUnlock = { cap: () => d.chapters[1].done[1], glasses: () => FN.Trophies.count() >= 5, scarf: () => d.chapters[2].done[1], headset: () => Object.keys(d.challengesDone).length > 0 };
+    const gLockTxt = { cap: T('g_lockCap'), glasses: T('g_lockGlasses'), scarf: T('g_lockScarf'), headset: T('g_lockHeadset') };
+    const gopts = (key, values, labels, swatch) => `<div class="opts" data-g="${key}">${values.map((v, i) => {
+      const locked = key === 'acc' && gUnlock[v] && !gUnlock[v]();
+      return `<button data-v="${v}" title="${locked ? esc(gLockTxt[v]) : ''}" class="${d.guard[key] === v ? 'on' : ''} ${locked ? 'locked' : ''}" ${swatch ? `style="background:${v};min-width:36px" aria-label="${v}"` : ''}>${swatch ? '' : (locked ? '🔒 ' : '') + esc(labels[i])}</button>`;
+    }).join('')}</div>`;
     $('#settingsBody').innerHTML = `
       <h4>${T('s_profile')}</h4>
       <div class="row"><label>${T('s_name')}</label><input type="text" id="nameInput" maxlength="18" value="${esc(d.name)}" /></div>
+      <h4>${T('g_title')}</h4>
+      <div class="row"><canvas class="guard-prev" id="guardPrev"></canvas><div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:0">
+        <div><label>${T('g_color')}</label>${gopts('color', ['#1f2a44', '#141414', '#3a3f45', '#4a2a18', '#5a1414', '#1f3a2a'], null, true)}</div>
+        <div><label>${T('g_outfit')}</label>${gopts('outfit', ['classic', 'jacket'], [T('g_classic'), T('g_jacket')])}</div>
+        <div><label>${T('g_acc')}</label>${gopts('acc', ['none', 'cap', 'glasses', 'scarf', 'headset'], [T('g_none'), T('g_cap'), T('g_glasses'), T('g_scarf'), T('g_headset')])}</div>
+        <div><label>${T('g_skin')}</label>${gopts('skin', ['#f0c8a8', '#c99a7a', '#9a6a4a', '#5a3a28'], null, true)}</div>
+        <div><label>${T('g_hair')}</label>${gopts('hair', ['#2a1d14', '#0e0c0b', '#8a5a2a', '#c9b48a', '#6a6a6a'], null, true)}</div>
+      </div></div>
       <div class="row"><label>${T('s_lang')}</label>${opts('lang', ['fr', 'en'], ['Français', 'English'])}</div>
       <h4>${T('s_graphics')}</h4>
       <div class="row"><label>${T('s_3d')}<small>${FN.G3.ok ? T('s_3dSub') : T('s_3dNone')}</small></label>${FN.G3.ok ? onoff('render3d') : ''}</div>
@@ -400,6 +423,12 @@
       <div class="row"><label>${T('s_install')}<small>${T('s_installSub')}</small></label>${deferredInstall ? `<button class="act" id="inst">${T('s_installBtn')}</button>` : ''}</div>
       <input type="file" id="impFile" accept="application/json,.json" class="hidden" />`;
     const body = $('#settingsBody');
+    body.querySelectorAll('.opts[data-g]').forEach((o) => o.querySelectorAll('button').forEach((b) => (b.onclick = () => {
+      if (b.classList.contains('locked')) { AU.play('denied'); toast('info', T('locked'), b.title, '🔒'); return; }
+      d.guard[o.dataset.g] = b.dataset.v; FN.Save.save(); FN.G3.forget && FN.G3.forget('guard'); AU.play('uiMove'); buildSettings();
+    })));
+    const gp = $('#guardPrev');
+    if (gp) { fitCanvas(gp); animate(gp, (c, W, H, t) => { c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#050505'; c.fillRect(0, 0, W, H); A.drawChar(c, 'guard', W / 2, H * 0.98, H * 0.84, { t, pose: Math.floor(t / 5) % 2 ? 'look' : 'idle', look: Math.sin(t), light: 1, eyes: 0 }); }); }
     body.querySelectorAll('.opts[data-key]').forEach((o) => o.querySelectorAll('button').forEach((b) => (b.onclick = () => {
       const key = o.dataset.key; let v = b.dataset.v;
       if (v === 'true') v = true; else if (v === 'false') v = false; else if (!isNaN(+v)) v = +v;
@@ -492,12 +521,33 @@
   // ---------------------------------------------------------------- night overlays
   function nightIntro(cfg, go) {
     const label = cfg.night === 'custom' ? T('customIntro') : T('nightIntro', { n: cfg.night });
-    const o = overlay(`<div class="clockflip">12:00<span class="am">AM</span></div><div class="mid">${esc(label)}</div><div class="small">${cfg.resume ? T('resume') : T('chapter', { n: cfg.chapter }) + ' — ' + (cfg.chapter === 1 ? 'Grimwood’s Pizza Palace' : 'Grimwood’s Fun Factory')}</div>`);
+    const o = overlay(`<canvas class="full"></canvas><div class="clockflip">12:00<span class="am">AM</span></div><div class="mid">${esc(label)}</div><div class="small">${cfg.resume ? T('resume') : T('chapter', { n: cfg.chapter }) + ' — ' + (cfg.chapter === 1 ? 'Grimwood’s Pizza Palace' : 'Grimwood’s Fun Factory')}</div>`);
     AU.play('sting');
     let done = false;
+    guardScene(o.querySelector('canvas'), 'walk', () => done);
     const finish = () => { if (done) return; done = true; hideOverlay(); go(); };
     o.onclick = finish;
     setTimeout(finish, 2800);
+  }
+  /** Small cinematic: the 3D guard walking in (night intro) or celebrating (6 AM). */
+  function guardScene(cv, pose, stop) {
+    if (!cv) return;
+    fitCanvas(cv, 0.7);
+    const t0 = performance.now();
+    const f = (now) => {
+      if (stop() || !cv.isConnected) return;
+      requestAnimationFrame(f);
+      const c = cv.getContext('2d'), W = cv.width, H = cv.height, t = (now - t0) / 1000;
+      c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+      const walk = pose === 'walk';
+      const k = walk ? Math.min(1, t / 2.6) : 1;
+      const h = H * (walk ? 0.35 + k * 0.5 : 0.8);
+      A.drawChar(c, 'guard', W * (walk ? 0.68 : 0.72), H * (walk ? 0.78 + k * 0.25 : 1.02), h, { t, pose: walk ? 'walk' : 'cheer', phase: t * 4.2, light: walk ? 0.55 : 0.9, eyes: 0, lit: walk });
+      if (walk) { const g = c.createRadialGradient(W * 0.6, H * 0.85, 10, W * 0.6, H * 0.85, W * 0.5); g.addColorStop(0, 'rgba(255,240,200,0.12)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+      const v = c.createLinearGradient(0, 0, W * 0.6, 0); v.addColorStop(0, 'rgba(0,0,0,0.9)'); v.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = v; c.fillRect(0, 0, W, H);
+      A.staticFx(c, W, H, 0.08, t);
+    };
+    requestAnimationFrame(f);
   }
   function pauseMenu(n) {
     const o = overlay(`<div class="big">${T('paused')}</div><div class="mid">${esc(n.hourLabel())} — ${n.night === 'custom' ? T('customIntro') : T('night', { n: n.night })}</div>
@@ -527,7 +577,9 @@
     } else showGO();
   }
   function sixAM(n, rewards, cb) {
-    const o = overlay(`<div class="clockflip"><span id="hh">5</span><span class="am">AM</span></div><div class="mid" id="winmsg">&nbsp;</div><div id="rewards"></div>`);
+    const o = overlay(`<canvas class="full"></canvas><div class="clockflip"><span id="hh">5</span><span class="am">AM</span></div><div class="mid" id="winmsg">&nbsp;</div><div id="rewards"></div>`);
+    let cheer = false;
+    setTimeout(() => { cheer = true; guardScene(o.querySelector('canvas'), 'cheer', () => !o.querySelector('#hh')); }, 1800);
     setTimeout(() => {
       const hh = o.querySelector('#hh'); if (!hh) return;
       hh.textContent = '6';

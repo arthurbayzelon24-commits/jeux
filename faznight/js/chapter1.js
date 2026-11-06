@@ -125,6 +125,7 @@
       if (this.out || this.broken[side]) { AU.play('denied', { pan: side === 'L' ? -0.8 : 0.8 }); return; }
       this.doors[side] = !this.doors[side];
       this.stats.doorUses++;
+      this._press = { side, t: performance.now() };
       AU.play(this.doors[side] ? 'doorClose' : 'doorOpen', { pan: side === 'L' ? -0.8 : 0.8 });
       this.updateHud();
     }
@@ -439,6 +440,7 @@
           this.camChar(ctx, map, unitH, id, spot, { t, pose: close ? 'peek' : 'idle', flip: cam === '10', eyes: 1, jaw: close && id === 'gus' ? 0.4 : 0, light: id === 'bruno' ? 0.25 : room.light });
         }
       }
+      if (cam === '04') this.camChar(ctx, map, unitH, 'endo', [0.16, 0.97, 0.78], { t, pose: 'idle', light: 0.35, eyes: Math.random() < 0.03 ? 1 : 0.25 });
       if (cam === '06') {
         if (this.a.bruno.room === '06' && Math.random() < 0.02) AU.play('laugh', { pan: 0.6, vol: 0.2 });
         if (this.kitchenCode) {

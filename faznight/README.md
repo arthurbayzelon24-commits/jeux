@@ -58,6 +58,8 @@ faznight/
   vendor/three.min.js  Three.js r128 (MIT)
   js/art.js            rig 2.5D de secours, poses partagées, effets analogiques
   js/three3d.js        modèles 3D articulés des animatroniques, matériaux, rendu dans n'importe quel canvas
+  js/models3d.js       reconstruction des modèles : anatomie, endosquelette, mains articulées, matériaux PBR, clips d'animation
+  js/gallery3d.js      galerie 3D (rotation, zoom, visage, dos, vue mécanique, animations)
   js/office3d.js       bureaux 3D des deux chapitres (portes, couloirs, conduits, lampe, ombres)
   js/characters.js     distribution originale (apparence, rôle, conseils)
   js/rooms.js          décors procéduraux : caméras, bureaux, couloirs, conduits
@@ -82,3 +84,17 @@ Option de test : `index.html?speed=20` accélère le temps du jeu.
 - Les modèles 3D sont construits à partir de formes géométriques articulées, sans sculpture ni maillage importé. Ce choix permet de les animer et de les rendre en temps réel sur téléphone.
 - Les vues des caméras restent des décors 2.5D, avec les personnages en 3D par-dessus.
 - Sur un appareil peu puissant, la résolution 3D baisse automatiquement, puis les ombres se coupent. Le réglage « Rendu 3D » permet de revenir au rendu 2.5D.
+
+## Modèles des personnages (version 1.2)
+
+Chaque animatronique est assemblé comme un robot de spectacle.
+- **Tête** : crâne, front, joues, museau, mâchoire supérieure et inférieure, dents une par une, langue, orbites, yeux avec iris et pupille, paupières qui clignent, sourcils, oreilles.
+- **Corps** : bassin, torse, épaules, bras, coudes, poignets, mains à quatre doigts articulés et pouce, cuisses, genoux, mollets, chevilles et chaussures.
+- **Endosquelette** : colonne, côtes, pistons qui suivent les articulations, axes, engrenages, boulons et câbles. Les versions abîmées le laissent voir.
+- **Matériaux** : fourrure synthétique, métal oxydé, chrome, caoutchouc, tissu, et plastique brillant pour la nouvelle génération du chapitre 2.
+
+Animations : attente, marche, course, regard, bouche, yeux, attaque et jumpscare, plus les poses de scène.
+
+Nouveautés :
+- **Endo-7** : un endosquelette secret, visible sur les caméras des coulisses et de l'atelier.
+- **Le gardien** : un modèle humain personnalisable (uniforme, tenue, teint, cheveux, accessoires à débloquer). Il apparaît dans les cinématiques, et ses mains sont visibles à la première personne pendant les nuits.

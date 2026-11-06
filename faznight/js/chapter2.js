@@ -409,6 +409,7 @@
         const spot = room.spots[id];
         if (spot) this.camChar(ctx, map, unitH, id, spot, { t: t + id.length, pose: id === 'lumi' ? 'float' : cam.startsWith('0') && +cam <= 6 && +cam >= 5 ? 'peek' : 'idle', eyes: 1 });
       }
+      if (cam === '08') this.camChar(ctx, map, unitH, 'endo', [0.5, 0.98, 0.42], { t, pose: 'slump', light: 0.3, eyes: 0.2 });
       if (cam === '11') {
         const spot = room.spots.chime;
         const awake = this.chimeOut;

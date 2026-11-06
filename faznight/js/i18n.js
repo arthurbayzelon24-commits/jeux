@@ -33,6 +33,7 @@ window.FN = window.FN || {};
       customLocked: 'Terminez la Nuit 6 du chapitre pour débloquer sa Custom Night.', presets: 'Défis', freePlay: 'Libre',
       totalLevel: 'Difficulté totale : {n}', bestRecord: 'Meilleur record : {n}', challengeRule: 'Règle : {r}',
       // settings
+      g_title: 'Votre gardien', g_color: 'Couleur de l’uniforme', g_outfit: 'Tenue', g_acc: 'Accessoire', g_skin: 'Teint', g_hair: 'Cheveux', g_classic: 'Chemise', g_jacket: 'Veste', g_none: 'Aucun', g_cap: 'Casquette', g_glasses: 'Lunettes', g_scarf: 'Écharpe', g_headset: 'Casque radio', g_lockCap: 'Terminez la Nuit 1', g_lockGlasses: '5 trophées', g_lockScarf: 'Nuit 1 du Chapitre 2', g_lockHeadset: 'Réussissez un défi',
       s_graphics: 'Graphismes', s_3d: 'Rendu 3D (Three.js)', s_3dSub: 'Bureaux et animatroniques en 3D temps réel. Désactivez-le sur un appareil peu puissant.', s_3dNone: 'WebGL indisponible sur cet appareil : rendu 2.5D utilisé.', s_quality: 'Qualité graphique', s_shadows: 'Ombres et lumières dynamiques', s_perf: 'Mode performance',
       s_perfSub: '30 images/s, effets allégés', s_immersion: 'Mode immersion', s_immersionSub: 'Plein écran, vibrations, aucun conseil à l’écran',
       s_audio: 'Audio', s_master: 'Volume général', s_music: 'Musique', s_sfx: 'Effets sonores', s_amb: 'Ambiance', s_voice: 'Voix (téléphone)',
@@ -80,6 +81,7 @@ window.FN = window.FN || {};
       unlockedCustom: 'Custom Night unlocked', chapterUnlockTitle: 'CHAPTER 2 UNLOCKED', newRecord: 'New record!',
       customLocked: 'Complete Night 6 of the chapter to unlock its Custom Night.', presets: 'Challenges', freePlay: 'Free',
       totalLevel: 'Total difficulty: {n}', bestRecord: 'Best record: {n}', challengeRule: 'Rule: {r}',
+      g_title: 'Your guard', g_color: 'Uniform colour', g_outfit: 'Outfit', g_acc: 'Accessory', g_skin: 'Skin tone', g_hair: 'Hair', g_classic: 'Shirt', g_jacket: 'Jacket', g_none: 'None', g_cap: 'Cap', g_glasses: 'Glasses', g_scarf: 'Scarf', g_headset: 'Radio headset', g_lockCap: 'Complete Night 1', g_lockGlasses: '5 trophies', g_lockScarf: 'Chapter 2 Night 1', g_lockHeadset: 'Clear a challenge',
       s_graphics: 'Graphics', s_3d: '3D rendering (Three.js)', s_3dSub: 'Real-time 3D offices and animatronics. Turn it off on a low-end device.', s_3dNone: 'WebGL is not available on this device: 2.5D rendering is used.', s_quality: 'Graphics quality', s_shadows: 'Dynamic shadows & lights', s_perf: 'Performance mode',
       s_perfSub: '30 fps, lighter effects', s_immersion: 'Immersion mode', s_immersionSub: 'Fullscreen, vibration, no on-screen tips',
       s_audio: 'Audio', s_master: 'Master volume', s_music: 'Music', s_sfx: 'Sound effects', s_amb: 'Ambience', s_voice: 'Voice (phone)',

@@ -286,3 +286,31 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 @media (min-width: 900px) {
   .home-inner { padding-left: 8vw; }
 }
+
+/* ---------- 3D gallery ---------- */
+.gal { position: absolute; inset: 0; background: #07060a; text-align: left; }
+.gal-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.gal-top { position: absolute; top: calc(10px + var(--safe-t)); left: calc(12px + var(--safe-l)); right: calc(12px + var(--safe-r)); display: flex; justify-content: space-between; pointer-events: none; }
+.gal-top > * { pointer-events: auto; }
+.gal-nav { display: flex; gap: 8px; }
+.gal-nav button { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: #000a; font-size: 28px; }
+.gal-info { position: absolute; left: calc(12px + var(--safe-l)); top: calc(66px + var(--safe-t)); width: min(340px, 44vw); background: #000b; border: 1px solid var(--line); border-radius: 8px; padding: 12px; max-height: 46vh; overflow-y: auto; font-size: 12px; line-height: 1.45; color: #d8d0c4; }
+.gal-info b { font-size: 16px; letter-spacing: 1px; color: #fff; }
+.gal-info p { margin: 8px 0 0; }
+.gal-tip { color: var(--dim); }
+.gal-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.gal-tags span { font-size: 10.5px; padding: 3px 7px; border-radius: 10px; border: 1px solid var(--line); color: var(--dim); }
+.gal-tags span.ok { border-color: #3d7a3f; color: #9fe39f; }
+.gal-views, .gal-clips { position: absolute; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; left: 50%; transform: translateX(-50%); width: min(96vw, 760px); }
+.gal-views { bottom: calc(64px + var(--safe-b)); }
+.gal-clips { bottom: calc(12px + var(--safe-b)); }
+.gal-views button, .gal-clips button { min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 20px; background: #000b; font-size: 12px; letter-spacing: 1px; }
+.gal-views button.on, .gal-clips button.on { border-color: var(--red-hi); background: #c4161c44; color: #fff; }
+.gal-hint { position: absolute; right: calc(14px + var(--safe-r)); top: calc(72px + var(--safe-t)); font-size: 11px; color: var(--dim); max-width: 180px; text-align: right; }
+@media (orientation: portrait) {
+  .gal-info { width: auto; right: calc(12px + var(--safe-r)); max-height: 28vh; }
+  .gal-hint { display: none; }
+  .gal-views { bottom: calc(110px + var(--safe-b)); }
+}
+.guard-prev { width: 120px; height: 160px; border-radius: 6px; background: #050505; border: 1px solid var(--line); }
+.opts button.locked { opacity: 0.4; }
