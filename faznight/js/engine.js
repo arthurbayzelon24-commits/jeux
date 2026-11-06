@@ -25,7 +25,7 @@
         const grow = clamp(t / 0.28, 0, 1);
         const h = H * (1.3 + grow * 1.25 + Math.sin(t * 9) * 0.03);
         const sx = Math.sin(t * 61) * H * 0.03, sy = Math.cos(t * 53) * H * 0.025;
-        A.drawChar(ctx, id, W / 2 + sx, H * (1.85 + grow * 0.6) + sy, h, { t: t * 3, pose: id === 'chime' ? 'dance' : 'attack', jaw: 1, light: 0.95, eyes: 1, tilt: Math.sin(t * 40) * 0.06 });
+        A.drawChar(ctx, id, W / 2 + sx, H * (1.85 + grow * 0.6) + sy, h, { t: t * 3, pose: id === 'chime' ? 'dance' : 'attack', jaw: 1, light: 0.95, eyes: 1, scare: true, tilt: Math.sin(t * 40) * 0.06 });
         if (t < 0.12) { ctx.fillStyle = `rgba(255,255,255,${0.7 - t * 5})`; ctx.fillRect(0, 0, W, H); }
         ctx.fillStyle = `rgba(160,0,0,${0.15 + Math.random() * 0.12})`; ctx.fillRect(0, 0, W, H);
         A.staticFx(ctx, W, H, 0.1 + (t > 1.1 ? (t - 1.1) * 2.5 : 0), t);
@@ -101,6 +101,7 @@
       this.running = false;
       window.removeEventListener('resize', this._onResize);
       this.unbindInput && this.unbindInput();
+      if (this.o3) { try { this.o3.dispose(); } catch (e) {} this.o3 = null; }
       for (const k in this.loops) this.loops[k] && this.loops[k].stop(0.3);
       this.loops = {};
       AU.stopSpeak();
@@ -327,7 +328,7 @@
         if (!down) return;
         if (!down.moved && !this.camUp && this.onTap) {
           const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
-          this.onTap(wx, wy);
+          this.onTap(wx, wy, e.clientX, e.clientY);
         }
         if (performance.now() - lastT > 80) this.panVel = 0;
         down = null;

@@ -96,6 +96,8 @@
   function drawChar(ctx, id, x, y, h, o = {}) {
     const def = FN.CHARS[id];
     if (!def || h < 2) return;
+    // real-time 3D model when WebGL is available (falls back to the 2.5D rig)
+    if (!o.flat && FN.G3 && FN.G3.enabled && FN.G3.drawChar(ctx, id, x, y, h, o)) return;
     const look = def.look;
     const k = Math.min(h, 1300) / 440;
     const W = Math.ceil(360 * k), H = Math.ceil(470 * k);
@@ -604,5 +606,5 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
   }
 
-  FN.Art = { rng, mix, lighten, darken, rgba, canvas, ell, vol, rod, joint, wire, grime, teethRow, roundRect, drawChar, staticFx, scanlines, vignette, getNoise };
+  FN.Art = { rng, mix, lighten, darken, rgba, canvas, ell, vol, rod, joint, wire, grime, teethRow, roundRect, drawChar, staticFx, scanlines, vignette, getNoise, pose, getGrit: () => getGrit() };
 })(window.FN);

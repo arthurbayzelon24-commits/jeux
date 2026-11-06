@@ -1,7 +1,7 @@
 /* FAZNIGHT service worker: offline play once loaded. Bump VERSION when files change. */
-const VERSION = 'faznight-1.0.0';
+const VERSION = 'faznight-1.1.0';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'css/style.css',
-  'js/i18n.js', 'js/save.js', 'js/audio.js', 'js/art.js', 'js/characters.js', 'js/rooms.js', 'js/trophies.js',
+  'vendor/three.min.js', 'js/i18n.js', 'js/save.js', 'js/audio.js', 'js/art.js', 'js/three3d.js', 'js/characters.js', 'js/rooms.js', 'js/office3d.js', 'js/trophies.js',
   'js/engine.js', 'js/chapter1.js', 'js/chapter2.js', 'js/minigame.js', 'js/ui.js', 'js/main.js'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

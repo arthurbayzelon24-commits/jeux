@@ -33,7 +33,7 @@ window.FN = window.FN || {};
       customLocked: 'Terminez la Nuit 6 du chapitre pour débloquer sa Custom Night.', presets: 'Défis', freePlay: 'Libre',
       totalLevel: 'Difficulté totale : {n}', bestRecord: 'Meilleur record : {n}', challengeRule: 'Règle : {r}',
       // settings
-      s_graphics: 'Graphismes', s_quality: 'Qualité graphique', s_shadows: 'Ombres et lumières dynamiques', s_perf: 'Mode performance',
+      s_graphics: 'Graphismes', s_3d: 'Rendu 3D (Three.js)', s_3dSub: 'Bureaux et animatroniques en 3D temps réel. Désactivez-le sur un appareil peu puissant.', s_3dNone: 'WebGL indisponible sur cet appareil : rendu 2.5D utilisé.', s_quality: 'Qualité graphique', s_shadows: 'Ombres et lumières dynamiques', s_perf: 'Mode performance',
       s_perfSub: '30 images/s, effets allégés', s_immersion: 'Mode immersion', s_immersionSub: 'Plein écran, vibrations, aucun conseil à l’écran',
       s_audio: 'Audio', s_master: 'Volume général', s_music: 'Musique', s_sfx: 'Effets sonores', s_amb: 'Ambiance', s_voice: 'Voix (téléphone)',
       s_controls: 'Commandes', s_sens: 'Sensibilité tactile', s_sensSub: 'Vitesse de rotation du bureau', s_game: 'Jeu',
@@ -80,7 +80,7 @@ window.FN = window.FN || {};
       unlockedCustom: 'Custom Night unlocked', chapterUnlockTitle: 'CHAPTER 2 UNLOCKED', newRecord: 'New record!',
       customLocked: 'Complete Night 6 of the chapter to unlock its Custom Night.', presets: 'Challenges', freePlay: 'Free',
       totalLevel: 'Total difficulty: {n}', bestRecord: 'Best record: {n}', challengeRule: 'Rule: {r}',
-      s_graphics: 'Graphics', s_quality: 'Graphics quality', s_shadows: 'Dynamic shadows & lights', s_perf: 'Performance mode',
+      s_graphics: 'Graphics', s_3d: '3D rendering (Three.js)', s_3dSub: 'Real-time 3D offices and animatronics. Turn it off on a low-end device.', s_3dNone: 'WebGL is not available on this device: 2.5D rendering is used.', s_quality: 'Graphics quality', s_shadows: 'Dynamic shadows & lights', s_perf: 'Performance mode',
       s_perfSub: '30 fps, lighter effects', s_immersion: 'Immersion mode', s_immersionSub: 'Fullscreen, vibration, no on-screen tips',
       s_audio: 'Audio', s_master: 'Master volume', s_music: 'Music', s_sfx: 'Sound effects', s_amb: 'Ambience', s_voice: 'Voice (phone)',
       s_controls: 'Controls', s_sens: 'Touch sensitivity', s_sensSub: 'Office panning speed', s_game: 'Game',

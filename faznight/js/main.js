@@ -9,6 +9,7 @@
     FN.lang = d.settings.lang || ((navigator.language || 'fr').toLowerCase().startsWith('fr') ? 'fr' : 'en');
     d.settings.lang = FN.lang;
     FN.applyI18n();
+    FN.G3.setup();
     FN.Audio.vols = { master: d.settings.master, music: d.settings.music, sfx: d.settings.sfx, amb: d.settings.amb, voice: d.settings.voice };
 
     // home menu

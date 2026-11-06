@@ -324,6 +324,9 @@
       if (this.maskA > 0) this.drawMask(t);
     }
     drawOffice(t) {
+      if (FN.G3.enabled && FN.Office2) {
+        try { (this.o3 = this.o3 || new FN.Office2(this)).render(t); return; } catch (e) { console.error('3D office disabled:', e); FN.G3.enabled = false; this.o3 = null; }
+      }
       const ctx = this.ctx;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, this.W, this.H);

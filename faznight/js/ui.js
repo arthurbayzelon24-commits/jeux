@@ -377,6 +377,7 @@
       <div class="row"><label>${T('s_name')}</label><input type="text" id="nameInput" maxlength="18" value="${esc(d.name)}" /></div>
       <div class="row"><label>${T('s_lang')}</label>${opts('lang', ['fr', 'en'], ['Français', 'English'])}</div>
       <h4>${T('s_graphics')}</h4>
+      <div class="row"><label>${T('s_3d')}<small>${FN.G3.ok ? T('s_3dSub') : T('s_3dNone')}</small></label>${FN.G3.ok ? onoff('render3d') : ''}</div>
       <div class="row"><label>${T('s_quality')}</label>${opts('quality', ['low', 'medium', 'high'], [T('low'), T('medium'), T('high')])}</div>
       <div class="row"><label>${T('s_shadows')}</label>${onoff('shadows')}</div>
       <div class="row"><label>${T('s_perf')}<small>${T('s_perfSub')}</small></label>${onoff('perf')}</div>
@@ -405,6 +406,7 @@
       s[key] = v; FN.Save.save(); AU.play('uiMove');
       if (key === 'lang') { FN.lang = v; FN.applyI18n(); }
       if (key === 'immersion' && v) enterFullscreen();
+      if (key === 'render3d' || key === 'quality' || key === 'perf') { FN.G3.reset(); FN.G3.setup(); }
       buildSettings();
     })));
     body.querySelectorAll('input[type=range]').forEach((r) => (r.oninput = () => { s[r.dataset.key] = +r.value; FN.Save.save(); AU.setVolumes(s); }));

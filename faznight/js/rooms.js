@@ -509,6 +509,6 @@
     vent2(lit) { return get(`v2${lit}`, 200, 148, (c, w, h) => vent2(c, w, h, lit)); },
     menu(w, h) { return get(`menu${w}x${h}`, w, h, menuRoom); },
     prewarm(ch) { for (const r of this.cams[ch]) this.bg(ch, r.id); this.office(ch); },
-    curtain,
+    curtain, poster, kidDrawing, stars, sign, scrawl, table, crate,
   };
 })(window.FN);

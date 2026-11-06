@@ -1,6 +1,12 @@
 # FAZNIGHT — la collection d'horreur animatronique
 
-Jeu d'horreur de surveillance nocturne jouable dans le navigateur, pensé d'abord pour le téléphone (Android et iPhone) et compatible ordinateur. Tout est original : les personnages, les décors et les animations sont dessinés en code (rendu Canvas 2.5D), et chaque son ou musique est synthétisé en direct avec la Web Audio API. Le jeu n'utilise aucun fichier image ou audio externe et aucune dépendance.
+Jeu d'horreur de surveillance nocturne jouable dans le navigateur, pensé d'abord pour le téléphone (Android et iPhone) et compatible ordinateur. Tout est original :
+- les animatroniques sont des modèles 3D articulés en temps réel (Three.js / WebGL), avec squelette, endosquelette métallique, matériaux usés et yeux lumineux ;
+- les deux bureaux sont de vraies scènes 3D, avec éclairage dynamique et ombres ;
+- les caméras utilisent des décors 2.5D dessinés en code ;
+- chaque son et chaque musique est synthétisé en direct avec la Web Audio API.
+
+Le jeu n'utilise aucun fichier image ou audio externe. Sa seule bibliothèque est Three.js r128 (licence MIT), incluse dans `vendor/`.
 
 ## Lancer le jeu
 
@@ -49,7 +55,10 @@ faznight/
   js/i18n.js           textes FR / EN
   js/save.js           profil + sauvegarde (localStorage et copie IndexedDB)
   js/audio.js          moteur sonore synthétisé, bus de volume, son spatial (panoramique)
-  js/art.js            squelette articulé des animatroniques, yeux lumineux, textures, effets analogiques
+  vendor/three.min.js  Three.js r128 (MIT)
+  js/art.js            rig 2.5D de secours, poses partagées, effets analogiques
+  js/three3d.js        modèles 3D articulés des animatroniques, matériaux, rendu dans n'importe quel canvas
+  js/office3d.js       bureaux 3D des deux chapitres (portes, couloirs, conduits, lampe, ombres)
   js/characters.js     distribution originale (apparence, rôle, conseils)
   js/rooms.js          décors procéduraux : caméras, bureaux, couloirs, conduits
   js/trophies.js       trophées, secrets, documents
@@ -70,4 +79,6 @@ Option de test : `index.html?speed=20` accélère le temps du jeu.
 - Il n'y a pas de compte en ligne pour l'instant : la progression reste sur l'appareil. Elle se transfère avec Exporter / Importer dans les paramètres.
 - iPhone : Safari ne permet pas de verrouiller l'orientation. En mode portrait, le jeu propose de tourner le téléphone ou de jouer quand même.
 - La voix du téléphone dépend des voix installées sur l'appareil. Les sous-titres sont toujours disponibles.
-- Les personnages sont des modèles 2.5D articulés dessinés en temps réel, pas de vrais modèles 3D : c'est ce qui permet au jeu de rester léger et fluide sur téléphone.
+- Les modèles 3D sont construits à partir de formes géométriques articulées, sans sculpture ni maillage importé. Ce choix permet de les animer et de les rendre en temps réel sur téléphone.
+- Les vues des caméras restent des décors 2.5D, avec les personnages en 3D par-dessus.
+- Sur un appareil peu puissant, la résolution 3D baisse automatiquement, puis les ombres se coupent. Le réglage « Rendu 3D » permet de revenir au rendu 2.5D.

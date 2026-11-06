@@ -159,9 +159,9 @@
       if (id === '02') this.clipping = !FN.Save.data.docs.d1 && this.night !== 1 && Math.random() < 0.12;
       else this.clipping = false;
     }
-    onTap(wx, wy) {
+    onTap(wx, wy, cx, cy) {
       // the badger's nose on the big poster
-      if (Math.hypot(wx - 511, wy - 205) < 22) {
+      if (this.o3 ? this.o3.pick(cx, cy) === 'nose' : Math.hypot(wx - 511, wy - 205) < 22) {
         AU.play('squeak');
         if (++this.nose >= 3) FN.Trophies.secret('nose');
       }
@@ -344,6 +344,9 @@
       this.post(t);
     }
     drawOffice(t) {
+      if (FN.G3.enabled && FN.Office1) {
+        try { (this.o3 = this.o3 || new FN.Office1(this)).render(t); return; } catch (e) { console.error('3D office disabled:', e); FN.G3.enabled = false; this.o3 = null; }
+      }
       const ctx = this.ctx;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, this.W, this.H);
