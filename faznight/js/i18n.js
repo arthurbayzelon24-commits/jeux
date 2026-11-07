@@ -5,7 +5,7 @@ window.FN = window.FN || {};
     fr: {
       tagline: "La collection d'horreur animatronique",
       bootPresents: 'présente', bootWarnTitle: 'Avertissement', bootWarn: 'Ce jeu contient des images effrayantes, des sons soudains et forts, et des lumières qui clignotent.', bootHeadphones: 'Pour une meilleure expérience : jouez dans le noir, avec un casque.',
-      difficulty: 'Difficulté',
+      difficulty: 'Difficulté', chooseGame: 'Choisissez un jeu', soonStamp: 'COMING SOON', g_new: 'Nouvelle partie', g_continue: 'Continuer', g_night6: '6e nuit', g_custom: 'Custom Night', g_all: 'Toutes les nuits', g_locked2: 'Terminez la Nuit 5 du jeu 1 pour l’ouvrir.', g_play: 'Jouer', g_soon: 'Le prochain jeu de la collection est en préparation.', g_ad: 'Offre d’emploi', g_contNight: 'Nuit {n}',
       play: 'Jouer', continue: 'Continuer', resume: 'Reprendre la nuit', collection: 'Collection', trophies: 'Trophées',
       customNight: 'Custom Night', extras: 'Extras', settings: 'Paramètres', credits: 'Crédits',
       continueSub: '{chapter} — Nuit {night}', resumeSub: '{chapter} — Nuit {night}, {hour}', newGameSub: 'Aucune partie en cours',
@@ -60,7 +60,7 @@ window.FN = window.FN || {};
     en: {
       tagline: 'The animatronic horror collection',
       bootPresents: 'presents', bootWarnTitle: 'Warning', bootWarn: 'This game contains frightening images, sudden loud sounds and flashing lights.', bootHeadphones: 'For the best experience: play in the dark, with headphones.',
-      difficulty: 'Difficulty',
+      difficulty: 'Difficulty', chooseGame: 'Choose a game', soonStamp: 'COMING SOON', g_new: 'New game', g_continue: 'Continue', g_night6: '6th night', g_custom: 'Custom Night', g_all: 'All nights', g_locked2: 'Finish Night 5 of game 1 to open it.', g_play: 'Play', g_soon: 'The next game in the collection is in the works.', g_ad: 'Help wanted', g_contNight: 'Night {n}',
       play: 'Play', continue: 'Continue', resume: 'Resume night', collection: 'Collection', trophies: 'Trophies',
       customNight: 'Custom Night', extras: 'Extras', settings: 'Settings', credits: 'Credits',
       continueSub: '{chapter} — Night {night}', resumeSub: '{chapter} — Night {night}, {hour}', newGameSub: 'No game in progress',

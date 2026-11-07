@@ -56,8 +56,8 @@
       return h;
     },
     stopAllLoops(fade = 0.2) { for (const h of [...loops]) h.stop(fade); },
-    music(name) { this.stopMusic(); if (ctx && MUSIC[name]) MUSIC[name](); },
-    stopMusic() { clearInterval(musicTimer); musicTimer = 0; if (A._musicOut) { fadeOut(A._musicOut, 1.2); A._musicOut = null; } },
+    music(name) { this.stopMusic(); if (ctx && MUSIC[name]) { MUSIC[name](); A._musicName = name; } },
+    stopMusic() { clearInterval(musicTimer); musicTimer = 0; A._musicName = null; if (A._musicOut) { fadeOut(A._musicOut, 1.2); A._musicOut = null; } },
 
     /** Phone voice using the device's speech engine when available (subtitles are always shown). */
     speak(text, lang, onEnd) {
@@ -171,7 +171,8 @@
       const t = ctx.currentTime, d = out('amb', o.pan, 0.35), v = o.vol ?? 0.6;
       osc('sine', 85, t, 0.16, d, 0.7 * v, 0.004, 45);
       noise(t, 0.12, d, { type: 'lowpass', f: 320, peak: 0.6 * v });
-      if (o.metal) osc('square', 260 + Math.random() * 80, t + 0.02, 0.06, d, 0.05 * v);
+      if (o.metal) { osc('square', 260 + Math.random() * 80, t + 0.02, 0.06, d, 0.05 * v); osc('sawtooth', 900 + Math.random() * 300, t + 0.03, 0.18, d, 0.015 * v, 0.02, 1400); }
+      osc('sine', 70, t + 0.09, 0.12, d, 0.4 * v, 0.004, 40); // toe after heel
     },
     run(o) { for (let i = 0; i < (o.n || 10); i++) setTimeout(() => SFX.step({ pan: o.pan, vol: 0.4 + i * 0.06, metal: true }), i * 190); },
     bang(o) {
@@ -231,6 +232,17 @@
       }
       noise(t, 1.4, shaper, { f: 2200, q: 0.5, peak: 0.9, a: 0.01 });
       osc('sine', 60, t, 1.0, d, 1, 0.005, 30);
+      // screech: a sweeping, vowel-filtered scream on top of the machinery
+      for (const [f0, q] of [[900, 9], [1700, 11], [2600, 13]]) {
+        const s = ctx.createOscillator(); s.type = 'sawtooth'; s.frequency.setValueAtTime(base * 0.9, t); s.frequency.exponentialRampToValueAtTime(base * 1.6, t + 0.25); s.frequency.exponentialRampToValueAtTime(base * 0.7, t + 1.4);
+        const vib = ctx.createOscillator(); vib.frequency.value = 9; const vg = ctx.createGain(); vg.gain.value = base * 0.06; vib.connect(vg).connect(s.frequency);
+        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f0; bp.Q.value = q;
+        const sg = ctx.createGain(); sg.gain.setValueAtTime(0.0001, t); sg.gain.exponentialRampToValueAtTime(0.7, t + 0.03); sg.gain.setValueAtTime(0.7, t + 1.0); sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.55);
+        s.connect(bp).connect(sg).connect(shaper); s.start(t); vib.start(t); s.stop(t + 1.6); vib.stop(t + 1.6);
+      }
+      // metal crash as it hits the guard
+      [420, 977, 1583, 2311, 3150].forEach((f, i) => osc('square', f, t + 0.02, 0.6 - i * 0.08, d, 0.08, 0.001));
+      noise(t + 0.02, 0.5, d, { type: 'highpass', f: 3000, peak: 0.5 });
     },
     sting(o) { const t = ctx.currentTime, d = out('sfx', 0, 0.6); osc('sawtooth', 55, t, 2.2, d, 0.4, 0.01, 40); noise(t, 1.5, d, { f: 3000, f2: 300, peak: 0.3 }); [61, 62, 66].forEach((n) => osc('sawtooth', midi(n), t, 1.6, d, 0.06, 0.02)); },
     powerDown() {
@@ -256,6 +268,11 @@
     phoneClick() { const t = ctx.currentTime; noise(t, 0.06, out('sfx', 0.3), { type: 'highpass', f: 1500, peak: 0.3 }); },
     trophy() { const t = ctx.currentTime, d = out('sfx', 0, 0.5); [67, 71, 74, 79].forEach((n, i) => osc('triangle', midi(n), t + i * 0.09, 0.6, d, 0.12)); },
     unlock() { const t = ctx.currentTime, d = out('sfx', 0, 0.8); [57, 60, 64, 69, 72].forEach((n, i) => osc('sawtooth', midi(n), t + i * 0.18, 1.6, d, 0.06, 0.02)); osc('sine', 40, t, 3, d, 0.5, 0.5); },
+    thunder() {
+      const t = ctx.currentTime, d = out('amb', Math.random() * 1.2 - 0.6, 0.6);
+      noise(t, 3.5, d, { type: 'lowpass', f: 300, f2: 80, peak: 0.6, a: 0.15, buf: brownBuf });
+      noise(t + 0.05, 0.6, d, { type: 'lowpass', f: 900, peak: 0.35, a: 0.01, buf: brownBuf });
+    },
     squeak() { const t = ctx.currentTime; osc('sine', 1200, t, 0.12, out('sfx'), 0.25, 0.005, 1900); },
     glitch(o) { const t = ctx.currentTime, d = out('sfx', o.pan); for (let i = 0; i < 14; i++) osc('square', 80 + Math.random() * 2400, t + i * 0.03, 0.025, d, 0.12); },
     crank() { const t = ctx.currentTime, d = out('sfx', 0); noise(t, 0.02, d, { type: 'highpass', f: 4000, peak: 0.25 }); osc('square', 2200, t, 0.01, d, 0.03); },
@@ -306,6 +323,23 @@
     };
   }
   const LOOPS = {
+    /** Fluorescent / mains hum with a slow beat between two tubes. */
+    hum: () => {
+      const a = ctx.createOscillator(), b = ctx.createOscillator(); a.type = 'sawtooth'; b.type = 'sawtooth'; a.frequency.value = 100; b.frequency.value = 100.7;
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 220; f.Q.value = 2;
+      const g = ctx.createGain(); g.gain.value = 0; a.connect(f); b.connect(f); f.connect(g).connect(out('amb')); a.start(); b.start();
+      g.gain.setTargetAtTime(0.025, ctx.currentTime, 1);
+      return { stop(fade) { g.gain.setTargetAtTime(0, ctx.currentTime, fade / 3 + 0.01); setTimeout(() => { a.stop(); b.stop(); }, fade * 1000 + 300); }, vol(v) { g.gain.setTargetAtTime(v, ctx.currentTime, 0.2); }, pan() {} };
+    },
+    /** Rain on the roof: filtered noise plus random drips. */
+    rain: () => {
+      const h = noiseLoop('amb', { type: 'bandpass', f: 1800, q: 0.4, vol: 0.05, buf: pinkBuf });
+      let alive = true;
+      const drip = () => { if (!alive) return; const t = ctx.currentTime; osc('sine', 1200 + Math.random() * 1500, t, 0.05, out('amb', Math.random() * 2 - 1, 0.4), 0.03, 0.002, 600); setTimeout(drip, 120 + Math.random() * 600); };
+      drip();
+      const stop = h.stop; h.stop = (f) => { alive = false; stop(f); };
+      return h;
+    },
     fan: () => noiseLoop('amb', { type: 'bandpass', f: 420, q: 0.7, vol: 0.12, buf: pinkBuf, amp: { rate: 16, depth: 0.025 } }),
     staticNoise: (o) => noiseLoop('sfx', { type: 'highpass', f: 1200, q: 0.5, vol: o.vol ?? 0.05 }),
     lightBuzz: (o) => {
@@ -352,6 +386,62 @@
 
   // ---------------------------------------------------------------- music (scheduled, original compositions)
   const MUSIC = {
+    /** Game 1 title: a worn-out celesta playing a minor lullaby, half a tone flat, over a mains hum and vinyl crackle. */
+    title1() {
+      const g = ctx.createGain(); g.gain.value = 0; g.connect(buses.music);
+      const wet = ctx.createGain(); wet.gain.value = 1.1; g.connect(wet); wet.connect(reverb);
+      g.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 2.5);
+      A._musicOut = g;
+      // hum + crackle bed
+      const hum = ctx.createOscillator(); hum.type = 'sawtooth'; hum.frequency.value = 50;
+      const hf = ctx.createBiquadFilter(); hf.type = 'lowpass'; hf.frequency.value = 180;
+      const hg = ctx.createGain(); hg.gain.value = 0.035; hum.connect(hf).connect(hg).connect(g); hum.start();
+      const cr = ctx.createBufferSource(); cr.buffer = noiseBuf; cr.loop = true;
+      const cf = ctx.createBiquadFilter(); cf.type = 'highpass'; cf.frequency.value = 3500;
+      const cg = ctx.createGain(); cg.gain.value = 0.012; cr.connect(cf).connect(cg).connect(g); cr.start();
+      const mel = [69, 72, 76, 74, 72, 71, 69, -1, 69, 72, 76, 79, 77, 76, 74, -1, 72, 71, 69, 68, 69, 71, 72, -1, 76, 74, 72, 71, 69, -1, -1, -1];
+      const bass = [45, 45, 41, 41, 38, 38, 40, 40];
+      let i = 0, next = ctx.currentTime + 0.3;
+      const step = 0.42;
+      const sched = () => {
+        while (next < ctx.currentTime + 1) {
+          const n = mel[i % mel.length];
+          const wob = 1 - 0.03 + Math.sin(i * 0.37) * 0.006; // tape that never runs at the right speed
+          if (n > 0 && Math.random() > 0.06) { const f = midi(n) * wob; osc('triangle', f, next, 1.6, g, 0.07, 0.003); osc('sine', f * 3.01, next, 0.5, g, 0.02, 0.002); }
+          if (i % 4 === 0) osc('sine', midi(bass[(i / 4) % bass.length]) * wob, next, step * 4, g, 0.09, 0.08);
+          if (Math.random() < 0.03) SFX.clank({ vol: 0.12, pan: Math.random() * 2 - 1 });
+          next += step; i++;
+        }
+      };
+      sched(); musicTimer = setInterval(sched, 300);
+      const stopG = g; const o = { hum, cr };
+      setTimeout(function watch() { if (A._musicOut !== stopG) { try { o.hum.stop(ctx.currentTime + 1.5); o.cr.stop(ctx.currentTime + 1.5); } catch (e) {} } else setTimeout(watch, 500); }, 500);
+    },
+    /** Game 2 title: a toy-piano waltz with a pump organ, slightly out of tune, like a fairground in an empty mall. */
+    title2() {
+      const g = ctx.createGain(); g.gain.value = 0; g.connect(buses.music);
+      const wet = ctx.createGain(); wet.gain.value = 0.8; g.connect(wet); wet.connect(reverb);
+      g.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 2);
+      A._musicOut = g;
+      const chords = [[48, 55, 64], [43, 55, 62], [45, 52, 60], [41, 53, 57], [48, 55, 64], [43, 55, 62], [41, 53, 60], [43, 50, 59]];
+      const mel = [76, 79, 84, 83, 79, 76, 74, 77, 81, 79, 76, 72, 74, 76, 77, 79, 76, 72, 71, 74, 79, 77, 74, 71];
+      let bar = 0, next = ctx.currentTime + 0.2;
+      const beat = 0.36;
+      const sched = () => {
+        while (next < ctx.currentTime + 1.2) {
+          const c = chords[bar % chords.length], drift = 1 + Math.sin(bar * 0.9) * 0.008;
+          // oom-pah-pah
+          osc('square', midi(c[0] - 12) * drift, next, beat * 0.9, g, 0.035, 0.005);
+          for (const k of [1, 2]) { osc('square', midi(c[1]) * drift, next + k * beat, beat * 0.6, g, 0.018, 0.005); osc('square', midi(c[2]) * drift, next + k * beat, beat * 0.6, g, 0.018, 0.005); }
+          for (let k = 0; k < 3; k++) {
+            const n = mel[(bar * 3 + k) % mel.length];
+            if (Math.random() > 0.08) { const f = midi(n) * drift * (1 + (Math.random() - 0.5) * 0.01); osc('triangle', f, next + k * beat, 0.7, g, 0.06, 0.002); osc('sine', f * 4.2, next + k * beat, 0.18, g, 0.02, 0.001); }
+          }
+          next += beat * 3; bar++;
+        }
+      };
+      sched(); musicTimer = setInterval(sched, 300);
+    },
     menu() {
       const g = ctx.createGain(); g.gain.value = 0; g.connect(buses.music);
       const wet = ctx.createGain(); wet.gain.value = 0.8; g.connect(wet); wet.connect(reverb);

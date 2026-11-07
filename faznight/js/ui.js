@@ -143,7 +143,8 @@
     clearAnims();
     if (id !== 'game') {
       if (!menuRAF) menuRAF = requestAnimationFrame(menuLoop);
-      if (AU.ready && !AU._musicOut) AU.music('menu');
+      const want = id === 'title' ? 'title' + titleChapter : 'menu';
+      if (AU.ready && AU._musicName !== want) AU.music(want);
       try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) {}
     } else { cancelAnimationFrame(menuRAF); menuRAF = 0; AU.stopMusic(); }
     if (!bgAnim) {
@@ -154,12 +155,15 @@
     const fn = BUILD[id];
     if (fn) fn();
   }
+  /** Back to the title screen of a game, with Back leading to the game list then home. */
+  function goTitle(ch) { titleChapter = ch; history.length = 0; history.push('home', 'games'); show('title', false); }
   function back() { const prev = history.pop() || 'home'; show(prev, false); AU.play('uiMove'); }
 
   // ---------------------------------------------------------------- HOME
   function refreshHome() {
     const d = D();
     const c = $('#btnContinue');
+    if (!c) { $('#btnExtras').classList.toggle('hidden', Object.keys(d.secrets).length < 2); $('#profileLine').textContent = `${d.name} · ${FN.Trophies.count()}/${FN.Trophies.list.length} ★`; return; }
     if (d.resume) {
       const r = d.resume;
       c.innerHTML = `${T('resume')}<span class="small">${esc(T('resumeSub', { chapter: T('chapter', { n: r.cfg.chapter }), night: r.cfg.night === 'custom' ? 'C' : r.cfg.night, hour: FN.util.HOURS[r.hour || 0] + ' AM' }))}</span>`;
@@ -174,6 +178,110 @@
     $('#btnCustom').innerHTML = `${T('customNight')}${cu ? '' : `<span class="small">🔒 ${esc(T('customLocked'))}</span>`}`;
     $('#btnExtras').classList.toggle('hidden', Object.keys(d.secrets).length < 2);
     $('#profileLine').textContent = `${d.name} · ${FN.Trophies.count()}/${FN.Trophies.list.length} ★`;
+  }
+
+  // ---------------------------------------------------------------- GAME SELECT (1, 2, 3 coming soon)
+  const GAMES = {
+    1: { title: 'PIZZA PALACE', face: ['bruno', 'gus', 'nora', 'krok'], bg: '01' },
+    2: { title: 'FUN FACTORY', face: ['pepper', 'oldbruno', 'rico', 'chime'], bg: '09' },
+  };
+  function buildGames() {
+    const d = D();
+    const card = (n) => {
+      const open = n <= 2 && d.chapters[n].unlocked;
+      const soon = n === 3;
+      const p = n <= 2 ? chapterPct(n) : null;
+      return `<button class="gcard ${open ? '' : 'locked'} ${soon ? 'soon' : ''}" data-g="${n}" ${soon ? 'aria-disabled="true"' : ''}>
+        <canvas></canvas>
+        <span class="gnum">${n}</span>
+        ${soon ? `<span class="gx" aria-hidden="true"></span><span class="gsoon">${T('soonStamp')}</span>` : ''}
+        <span class="ginfo"><b>${soon ? '???' : GAMES[n].title}</b><small>${soon ? esc(T('g_soon')) : open ? esc(T('progressPct', { p: p.pct })) : '🔒 ' + esc(T('g_locked2'))}</small></span>
+      </button>`;
+    };
+    $('#gameList').innerHTML = card(1) + card(2) + card(3);
+    $('#gameList').querySelectorAll('.gcard').forEach((b) => {
+      const n = +b.dataset.g, cv = b.querySelector('canvas');
+      fitCanvas(cv, 0.8);
+      if (n <= 2) animate(cv, drawPoster(n, !d.chapters[n].unlocked));
+      else animate(cv, (c, W, H, t) => {
+        c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#050505'; c.fillRect(0, 0, W, H);
+        // a silhouette that never comes into focus
+        A.drawChar(c, 'hollow', W / 2, H * 1.02, H * 0.9, { t, light: 0, eyes: Math.max(0, Math.sin(t * 0.7) - 0.7) * 3, stare: true });
+        A.staticFx(c, W, H, 0.3, t); A.scanlines(c, W, H, 0.15);
+      });
+      b.onclick = () => {
+        if (n === 3) { AU.play('denied'); AU.play('staticBurst', { dur: 0.4 }); return; }
+        if (!d.chapters[n].unlocked) { AU.play('denied'); toast('info', T('locked'), T('g_locked2'), '🔒'); return; }
+        AU.play('uiSelect'); titleChapter = n; show('title');
+      };
+    });
+  }
+
+  // ---------------------------------------------------------------- GAME TITLE SCREEN
+  let titleChapter = 1;
+  const faceState = { id: null, swap: 0, glitch: 0, next: 4 };
+  function buildTitle() {
+    const d = D(), ch = titleChapter, chap = d.chapters[ch], G = GAMES[ch];
+    D().last.chapter = ch;
+    $('#titleNum').textContent = ch;
+    $('#titleName').textContent = G.title;
+    const res = d.resume && d.resume.cfg.chapter === ch ? d.resume : null;
+    const anyDone = Object.keys(chap.done).length > 0;
+    const nextN = Math.min(5, chap.next);
+    const items = [];
+    items.push(['new', T('g_new')]);
+    items.push(['continue', `${T('g_continue')}<small>${res ? esc(T('resumeSub', { chapter: '', night: res.cfg.night === 'custom' ? 'C' : res.cfg.night, hour: FN.util.HOURS[res.hour || 0] + ' AM' })).replace(/^ — /, '') : anyDone ? esc(T('g_contNight', { n: nextN })) : ''}</small>`, !(res || anyDone)]);
+    if (chap.next >= 6) items.push(['n6', T('g_night6')]);
+    if (d.customUnlocked[ch]) items.push(['custom', T('g_custom')]);
+    if (anyDone) items.push(['all', T('g_all')]);
+    $('#titleMenu').innerHTML = items.map(([a, label, dis]) => `<button class="tbtn" data-t="${a}" ${dis ? 'disabled' : ''}>${label}</button>`).join('');
+    // stars: 5 nights, 6th night, one challenge cleared
+    const stars = [chap.done[5], chap.done[6], Object.keys(d.challengesDone).some((k) => k.startsWith('c' + ch + '_'))];
+    $('#titleStars').innerHTML = stars.map((s) => `<span class="${s ? 'on' : ''}">★</span>`).join('');
+    $('#titleFoot').textContent = `v1.4 · © Grimwood Entertainment`;
+    $('#titleMenu').querySelectorAll('[data-t]').forEach((b) => (b.onclick = () => {
+      const a = b.dataset.t; AU.play('uiSelect');
+      if (a === 'new') {
+        const start = () => { chap.done = {}; chap.next = 1; if (d.resume && d.resume.cfg.chapter === ch) d.resume = null; FN.Save.flush(); helpWanted(ch, () => FN.Game.start({ chapter: ch, night: 1 })); };
+        if (anyDone || res) confirmBox(T('newGameConfirm'), start); else start();
+      } else if (a === 'continue') {
+        if (res) FN.Game.resumeSaved(); else FN.Game.start({ chapter: ch, night: nextN });
+      } else if (a === 'n6') FN.Game.start({ chapter: ch, night: 6 });
+      else if (a === 'custom') { customCh = ch; customLv = null; show('custom'); }
+      else if (a === 'all') { nightsChapter = ch; show('nights'); }
+    }));
+    const cv = $('#titleFace');
+    faceState.id = G.face[0]; faceState.next = 5;
+    animate(cv, (c, W, H, t) => {
+      fitCanvas(cv, 0.75); W = cv.width; H = cv.height;
+      c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+      // the face: lit from one side, twitching; now and then the image swaps to another animatronic
+      faceState.next -= 1 / 30;
+      if (faceState.next <= 0) { faceState.glitch = 0.25; faceState.next = 4 + Math.random() * 7; faceState.swap = Math.random() < 0.55 ? 1 + Math.floor(Math.random() * (G.face.length - 1)) : 0; AU.ready && AU.play('staticBurst', { dur: 0.25, vol: 0.4 }); }
+      if (faceState.glitch > 0) faceState.glitch -= 1 / 30;
+      const id = faceState.glitch > 0 || faceState.swap === 0 ? G.face[faceState.glitch > 0 ? faceState.swap : 0] : G.face[0];
+      if (faceState.glitch <= 0) faceState.swap = 0;
+      const wide = W / H > 1;
+      const fx = wide ? W * 0.7 : W * 0.5, fh = H * (wide ? 2.9 : 1.3);
+      const flick = Math.random() < 0.06 ? 0.25 : 1;
+      A.drawChar(c, id, fx + Math.sin(t * 0.4) * W * 0.01, H * (wide ? 3.05 : 1.57), fh, { t, pose: 'idle', stare: true, tilt: Math.sin(t * 0.3) * 0.08, light: 0.55 * flick, eyes: faceState.glitch > 0 ? 1 : 0.35 + Math.max(0, Math.sin(t * 0.9)) * 0.5, jaw: faceState.glitch > 0 ? 0.8 : 0 });
+      const g = c.createLinearGradient(0, 0, W * (wide ? 0.62 : 1), 0); g.addColorStop(0, 'rgba(0,0,0,0.92)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+      if (!wide) { const g2 = c.createLinearGradient(0, H * 0.35, 0, H); g2.addColorStop(0, 'rgba(0,0,0,0)'); g2.addColorStop(1, 'rgba(0,0,0,0.9)'); c.fillStyle = g2; c.fillRect(0, 0, W, H); }
+      A.staticFx(c, W, H, 0.16 + (faceState.glitch > 0 ? 0.5 : 0), t);
+      if (faceState.glitch > 0) FN.Scare.glitch(c, W, H, 1);
+      A.scanlines(c, W, H, 0.2);
+    });
+  }
+  /** New game: the job advert that hired you. */
+  function helpWanted(ch, go) {
+    const en = FN.lang === 'en';
+    const txt = ch === 1
+      ? (en ? 'GRIMWOOD’S PIZZA PALACE is looking for a NIGHT GUARD. Hours: midnight to 6 AM. Pay: $120.50 a week. Must stay calm, awake and inside the office. Management accepts no responsibility for anything that happens after closing.' : 'GRIMWOOD’S PIZZA PALACE recherche un GARDIEN DE NUIT. Horaires : de minuit à 6 h. Salaire : 120,50 € par semaine. Le candidat doit rester calme, éveillé, et ne jamais quitter le bureau. La direction décline toute responsabilité pour ce qui se passe après la fermeture.')
+      : (en ? 'GRIMWOOD’S FUN FACTORY — brand-new animatronics, brand-new fun! Hiring a NIGHT GUARD for opening week. Flashlight and mask provided. Previous experience at Grimwood’s welcome.' : 'GRIMWOOD’S FUN FACTORY — de nouveaux animatroniques, de nouveaux sourires ! Recherche un GARDIEN DE NUIT pour la semaine d’ouverture. Lampe torche et masque fournis. Une expérience chez Grimwood’s est un plus.');
+    const o = overlay(`<div class="letter ad"><h3>${esc(T('g_ad'))}</h3><p>${esc(txt)}</p><p class="ad-sig">— Grimwood Entertainment</p></div><div class="btns"><button class="mbtn" data-a="ok">${T('start')}</button></div>`, true);
+    AU.play('uiSelect');
+    o.querySelector('[data-a=ok]').onclick = () => { hideOverlay(); go(); };
   }
 
   // ---------------------------------------------------------------- NIGHT SELECT
@@ -586,7 +694,7 @@
       <div class="btns"><button class="mbtn" data-a="r">${T('resumeGame')}</button><button class="mbtn" data-a="re">${T('restart')}</button><button class="mbtn" data-a="q">${T('quitSave')}</button></div>`, true);
     o.querySelector('[data-a=r]').onclick = () => { hideOverlay(); n.resume(); };
     o.querySelector('[data-a=re]').onclick = () => { hideOverlay(); const cfg = Object.assign({}, n.cfg, { resume: null }); n.over = true; n.destroy(); FN.Game.start(cfg); };
-    o.querySelector('[data-a=q]').onclick = () => { hideOverlay(); n.quitAndSave(); show('home'); refreshHome(); };
+    o.querySelector('[data-a=q]').onclick = () => { hideOverlay(); const ch = n.ch; n.quitAndSave(); goTitle(ch); };
   }
   function gameOver(cfg, id, opts) {
     const c = FN.CHARS[id];
@@ -600,7 +708,7 @@
       AU.loop('staticNoise', { vol: 0.04 });
       const leave = () => { anims.delete(a); AU.stopAllLoops(0.2); hideOverlay(); };
       o.querySelector('[data-a=r]').onclick = () => { leave(); FN.Game.start(Object.assign({}, cfg, { resume: null })); };
-      o.querySelector('[data-a=m]').onclick = () => { leave(); show('home'); refreshHome(); };
+      o.querySelector('[data-a=m]').onclick = () => { leave(); goTitle(cfg.chapter); };
     };
     if (opts && opts.crash) {
       overlay(`<div class="terminal" style="color:#ccc"><p>FAZNIGHT.EXE</p><p>Erreur fatale 0x000HOLLOW</p><p>${FN.lang === 'en' ? 'IT SAW YOU LOOKING.' : 'IL VOUS A VU LE REGARDER.'}</p></div>`);
@@ -631,7 +739,7 @@
         <div class="btns">${canNext ? `<button class="mbtn" data-a="n">${T('nextNight')}</button>` : ''}<button class="mbtn" data-a="m">${T('menu')}</button></div>`);
       const nb = o.querySelector('[data-a=n]');
       if (nb) nb.onclick = () => { hideOverlay(); FN.Game.start({ chapter: cfg.chapter, night: cfg.night + 1 }); };
-      o.querySelector('[data-a=m]').onclick = () => { hideOverlay(); AU.stopMusic(); show('home'); refreshHome(); };
+      o.querySelector('[data-a=m]').onclick = () => { hideOverlay(); AU.stopMusic(); goTitle(cfg.chapter); };
     };
     const en = FN.lang === 'en';
     const C = {
@@ -689,7 +797,7 @@
     };
   }
 
-  const BUILD = { home: refreshHome, nights: buildNights, collection: buildCollection, trophies: buildTrophies, custom: buildCustom, settings: buildSettings, credits: buildCredits, extras: buildExtras };
+  const BUILD = { games: buildGames, title: buildTitle, home: refreshHome, nights: buildNights, collection: buildCollection, trophies: buildTrophies, custom: buildCustom, settings: buildSettings, credits: buildCredits, extras: buildExtras };
 
   FN.UI = {
     show, back, refreshHome, toast, toastTrophy, nightIntro, pauseMenu, gameOver, sixAM, afterWin, presetName, terminal,

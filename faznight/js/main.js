@@ -20,17 +20,8 @@
       FN.Audio.setVolumes(FN.Audio.vols);
       FN.Audio.play('uiSelect');
       const act = b.dataset.act;
-      if (act === 'continue') {
-        if (FN.Game.resumeSaved()) return;
-        const ch = d.last.chapter || 1;
-        const n = Math.min(6, FN.Save.data.chapters[ch].next);
-        FN.Game.start({ chapter: ch, night: n });
-      } else if (act === 'play') FN.UI.openNights(FN.Save.data.chapters[2].unlocked ? FN.Save.data.last.chapter || 1 : 1);
-      else if (act === 'custom') {
-        const sd = FN.Save.data;
-        if (!sd.customUnlocked[1] && !sd.customUnlocked[2]) { FN.Audio.play('denied'); FN.UI.toast('info', FN.t('customNight'), FN.t('customLocked'), '🔒'); return; }
-        FN.UI.show('custom');
-      } else FN.UI.show(act);
+      if (act === 'play') FN.UI.show('games');
+      else FN.UI.show(act);
     });
     document.querySelectorAll('[data-back]').forEach((b) => b.addEventListener('click', () => FN.UI.back()));
     document.addEventListener('mouseover', (e) => { if (e.target.closest && e.target.closest('.mbtn') && FN.Audio.ready) FN.Audio.play('uiMove'); });

@@ -39,16 +39,35 @@
           <h1 class="logo" id="logo"><span>FAZ</span><span class="logo-b">NIGHT</span></h1>
           <p class="tagline" data-i18n="tagline"></p>
           <nav class="menu" id="homeMenu">
-            <button class="mbtn" data-act="continue" id="btnContinue"></button>
             <button class="mbtn" data-act="play" data-i18n="play"></button>
             <button class="mbtn" data-act="collection" data-i18n="collection"></button>
             <button class="mbtn" data-act="trophies" data-i18n="trophies"></button>
-            <button class="mbtn" data-act="custom" id="btnCustom" data-i18n="customNight"></button>
             <button class="mbtn secret-btn hidden" data-act="extras" id="btnExtras" data-i18n="extras"></button>
             <button class="mbtn" data-act="settings" data-i18n="settings"></button>
             <button class="mbtn" data-act="credits" data-i18n="credits"></button>
           </nav>
-          <div class="home-foot"><span id="profileLine"></span><span id="versionLine">v1.0</span></div>
+          <div class="home-foot"><span id="profileLine"></span><span id="versionLine">v1.4</span></div>
+        </div>
+      </section>
+
+      <!-- GAME SELECT: 1, 2, 3 (coming soon) -->
+      <section class="screen" id="games">
+        <header class="bar"><button class="back" data-back>‹</button><h2 data-i18n="chooseGame"></h2></header>
+        <div class="games" id="gameList"></div>
+      </section>
+
+      <!-- GAME TITLE SCREEN (one per game, like a standalone game's main menu) -->
+      <section class="screen" id="title">
+        <canvas id="titleFace" class="title-face" aria-hidden="true"></canvas>
+        <div class="title-inner">
+          <button class="back title-back" data-back aria-label="Retour">‹</button>
+          <div class="title-text">
+            <div class="title-num" id="titleNum"></div>
+            <h1 class="title-name" id="titleName"></h1>
+            <nav class="title-menu" id="titleMenu"></nav>
+            <div class="title-stars" id="titleStars"></div>
+          </div>
+          <div class="title-foot" id="titleFoot"></div>
         </div>
       </section>
 

@@ -99,7 +99,8 @@
       window.addEventListener('resize', this._onResize);
       this.bindInput();
       this.buildHud();
-      this.loops = { drone: AU.loop('drone', { base: this.ch === 1 ? 46 : 52, vol: 0.16 }) };
+      this.loops = { drone: AU.loop('drone', { base: this.ch === 1 ? 46 : 52, vol: 0.16 }), hum: AU.loop('hum') };
+      if (this.ch === 1) this.loops.rain = AU.loop('rain');
       this.startLoops && this.startLoops();
       if (this.cfg.resume) this.restore(this.cfg.resume);
       else this.scheduleCall();
@@ -196,6 +197,7 @@
       else if (r < 0.8 && this.hour >= 3 && !this.camUp) { this.silhouette = { t: 0.18, x: rand(0.2, 0.8) }; AU.play('step', { pan: 0, vol: 0.5 }); }
       else if (r < 0.85) AU.play('knock', { pan: rand(-1, 1) });
       else if (r < 0.9) AU.play('heartbeat');
+      else if (r < 0.96 && this.ch === 1) { AU.play('thunder'); setTimeout(() => { this.flicker = 1; }, 150); }
     }
 
     // ------------------------------------------------ cameras

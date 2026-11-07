@@ -141,3 +141,25 @@ Nouveautés :
 - Cadre de tablette quand les caméras sont levées.
 - Cartes de nuits avec une image de caméra animée et une jauge de difficulté.
 - Galerie : rotation automatique quand on ne touche pas l'écran, et le modèle sort de l'ombre avec les yeux qui s'allument.
+
+## Version 1.4 — choix du jeu, écrans titres, sons
+
+**Navigation, comme dans un vrai jeu**
+- Accueil de la plateforme : Jouer, Collection, Trophées, Paramètres, Crédits.
+- Jouer ouvre « Choisissez un jeu », avec trois grandes cases animées :
+  - **1** Pizza Palace ;
+  - **2** Fun Factory, verrouillé tant que la Nuit 5 du jeu 1 n'est pas terminée ;
+  - **3** barré d'une croix rouge, avec le tampon « COMING SOON ».
+- Chaque jeu a son propre écran titre :
+  - le grand chiffre, le nom, et le visage d'un animatronique qui vous fixe ;
+  - de temps en temps, l'image grésille et le visage est remplacé par celui d'un autre animatronique ;
+  - le menu propose Nouvelle partie (avec l'offre d'emploi du gardien), Continuer (reprise exacte ou prochaine nuit), 6e nuit, Custom Night et Toutes les nuits, ces trois derniers une fois débloqués ;
+  - trois étoiles à gagner : les 5 nuits, la 6e nuit, un défi.
+- Après une nuit, « Menu principal » ramène à l'écran titre du jeu.
+
+**Sons**
+- Écran titre 1 : une berceuse au célesta, désaccordée comme une vieille bande, sur un bourdonnement électrique et des craquements.
+- Écran titre 2 : une valse de piano jouet avec un orgue, légèrement fausse.
+- Jumpscares : un cri filtré qui monte puis s'effondre, et un choc métallique.
+- Pas des animatroniques : talon puis pointe, avec un sifflement de servomoteur.
+- Pendant les nuits : bourdonnement des néons. Au chapitre 1, de la pluie sur le toit, et parfois du tonnerre qui fait vaciller la lumière.
