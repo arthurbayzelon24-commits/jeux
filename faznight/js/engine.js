@@ -64,7 +64,7 @@
       this.night = cfg.night; // 1..7 or 'custom'
       this.rules = cfg.rules || {};
       const st = FN.Save.data.settings;
-      this.duration = Math.max(60, (this.rules.duration || st.duration || 6) * 60);
+      this.duration = FN.HOUR_SECONDS * 6; // fixed: 90 s per hour, like the classic night-watch games
       this.time = 0;
       this.hour = 0;
       this.over = false;
@@ -165,8 +165,13 @@
       this.silence = Math.max(0, this.silence - dt);
       // office pan from drag inertia / mouse edge
       if (!this.camUp) {
-        this.pan = clamp(this.pan + this.panVel * dt, 0, 1);
-        if (this.edgePan) this.pan = clamp(this.pan + this.edgePan * dt * 0.9 * FN.Save.data.settings.sens, 0, 1);
+        // the view eases towards a target: no jitter, no sliding after the finger lifts
+        if (this.panT == null || this._panSet !== this.pan) this.panT = this.pan;
+        const sens = FN.Save.data.settings.sens;
+        if (this.edgePan) this.panT = clamp(this.panT + this.edgePan * dt * 0.9 * sens, 0, 1);
+        if (this._hold) this.panT = clamp(this.panT + this._hold * dt * 0.75 * sens, 0, 1); // finger held on a screen edge
+        this.pan += (this.panT - this.pan) * Math.min(1, dt * 10);
+        this._panSet = this.pan;
       }
       this.fearSystem(dt);
       this.update(dt);
@@ -338,6 +343,9 @@
         down = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false };
         lastX = e.clientX; lastT = performance.now();
         this.panVel = 0;
+        // touch and hold near the left/right edge to look that way (like the mobile classics)
+        const fx = e.clientX / window.innerWidth;
+        this._hold = e.pointerType !== 'mouse' && !this.camUp ? (fx < 0.16 ? -1 : fx > 0.84 ? 1 : 0) : 0;
         cv.setPointerCapture && cv.setPointerCapture(e.pointerId);
       };
       this._pm = (e) => {
@@ -347,12 +355,13 @@
         }
         if (!down || this.camUp) return;
         const dx = e.clientX - lastX;
-        if (Math.abs(e.clientX - down.x) > 8) down.moved = true;
-        const k = (1.6 * sens()) / window.innerWidth;
-        this.pan = clamp(this.pan - dx * k, 0, 1);
-        const now = performance.now();
-        if (now > lastT) this.panVel = clamp((-dx * k) / ((now - lastT) / 1000), -3, 3);
-        lastX = e.clientX; lastT = now;
+        if (Math.abs(e.clientX - down.x) > 10) { down.moved = true; this._hold = 0; }
+        if (!down.moved) return;
+        // one screen width of drag = the whole room, finger and view move together
+        const k = (1.0 * sens()) / window.innerWidth;
+        if (this.panT == null) this.panT = this.pan;
+        this.panT = clamp(this.panT - dx * k, 0, 1);
+        lastX = e.clientX; lastT = performance.now();
       };
       this._pu = (e) => {
         if (!down) return;
@@ -360,7 +369,7 @@
           const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
           this.onTap(wx, wy, e.clientX, e.clientY);
         }
-        if (performance.now() - lastT > 80) this.panVel = 0;
+        this._hold = 0;
         down = null;
       };
       this._pl = () => { this.edgePan = 0; };
@@ -560,6 +569,7 @@
     }
   }
   FN.Night = Night;
+  FN.HOUR_SECONDS = 90;
 
   // ---------------------------------------------------------------- HUD icons (inline SVG, original drawings)
   FN.ICON = {

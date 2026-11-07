@@ -72,7 +72,7 @@
     constructor(night) {
       this.n = night;
       const st = FN.Save.data.settings;
-      this.scaleRes = st.perf ? 0.5 : st.quality === 'high' ? 1 : st.quality === 'low' ? 0.55 : 0.75;
+      this.scaleRes = st.perf ? 0.55 : st.quality === 'high' ? 1 : st.quality === 'low' ? 0.6 : 0.9;
       const cv = document.createElement('canvas');
       this.R = new T3.WebGLRenderer({ canvas: cv, antialias: st.quality !== 'low' && !st.perf, powerPreference: 'high-performance' });
       this.R.setPixelRatio(1);
@@ -485,6 +485,20 @@
       this.dust = dust(S, new T3.Box3(V(-2.8, 0.3, -9), V(2.8, 2.4, 0.6)), 300);
       // desk
       this.deskProps(S, '#5a5a6a', '#2a2a36');
+      // the mask, lying face up on the desk: tap it to wear it
+      const mask = new T3.Group(); mask.position.set(-0.8, 0.925, -0.12); mask.rotation.set(-1.15, 0.35, 0); S.add(mask);
+      const face = new T3.Mesh(new T3.SphereGeometry(1, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.5), new T3.MeshPhysicalMaterial({ color: 0xf2efea, roughness: 0.3, clearcoat: 0.8, side: T3.DoubleSide }));
+      face.rotation.x = Math.PI / 2; face.scale.set(0.13, 0.07, 0.15); face.castShadow = true; mask.add(face);
+      const ink = new T3.MeshBasicMaterial({ color: 0x0a0a0a });
+      for (const s of [-1, 1]) {
+        const patch = new T3.Mesh(new T3.SphereGeometry(1, 12, 8), ink); patch.scale.set(0.04, 0.05, 0.012); patch.position.set(s * 0.05, 0.025, 0.065); patch.rotation.z = s * 0.4; mask.add(patch);
+        const ear = new T3.Mesh(new T3.SphereGeometry(1, 12, 8), ink); ear.scale.set(0.035, 0.035, 0.015); ear.position.set(s * 0.1, 0.12, 0.02); mask.add(ear);
+        const cheek = new T3.Mesh(new T3.SphereGeometry(1, 10, 6), new T3.MeshBasicMaterial({ color: 0xe05a78 })); cheek.scale.set(0.02, 0.012, 0.006); cheek.position.set(s * 0.075, -0.035, 0.06); mask.add(cheek);
+      }
+      const nose = new T3.Mesh(new T3.SphereGeometry(1, 10, 6), ink); nose.scale.set(0.018, 0.012, 0.01); nose.position.set(0, -0.01, 0.075); mask.add(nose);
+      const strap = new T3.Mesh(new T3.TorusGeometry(0.13, 0.006, 4, 24, Math.PI), new T3.MeshStandardMaterial({ color: 0x222222 })); strap.rotation.x = -0.3; strap.position.y = -0.02; mask.add(strap);
+      const hit = new T3.Mesh(new T3.SphereGeometry(0.22, 8, 6), new T3.MeshBasicMaterial({ visible: false })); hit.name = 'mask'; hit.position.copy(mask.position); S.add(hit); this.pickables.push(hit);
+      this.deskMask = mask;
       const tablet = new T3.Group(); tablet.position.set(-0.4, 0.9, -0.1); tablet.rotation.x = -1.3; S.add(tablet);
       box(std('#1a1a1a', { roughness: 0.3 }), 0.5, 0.34, 0.03, 0, 0, 0, tablet);
       this.tabScreen = plane(new T3.MeshBasicMaterial({ map: screenTex('tab', ['FUN FACTORY', 'CAM 12', '♪ ...'], 'rgba(255,140,200,0.85)') }), 0.44, 0.28, 0, 0, 0.017, 0, tablet);
@@ -563,6 +577,9 @@
       if (n.room('rico') === 'VENT_L') this.place('rico', -2.1, 0.14, -3.05, 0, { pose: 'peek', light: 1, eyes: n.vent.L ? 1 : 0.4 }, 0.42);
       if (n.room('lumi') === 'VENT_R') this.place('lumi', 2.1, 0.14, -3.05, 0, { pose: 'float', light: 1, eyes: n.vent.R ? 1 : 0.5 }, 0.4);
       // intruder in the office
+      this.deskMask.visible = !n.mask && n.maskA < 0.2;
+      // soft pulse on the mask when someone is in the office, so the player knows what to grab
+      this.deskMask.scale.setScalar(n.intr && !n.mask ? 1 + Math.abs(Math.sin(t * 6)) * 0.08 : 1);
       if (n.intr && !n.camUp) {
         const id = n.intr.id;
         this.place(id, 0, 0, -1.05, 0, { pose: id === 'lumi' ? 'float' : 'idle', light: 1, eyes: 1, jaw: 0.15 });

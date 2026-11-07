@@ -558,7 +558,7 @@
       <div class="row"><label>${T('s_sens')}<small>${T('s_sensSub')}</small></label>${range('sens', 0.4, 2.5, 0.1)}</div>
       <div class="row"><label>${T('s_vibrate')}</label>${onoff('vibrate')}</div>
       <h4>${T('s_game')}</h4>
-      <div class="row"><label>${T('s_duration')}</label>${opts('duration', [3, 4, 6, 8, 9], [3, 4, 6, 8, 9].map((n) => T('min', { n })))}</div>
+      <div class="row hidden"><label>${T('s_duration')}</label>${opts('duration', [3, 4, 6, 8, 9], [3, 4, 6, 8, 9].map((n) => T('min', { n })))}</div>
       <h4>${T('s_saves')}</h4>
       <div class="row"><label>${T('s_saves')}<small>${T('s_saveInfo')}</small></label><div class="opts"><button class="act" id="exp">${T('s_export')}</button><button class="act" id="imp">${T('s_import')}</button><button class="act danger" id="rst">${T('s_reset')}</button></div></div>
       <div class="row"><label>${T('s_account')}<small>${T('s_accountSub')}</small></label></div>

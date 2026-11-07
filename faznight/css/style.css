@@ -604,3 +604,5 @@ button:active:not([disabled]) { transform: scale(0.97); }
 .mp-tiles { align-content: start; grid-auto-rows: auto; }
 #overlay.mp-count .mp-cnum { display: block; opacity: 1; }
 .mp-codebox .act { min-height: 38px; padding: 0 16px; border: 1px solid #ffffff44; border-radius: 6px; background: #1d1717; color: #fff; font-family: var(--ui); font-size: 13px; letter-spacing: 1px; }
+.maskhint { position: absolute; left: 50%; transform: translateX(-50%); top: calc(60px + var(--safe-t)); padding: 8px 14px; border-radius: 20px; background: #000c; border: 1px solid #ffffff44; font-size: clamp(15px, 3.8vmin, 20px); letter-spacing: 1px; color: #fff; pointer-events: none; animation: pulse 1.4s infinite; white-space: nowrap; }
+.maskhint { top: auto; bottom: calc(140px + var(--safe-b)); }

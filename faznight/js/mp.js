@@ -163,7 +163,7 @@
       const roster = lobbyList(s).slice(0, max).map((p) => p.peer);
       if (roster.length < 2) return;
       AU.play('uiSelect');
-      s.net.presence({ st: { at: Date.now(), ch, n: night, roster, dur: FN.Save.data.settings.duration || 6 } });
+      s.net.presence({ st: { at: Date.now(), ch, n: night, roster, dur: 9 } });
       setTimeout(() => onPeers(s), 30);
     };
   }

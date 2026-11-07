@@ -41,7 +41,7 @@ window.FN = window.FN || {};
       s_perfSub: '30 images/s, effets allégés', s_immersion: 'Mode immersion', s_immersionSub: 'Plein écran, vibrations, aucun conseil à l’écran',
       s_audio: 'Audio', s_master: 'Volume général', s_music: 'Musique', s_sfx: 'Effets sonores', s_amb: 'Ambiance', s_voice: 'Voix (téléphone)',
       s_controls: 'Commandes', s_sens: 'Sensibilité tactile', s_sensSub: 'Vitesse de rotation du bureau', s_game: 'Jeu',
-      s_duration: 'Durée d’une nuit', s_lang: 'Langue', s_profile: 'Profil', s_name: 'Nom du gardien', s_saves: 'Sauvegarde',
+      s_duration: 'Durée d’une nuit (fixe : 9 min)', s_lang: 'Langue', s_profile: 'Profil', s_name: 'Nom du gardien', s_saves: 'Sauvegarde',
       s_export: 'Exporter', s_import: 'Importer', s_reset: 'Tout effacer', s_resetConfirm: 'Effacer toute la progression, les trophées et les secrets ? Cette action est définitive.',
       s_saveInfo: 'Sauvegarde locale automatique (stockage du navigateur + IndexedDB).', s_imported: 'Sauvegarde importée.', s_badFile: 'Fichier de sauvegarde invalide.',
       low: 'Basse', medium: 'Moyenne', high: 'Haute', on: 'Activé', off: 'Désactivé', min: '{n} min',

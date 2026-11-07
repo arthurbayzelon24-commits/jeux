@@ -82,7 +82,8 @@
     buildHud() {
       this.commonHud();
       const u = this.ui;
-      u.mask = this.button(`${FN.ICON.mask}${FN.t('mask')}`, 'maskb', { left: 'calc(10px + var(--safe-l))', bottom: 'calc(6px + var(--safe-b))', width: 'min(30vw, 160px)', height: '46px' }, () => this.toggleMask());
+      u.maskHint = this.el('', 'maskhint hidden');
+      u.mask = { classList: { toggle() {} }, style: {} }; // no HUD button: the mask is on the desk
       u.flash = this.button(`${FN.ICON.flash}${FN.t('flash')}`, 'light', { left: '50%', transform: 'translateX(-50%)', bottom: 'calc(60px + var(--safe-b))' }, () => this.setFlash(true), () => this.setFlash(false));
       u.ventL = this.button(`${FN.ICON.vent}${FN.t('vent')}`, 'light', { left: 'calc(10px + var(--safe-l))', bottom: 'calc(62px + var(--safe-b))' }, () => this.setVent('L', true), () => this.setVent('L', false));
       u.ventR = this.button(`${FN.ICON.vent}${FN.t('vent')}`, 'light', { right: 'calc(10px + var(--safe-r))', bottom: 'calc(62px + var(--safe-b))' }, () => this.setVent('R', true), () => this.setVent('R', false));
@@ -102,7 +103,9 @@
       u.ventL.classList.toggle('on', this.vent.L); u.ventR.classList.toggle('on', this.vent.R);
       const off = this.camUp;
       for (const b of [u.flash, u.ventL, u.ventR]) { b.style.display = off || this.mask ? 'none' : ''; b.classList.toggle('broken', this.battery <= 0 || !!this.rules.noLight); }
-      u.mask.style.display = off ? 'none' : '';
+      const en = FN.lang === 'en';
+      u.maskHint.textContent = this.mask ? (en ? 'Tap the screen to take the mask off' : 'Touchez l’écran pour retirer le masque') : (en ? '☻ Tap the mask on the desk!' : '☻ Touchez le masque sur le bureau !');
+      u.maskHint.classList.toggle('hidden', off || !(this.mask || this.intr));
       u.cambar.style.display = this.mask ? 'none' : '';
       const onBox = this.camUp && this.cam === '11';
       u.wind.classList.toggle('hidden', !onBox); u.windMeter.classList.toggle('hidden', !onBox);
@@ -113,6 +116,11 @@
     }
 
     // ------------------------------------------------ controls
+    onTap(wx, wy, cx, cy) {
+      if (this.mask) return this.toggleMask();
+      const hit = this.o3 ? this.o3.pick(cx, cy) === 'mask' : Math.hypot(wx - 470, wy - 655) < 80;
+      if (hit) this.toggleMask();
+    }
     toggleMask() {
       if (this.camUp) return;
       this.mask = !this.mask;
@@ -333,6 +341,12 @@
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, this.W, this.H);
       this.officeTransform();
       ctx.drawImage(R.office(2), 0, 0);
+      if (!this.mask && this.maskA < 0.2) { // 2.5D fallback: the mask on the desk
+        const p = this.intr ? 1 + Math.abs(Math.sin(t * 6)) * 0.08 : 1;
+        ctx.save(); ctx.translate(470, 655); ctx.scale(p, p * 0.7);
+        A.ell(ctx, 0, 0, 62, 70, '#f2efea'); A.ell(ctx, -26, -8, 18, 22, '#111'); A.ell(ctx, 26, -8, 18, 22, '#111'); A.ell(ctx, -50, -58, 18, 18, '#111'); A.ell(ctx, 50, -58, 18, 18, '#111'); A.ell(ctx, 0, 18, 9, 6, '#111'); A.ell(ctx, -36, 24, 9, 5, '#e05a78'); A.ell(ctx, 36, 24, 9, 5, '#e05a78');
+        ctx.restore();
+      }
       // hallway
       const hx = 564, hy = 136, hw = 472, hh = 444;
       ctx.save(); ctx.beginPath(); ctx.rect(hx, hy, hw, hh); ctx.clip();
