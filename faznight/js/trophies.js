@@ -12,7 +12,7 @@
     { id: 'b_first', tier: 'bronze', name: { fr: 'Premier service', en: 'First Shift' }, desc: { fr: 'Survivre à la Nuit 1 du Chapitre 1.', en: 'Survive Night 1 of Chapter 1.' }, check: () => done(1, 1) },
     { id: 'b_spot', tier: 'bronze', name: { fr: 'Premier regard', en: 'First Glance' }, desc: { fr: 'Découvrir un animatronique sur les caméras.', en: 'Spot an animatronic on camera.' }, check: () => Object.keys(S().seen).length >= 1 },
     { id: 'b_death', tier: 'bronze', name: { fr: 'Bienvenue chez Grimwood', en: 'Welcome to Grimwood’s' }, desc: { fr: 'Se faire attraper pour la première fois.', en: 'Get caught for the first time.' }, check: () => S().stats.deaths >= 1 },
-    { id: 'b_krok', tier: 'bronze', name: { fr: 'Porte blindée', en: 'Reinforced Door' }, desc: { fr: 'Survivre à une charge de Krok grâce à la porte.', en: 'Survive Krok’s charge thanks to the door.' } },
+    { id: 'b_krok', tier: 'bronze', name: { fr: 'Porte blindée', en: 'Reinforced Door' }, desc: { fr: 'Survivre à une charge de {@krok} grâce à la porte.', en: 'Survive {@krok}’s charge thanks to the door.' } },
     { id: 'b_call', tier: 'bronze', name: { fr: 'Bonne écoute', en: 'Good Listener' }, desc: { fr: 'Écouter un appel téléphonique en entier.', en: 'Listen to a whole phone call.' } },
     { id: 'b_ch2', tier: 'bronze', name: { fr: 'Nouvelle usine', en: 'New Factory' }, desc: { fr: 'Survivre à la Nuit 1 du Chapitre 2.', en: 'Survive Night 1 of Chapter 2.' }, check: () => done(2, 1) },
     { id: 'b_wind', tier: 'bronze', name: { fr: 'Mélomane', en: 'Music Lover' }, desc: { fr: 'Remonter complètement la boîte à musique.', en: 'Fully wind the music box.' } },
@@ -34,7 +34,7 @@
     { id: 'g_secrets', tier: 'gold', name: { fr: 'Chercheur de secrets', en: 'Secret Seeker' }, desc: { fr: 'Découvrir au moins 3 secrets.', en: 'Discover at least 3 secrets.' }, check: () => Object.keys(S().secrets).length >= 3 },
     { id: 'g_bestiary', tier: 'gold', name: { fr: 'Bestiaire complet', en: 'Full Bestiary' }, desc: { fr: 'Apercevoir tous les animatroniques des deux chapitres.', en: 'Spot every animatronic of both chapters.' }, check: () => seenAll(1) && seenAll(2) },
     { id: 'g_archives', tier: 'gold', name: { fr: 'Archiviste', en: 'Archivist' }, desc: { fr: 'Retrouver les 5 documents.', en: 'Find all 5 documents.' }, check: () => FN.DOCS.every((d) => S().docs[d.id]) },
-    { id: 'g_hollow', tier: 'gold', name: { fr: 'Le Creux', en: 'The Hollow' }, desc: { fr: 'Croiser Hank le Creux dans les deux chapitres.', en: 'Encounter Hollow Hank in both chapters.' }, check: () => S().secrets.hollow1 && S().secrets.hollow2 },
+    { id: 'g_hollow', tier: 'gold', name: { fr: 'Le Creux', en: 'The Hollow' }, desc: { fr: 'Croiser {@hollow} dans les deux chapitres.', en: 'Encounter {@hollow} in both chapters.' }, check: () => S().secrets.hollow1 && S().secrets.hollow2 },
     // ---------------- platinum
     { id: 'p_plat', tier: 'platinum', name: { fr: 'FAZNIGHT — Platine', en: 'FAZNIGHT — Platinum' }, desc: { fr: 'Obtenir tous les autres trophées : toutes les nuits des deux chapitres, les défis principaux et les secrets majeurs.', en: 'Earn every other trophy: all nights of both chapters, the main challenges and the major secrets.' }, check: () => T.filter((t) => t.tier !== 'platinum').every((t) => S().trophies[t.id]) },
   ];
@@ -67,9 +67,9 @@
       },
     },
     {
-      id: 'd3', title: { fr: 'Fiche d’entretien — Vieux Krok', en: 'Maintenance sheet — Old Krok' },
+      id: 'd3', title: { fr: 'Fiche d’entretien — {@oldkrok}', en: 'Maintenance sheet — {@oldkrok}' },
       text: {
-        fr: 'Capteurs optiques sur-sensibles. La lumière vive provoque un réflexe de recul. NE PAS réactiver. NE PAS laisser dans le couloir principal. Signé : service technique.',
+        fr: 'Capteurs optiques hypersensibles. La lumière vive provoque un réflexe de recul. NE PAS réactiver. NE PAS laisser dans le couloir principal. Signé : service technique.',
         en: 'Optical sensors over-sensitive. Bright light triggers a recoil reflex. DO NOT reactivate. DO NOT leave in the main hallway. Signed: technical department.',
       },
     },

@@ -28,14 +28,14 @@
       { fr: 'Bon courage. Je vous rappelle demain.', en: 'Good luck. I’ll call you tomorrow.' },
     ],
     2: [
-      { fr: 'Re-bonjour ! Vous avez survécu, bravo. Ce soir, ils seront plus actifs.', en: 'Hi again! You made it, well done. Tonight they’ll be more active.' },
-      { fr: 'Surveillez le Marais. Krok n’aime pas qu’on l’oublie. S’il sort, il court… et il frappe fort.', en: 'Watch the Swamp. Krok doesn’t like being forgotten. If he gets out, he runs… and hits hard.' },
+      { fr: 'Rebonjour ! Vous avez survécu, bravo. Ce soir, ils seront plus actifs.', en: 'Hi again! You made it, well done. Tonight they’ll be more active.' },
+      { fr: 'Surveillez le Marais. {@krok} n’aime pas qu’on l’oublie. S’il sort, il court… et il frappe fort.', en: 'Watch the Swamp. {@krok} doesn’t like being forgotten. If he gets out, he runs… and hits hard.' },
       { fr: 'Regardez sa caméra souvent, mais ne la fixez pas. Il le sent.', en: 'Check his camera often, but don’t stare. He can tell.' },
     ],
     3: [
-      { fr: 'Nuit trois. Nora a une drôle d’habitude : elle disparaît des caméras.', en: 'Night three. Nora has an odd habit: she vanishes from the cameras.' },
+      { fr: 'Nuit trois. {@nora} a une drôle d’habitude : elle disparaît des caméras.', en: 'Night three. {@nora} has an odd habit: she vanishes from the cameras.' },
       { fr: 'Si vous ne la trouvez plus, ne cherchez pas : allumez la lumière droite.', en: 'If you can’t find her, don’t search: turn on the right light.' },
-      { fr: 'Et Bruno… s’il quitte la scène, restez calme. Il ne bouge que si personne ne le regarde.', en: 'And Bruno… if he leaves the stage, stay calm. He only moves when nobody is watching.' },
+      { fr: 'Et {@bruno}… s’il quitte la scène, restez calme. Il ne bouge que si personne ne le regarde.', en: 'And {@bruno}… if he leaves the stage, stay calm. He only moves when nobody is watching.' },
     ],
     4: [
       { fr: 'Allô ? … Je n’ai pas beaucoup de temps. Quelque chose cogne à la porte.', en: 'Hello? … I don’t have much time. Something keeps banging on the door.' },

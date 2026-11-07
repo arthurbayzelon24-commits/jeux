@@ -24,17 +24,17 @@
   const CALLS = {
     1: [
       { fr: 'Allô ? Bienvenue à la Fun Factory ! C’est encore moi, Gérard. On m’a muté ici aussi.', en: 'Hello? Welcome to the Fun Factory! It’s me again, Gérard. They moved me here too.' },
-      { fr: 'Pas de portes ici. À la place : une lampe torche, un masque, et une boîte à musique.', en: 'No doors here. Instead: a flashlight, a mask, and a music box.' },
+      { fr: 'Pas de portes ici. À la place : une lampe torche, un masque et une boîte à musique.', en: 'No doors here. Instead: a flashlight, a mask, and a music box.' },
       { fr: 'Remontez la boîte à musique de la Salle des prix, caméra 11. Toujours. Ne demandez pas pourquoi.', en: 'Wind the Prize Room music box, camera 11. Always. Don’t ask why.' },
-      { fr: 'Si un des nouveaux entre dans le bureau, mettez le masque. Ils vous prendront pour l’un des leurs.', en: 'If one of the new ones gets into the office, put on the mask. They’ll take you for one of them.' },
+      { fr: 'Si l’un des nouveaux entre dans le bureau, mettez le masque. Ils vous prendront pour l’un des leurs.', en: 'If one of the new ones gets into the office, put on the mask. They’ll take you for one of them.' },
     ],
     2: [
-      { fr: 'Les anciens sont stockés dans l’atelier. Le vieux Krok, surtout… le masque ne marche pas sur lui.', en: 'The old ones are stored in the workshop. Old Krok especially… the mask doesn’t work on him.' },
+      { fr: 'Les anciens sont rangés dans l’atelier. Surtout {@oldkrok}… le masque ne marche pas sur lui.', en: 'The old ones are stored in the workshop. Especially {@oldkrok}… the mask doesn’t work on him.' },
       { fr: 'Flashez-le avec la lampe quand il est dans le couloir. Plusieurs fois. Ça le dérègle.', en: 'Flash him with the light when he is in the hallway. Several times. It throws him off.' },
     ],
     3: [
-      { fr: 'Les conduits… Rico n’aime pas le bruit, enfin, il l’adore. Chaque clic l’attire.', en: 'The vents… Rico doesn’t like noise — well, he loves it. Every click draws him in.' },
-      { fr: 'Et Lumi, à droite, suit la lumière comme un papillon. N’éclairez pas trop son conduit.', en: 'And Lumi, on the right, follows light like a moth. Don’t light her vent too much.' },
+      { fr: 'Les conduits… {@rico} n’aime pas le bruit, enfin, il l’adore. Chaque clic l’attire.', en: 'The vents… {@rico} doesn’t like noise — well, he loves it. Every click draws him in.' },
+      { fr: 'Et {@lumi}, à droite, suit la lumière comme un papillon. N’éclairez pas trop son conduit.', en: 'And {@lumi}, on the right, follows light like a moth. Don’t light her vent too much.' },
     ],
     4: [
       { fr: 'Il y a un problème avec les caméras. Un visage apparaît dessus. Si vous le voyez, fermez la tablette. Tout de suite.', en: 'Something is wrong with the cameras. A face shows up on them. If you see it, close the tablet. Right away.' },
@@ -220,7 +220,7 @@
     intrude(id) {
       const c = this.a[id];
       c.i = PATHS[id].length - 1;
-      this.intr = { id, t: 0, waitCam: 0, masked: 0, window: Math.max(0.65, 1.3 - this.level(id) * 0.03) };
+      this.intr = { id, t: 0, waitCam: 0, masked: 0, window: Math.max(1.0, 1.65 - this.level(id) * 0.03) };
       this.flicker = 1;
       AU.play('groan', { pan: 0, vol: 0.5 });
       if (this.mask) this.intr.t = 0;

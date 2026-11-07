@@ -23,7 +23,7 @@
         <div class="gal-info"></div>
         <div class="gal-views"><button data-v="face">${FN.lang === 'en' ? 'Face' : 'Visage'}</button><button data-v="full">${FN.lang === 'en' ? 'Full body' : 'Corps entier'}</button><button data-v="back">${FN.lang === 'en' ? 'Back' : 'Dos'}</button><button data-v="xray">${FN.lang === 'en' ? 'Mechanics' : 'Mécanique'}</button></div>
         <div class="gal-clips">${CLIPS.map(([k, n]) => `<button data-c="${k}">${esc(L(n))}</button>`).join('')}</div>
-        <div class="gal-hint">${FN.lang === 'en' ? 'Drag to rotate · pinch or scroll to zoom' : 'Glissez pour tourner · pincez ou molette pour zoomer'}</div>
+        <div class="gal-hint">${FN.lang === 'en' ? 'Drag to rotate · pinch or scroll to zoom' : 'Glissez pour tourner · pincez ou utilisez la molette pour zoomer'}</div>
       </div>`;
       const cv = ov.querySelector('.gal-cv');
       const R = new T.WebGLRenderer({ canvas: cv, antialias: true });
@@ -52,13 +52,21 @@
         if (v === 'face') Object.assign(st, { tYaw: 0, tPitch: 0.05, tDist: 1.25, tTy: 1.95 });
         if (v === 'full') Object.assign(st, { tYaw: 0.35, tPitch: 0.12, tDist: 4.4, tTy: 1.15 });
         if (v === 'back') Object.assign(st, { tYaw: Math.PI, tPitch: 0.15, tDist: 3.2, tTy: 1.3 });
-        if (v === 'xray') { xr = !xr; FN.Models.xray(model, xr); ov.querySelector('[data-v=xray]').classList.toggle('on', xr); if (xr) Object.assign(st, { tDist: 2.6, tTy: 1.4 }); }
+        if (v === 'xray') { xr = !xr; if (model.userData && model.userData.L) FN.Models.xray(model, xr); ov.querySelector('[data-v=xray]').classList.toggle('on', xr); if (xr) Object.assign(st, { tDist: 2.6, tTy: 1.4 }); }
         ov.querySelectorAll('[data-v]').forEach((b) => b.dataset.v !== 'xray' && b.classList.toggle('on', b.dataset.v === v));
       };
       const load = () => {
         if (model) { scene.remove(model); model.traverse((o) => o.geometry && o.geometry.type === 'TubeGeometry' && o.geometry.dispose()); }
         const cid = ids[idx];
-        model = FN.Models.build(cid);
+        try { model = FN.Models.build(cid); }
+        catch (e) {
+          console.error(e);
+          model = new T.Group();
+          model.userData = null;
+          ov.querySelector('.gal-info').innerHTML = `<b>${esc(L(FN.CHARS[cid].name))}</b><p>${FN.lang === 'en' ? 'Model in development' : 'Modèle en développement'}</p>`;
+          scene.add(model);
+          return;
+        }
         scene.add(model);
         xr = false; ov.querySelector('[data-v=xray]').classList.remove('on');
         const c = FN.CHARS[cid], d = FN.Save.data;
@@ -107,7 +115,7 @@
         else if (clip === 'eyes') { o.pose = 'idle'; o.look = Math.sin(ct * 1.7) * 0.8; o.eyes = 0.6 + Math.abs(Math.sin(ct * 2)) * 0.6; }
         else if (clip === 'attack' || clip === 'scare') { o.pose = 'attack'; o.jaw = 1; }
         else o.pose = 'idle';
-        FN.Models.pose(model, o);
+        if (model.userData && model.userData.L) FN.Models.pose(model, o);
         if (clip === 'scare' && ct < 1.4) { cam.position.x += (Math.random() - 0.5) * 0.04; cam.position.y += (Math.random() - 0.5) * 0.04; key.color.setHex(0xff4020); } else key.color.setHex(0xffe0c0);
         R.render(scene, cam);
       };

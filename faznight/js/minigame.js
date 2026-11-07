@@ -72,7 +72,7 @@
         if (phase === 'play' && Math.floor(t * 2.2) !== Math.floor((t - dt) * 2.2)) {
           const dx = Math.sign(px - sx), dy = Math.sign(py - sy);
           if (Math.random() < 0.5 && grid[sy][sx + dx] !== '#') sx += dx; else if (grid[sy + dy] && grid[sy + dy][sx] !== '#') sy += dy;
-          if (sx === px && sy === py) { px = 9; py = 12; sx = 1; sy = 13; carrying = false; FN.Audio.play('glitch', {}); say(FN.lang === 'en' ? 'It caught you. Try again.' : 'Elle vous a attrapé. Recommencez.'); }
+          if (sx === px && sy === py) { px = 9; py = 12; sx = 1; sy = 13; carrying = false; FN.Audio.play('glitch', {}); say(FN.lang === 'en' ? 'It caught you. Try again.' : 'La silhouette vous a rejoint. Recommencez.'); }
         }
         x.fillStyle = '#000'; x.fillRect(0, 0, 160, 120);
         grid.forEach((r, y) => r.forEach((c, xx) => {

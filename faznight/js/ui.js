@@ -11,10 +11,10 @@
       { id: 'c1_nocam', name: { fr: 'Nuit sans caméra', en: 'No-camera night' }, rule: { fr: 'Caméras désactivées', en: 'Cameras disabled' }, levels: [6, 8, 8, 6], rules: { noCam: true } },
       { id: 'c1_nolight', name: { fr: 'Nuit sans lumière', en: 'No-light night' }, rule: { fr: 'Lumières des portes désactivées', en: 'Door lights disabled' }, levels: [6, 8, 8, 8], rules: { noLight: true } },
       { id: 'c1_lowpower', name: { fr: 'Énergie limitée', en: 'Low power' }, rule: { fr: 'Départ à 50 % d’énergie', en: 'Start at 50% power' }, levels: [5, 7, 7, 7], rules: { lowPower: true } },
-      { id: 'c1_flawless', name: { fr: 'Nuit sans erreur', en: 'Flawless night' }, rule: { fr: 'Ne jamais descendre sous 25 % et aucune charge de Krok', en: 'Never drop below 25% and no Krok charge' }, levels: [8, 10, 10, 10], rules: { flawless: true } },
+      { id: 'c1_flawless', name: { fr: 'Nuit sans erreur', en: 'Flawless night' }, rule: { fr: 'Ne jamais descendre sous 25 % et aucune charge de {@krok}', en: 'Never drop below 25% and no {@krok} charge' }, levels: [8, 10, 10, 10], rules: { flawless: true } },
       { id: 'c1_allmax', name: { fr: 'Tous au maximum', en: 'All at max' }, rule: { fr: '20 / 20 / 20 / 20', en: '20 / 20 / 20 / 20' }, levels: [20, 20, 20, 20], rules: {} },
       { id: 'c1_nightmare', name: { fr: 'Nuit cauchemardesque', en: 'Nightmare night' }, rule: { fr: 'Tous à 15, événements rares fréquents', en: 'All at 15, frequent rare events' }, levels: [15, 15, 15, 15], rules: {} },
-      { id: 'c1_hollow', secret: 'codehollow', name: { fr: 'Nuit du Creux', en: 'Hollow night' }, rule: { fr: 'Il vient chaque heure', en: 'It comes every hour' }, levels: [8, 8, 8, 8], rules: { hollow: true } },
+      { id: 'c1_hollow', secret: 'codehollow', name: { fr: 'Nuit du Creux', en: 'Hollow night' }, rule: { fr: 'Il vient toutes les heures', en: 'It comes every hour' }, levels: [8, 8, 8, 8], rules: { hollow: true } },
     ],
     2: [
       { id: 'c2_nocam', name: { fr: 'Nuit sans caméra', en: 'No-camera night' }, rule: { fr: 'Tablette désactivée', en: 'Tablet disabled' }, levels: [8, 8, 8, 8, 6, 0, 0], rules: { noCam: true } },
@@ -619,7 +619,6 @@
       ending2: (next) => letter(en ? 'Ending — The Factory Closes' : 'Fin — La fermeture de l’usine', en ? 'The Fun Factory closes its doors for good. The animatronics are boxed up, one by one. Somewhere in the dark, a music box keeps playing. (Find every document for another ending.)' : 'La Fun Factory ferme définitivement ses portes. Les animatroniques sont mis en caisse, un par un. Quelque part dans le noir, une boîte à musique continue de jouer. (Retrouvez tous les documents pour une autre fin.)', next),
       trueEnding: (next) => letter(en ? 'True ending — The one they waited for' : 'Vraie fin — Celui qu’ils attendaient', en ? 'With Gérard’s note in hand, you understand: they were never hunting you. They were waiting for Harold Grimwood. At 6 AM, the old mascots turn towards the empty office chair… and power down, at peace.' : 'Avec la note de Gérard, vous comprenez : ils ne vous chassaient pas. Ils attendaient Harold Grimwood. À 6 h, les vieilles mascottes se tournent vers le fauteuil vide du bureau… et s’éteignent, apaisées.', next),
       ending6: (next) => letter(en ? 'Final closing' : 'Fermeture définitive', en ? 'Notice: the guard is dismissed for tampering with the animatronics and for odour. The Custom Night stays open… for those who insist.' : 'Avis : le gardien est licencié pour avoir trafiqué les animatroniques et pour mauvaise odeur. La Custom Night reste ouverte… pour ceux qui insistent.', next),
-      n7: (next) => letter(en ? 'Seventh night' : 'Septième nuit', en ? 'Nobody was supposed to come back. You did. The Custom Night is waiting for you.' : 'Personne n’était censé revenir. Vous l’avez fait. La Custom Night vous attend.', next),
     };
     let chain = [];
     if (cinematic === 'ch2') chain = ['paycheck', 'ch2'];

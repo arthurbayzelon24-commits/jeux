@@ -15,7 +15,7 @@ window.FN = window.FN || {};
       unlockHint1: 'Terminez la Nuit 5 du Chapitre 1', comingSoon: 'Prochain chapitre — en préparation',
       // night descriptions
       n1: 'Apprentissage et découverte', n2: 'La difficulté augmente', n3: 'Nouveaux comportements', n4: 'Agressivité accrue',
-      n5: 'Difficulté maximale du scénario', n6: 'Nuit secrète', n7: 'Défi supplémentaire',
+      n5: 'Difficulté maximale du scénario', n6: 'Nuit secrète',
       // HUD
       door: 'Porte', light: 'Lumière', cams: 'Caméras', power: 'Énergie : {p} %', usage: 'Conso :', mask: 'Masque', flash: 'Lampe',
       vent: 'Conduit', battery: 'Lampe : {p} %', wind: 'Remonter', muteCall: 'Couper l’appel', pause: 'Pause',
@@ -23,8 +23,8 @@ window.FN = window.FN || {};
       // overlays
       am: 'AM', hourLabel: '{h} AM', nightIntro: 'Nuit {n}', customIntro: 'Custom Night', winNight: 'Nuit {n} terminée',
       winCustom: 'Custom Night réussie', gameOver: 'GAME OVER', retry: 'Réessayer', menu: 'Menu principal', nextNight: 'Nuit suivante',
-      resumeGame: 'Reprendre', restart: 'Recommencer la nuit', quitSave: 'Quitter (sauvegarder)', paused: 'PAUSE',
-      killedBy: 'Vous avez été attrapé par {name}.', powerOutTitle: 'Coupure de courant',
+      resumeGame: 'Reprendre', restart: 'Recommencer la nuit', quitSave: 'Sauvegarder et quitter', paused: 'PAUSE',
+      killedBy: 'Vous n’avez pas survécu à {name}.', powerOutTitle: 'Coupure de courant',
       rotate: 'Tournez votre téléphone en mode paysage pour une meilleure expérience.', playAnyway: 'Jouer quand même',
       tapToStart: 'Touchez pour commencer', loading: 'Chargement…', record: 'Record', reward: 'Récompense',
       starEarned: 'Étoile obtenue', unlockedNight: 'Nuit {n} débloquée', unlockedChapter: 'Nouveau chapitre débloqué',
@@ -67,13 +67,13 @@ window.FN = window.FN || {};
       nightsDone: 'Nights completed: {n}/{t}', trophiesCount: 'Trophies: {n}/{t}', progressPct: 'Progress: {p}%',
       unlockHint1: 'Complete Night 5 of Chapter 1', comingSoon: 'Next chapter — in the works',
       n1: 'Learning the ropes', n2: 'Difficulty rises', n3: 'New behaviours', n4: 'Increased aggression',
-      n5: 'Maximum story difficulty', n6: 'Secret night', n7: 'Extra challenge',
+      n5: 'Maximum story difficulty', n6: 'Secret night',
       door: 'Door', light: 'Light', cams: 'Cameras', power: 'Power: {p}%', usage: 'Usage:', mask: 'Mask', flash: 'Light',
       vent: 'Vent', battery: 'Flashlight: {p}%', wind: 'Wind up', muteCall: 'Mute call', pause: 'Pause',
       camOff: 'CAMERA OFFLINE', audioOnly: 'AUDIO ONLY', signalLost: 'SIGNAL LOST',
       am: 'AM', hourLabel: '{h} AM', nightIntro: 'Night {n}', customIntro: 'Custom Night', winNight: 'Night {n} complete',
       winCustom: 'Custom Night cleared', gameOver: 'GAME OVER', retry: 'Try again', menu: 'Main menu', nextNight: 'Next night',
-      resumeGame: 'Resume', restart: 'Restart night', quitSave: 'Quit (save)', paused: 'PAUSED',
+      resumeGame: 'Resume', restart: 'Restart night', quitSave: 'Save and quit', paused: 'PAUSED',
       killedBy: 'You were caught by {name}.', powerOutTitle: 'Power outage',
       rotate: 'Turn your phone to landscape for the best experience.', playAnyway: 'Play anyway',
       tapToStart: 'Tap to start', loading: 'Loading…', record: 'Record', reward: 'Reward',
@@ -107,13 +107,17 @@ window.FN = window.FN || {};
   FN.t = function (key, vars) {
     let s = (STR[FN.lang] && STR[FN.lang][key]) ?? STR.fr[key] ?? key;
     if (vars) for (const k in vars) s = s.split('{' + k + '}').join(vars[k]);
-    return s;
+    return FN.names(s);
   };
   /** Pick the current-language variant of a {fr, en} object (or return a plain string). */
+  /** Character names live in one place (FN.CHARS). Texts write {@id} and get the official name. */
+  FN.names = function (s) {
+    return typeof s === 'string' && s.includes('{@') ? s.replace(/\{@(\w+)\}/g, (m, id) => (FN.CHARS && FN.CHARS[id] ? FN.L(FN.CHARS[id].name) : m)) : s;
+  };
   FN.L = function (obj) {
     if (obj == null) return '';
-    if (typeof obj === 'string') return obj;
-    return obj[FN.lang] ?? obj.fr;
+    if (typeof obj === 'string') return FN.names(obj);
+    return FN.names(obj[FN.lang] ?? obj.fr);
   };
   FN.applyI18n = function (root) {
     (root || document).querySelectorAll('[data-i18n]').forEach((el) => (el.textContent = FN.t(el.dataset.i18n)));
