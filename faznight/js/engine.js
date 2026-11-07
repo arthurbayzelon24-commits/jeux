@@ -573,12 +573,11 @@
         const chap = d.chapters[ch];
         if (!chap.done[N]) rewards.push(FN.t('starEarned'));
         chap.done[N] = Date.now();
-        if (N < 7 && chap.next < N + 1) { chap.next = N + 1; if (N + 1 >= 6) rewards.push(FN.t('unlockedNight', { n: N + 1 })); }
+        if (N < 6 && chap.next < N + 1) { chap.next = N + 1; if (N + 1 >= 6) rewards.push(FN.t('unlockedNight', { n: N + 1 })); }
         if (N === 5 && ch === 1 && !d.chapters[2].unlocked) { d.chapters[2].unlocked = true; rewards.push(FN.t('unlockedChapter')); cinematic = 'ch2'; }
         if (N === 5) cinematic = cinematic || (ch === 1 ? 'paycheck' : d.docs.d1 && d.docs.d2 && d.docs.d3 && d.docs.d4 ? 'trueEnding' : 'ending2');
         if (N === 6 && !d.customUnlocked[ch]) { d.customUnlocked[ch] = true; rewards.push(FN.t('unlockedCustom')); }
         if (N === 6) cinematic = cinematic || (ch === 1 ? 'letter' : 'ending6');
-        if (N === 7) cinematic = 'n7';
       }
       if (n.hadPowerOut) FN.Trophies.award('s_dark');
       FN.Save.flush();

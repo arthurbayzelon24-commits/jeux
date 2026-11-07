@@ -153,7 +153,7 @@
     } else {
       const ch = d.last.chapter || 1;
       const anyDone = Object.keys(d.chapters[1].done).length || Object.keys(d.chapters[2].done).length;
-      c.innerHTML = `${T('continue')}<span class="small">${anyDone ? esc(T('continueSub', { chapter: T('chapter', { n: ch }), night: Math.min(7, d.chapters[ch].next) })) : esc(T('newGameSub'))}</span>`;
+      c.innerHTML = `${T('continue')}<span class="small">${anyDone ? esc(T('continueSub', { chapter: T('chapter', { n: ch }), night: Math.min(6, d.chapters[ch].next) })) : esc(T('newGameSub'))}</span>`;
       c.disabled = !anyDone;
     }
     const cu = d.customUnlocked[1] || d.customUnlocked[2];
@@ -173,7 +173,7 @@
     if (d.chapters[2].unlocked) {
       html += `<div class="seg" style="grid-column:1/-1">${[1, 2].map((n) => `<button data-ch="${n}" class="${n === nightsChapter ? 'on' : ''}">${T('chapter', { n })}</button>`).join('')}</div>`;
     }
-    for (let n = 1; n <= 7; n++) {
+    for (let n = 1; n <= 6; n++) {
       const locked = n > chap.next;
       const doneN = chap.done[n];
       html += `<button class="night-card ${doneN ? 'done' : ''} ${locked ? 'locked' : ''} ${n >= 6 ? 'secret' : ''}" data-n="${n}"><b>${T('night', { n })}</b><span>${T('n' + n)}</span></button>`;
@@ -193,7 +193,7 @@
     const d = D();
     const nights = Object.keys(d.chapters[ch].done).length;
     const chars = FN.charsOf(ch).filter((id) => d.seen[id]).length;
-    const total = 7 + FN.charsOf(ch).length;
+    const total = 6 + FN.charsOf(ch).length;
     return { nights, pct: Math.round(((nights + chars) / total) * 100) };
   }
   function drawPoster(ch, locked) {
@@ -223,13 +223,13 @@
     const card = (ch) => {
       const unlocked = d.chapters[ch].unlocked;
       const p = chapterPct(ch);
-      const tr = FN.Trophies.list.filter((x) => (ch === 1 ? /^(b_first|b_krok|b_call|s_three|s_secret|s_census|s_dark|g_ch1|g_n6|g_n7)$/ : /^(b_ch2|b_wind|s_ch2three|s_mask|g_ch2|g_ch2n6|g_ch2n7)$/).test(x.id));
+      const tr = FN.Trophies.list.filter((x) => (ch === 1 ? /^(b_first|b_krok|b_call|s_three|s_secret|s_census|s_dark|g_ch1|g_n6)$/ : /^(b_ch2|b_wind|s_ch2three|s_mask|g_ch2|g_ch2n6)$/).test(x.id));
       const got = tr.filter((x) => d.trophies[x.id]).length;
-      const status = !unlocked ? T('status_locked') : p.nights >= 7 ? T('status_done') : T('status_progress');
+      const status = !unlocked ? T('status_locked') : p.nights >= 6 ? T('status_done') : T('status_progress');
       return `<button class="chapter ${unlocked ? '' : 'locked'}" data-ch="${ch}"><canvas></canvas><div class="info"><b>${T('chapter', { n: ch })} — ${ch === 1 ? 'Grimwood’s Pizza Palace' : 'Grimwood’s Fun Factory'}</b>
         <span>${status}${unlocked ? '' : ' — ' + esc(T('unlockHint1'))}</span>
         <div class="progress"><i style="width:${unlocked ? p.pct : 0}%"></i></div>
-        <span>${T('progressPct', { p: unlocked ? p.pct : 0 })} · ${T('nightsDone', { n: p.nights, t: 7 })} · ${T('trophiesCount', { n: got, t: tr.length })}</span></div></button>`;
+        <span>${T('progressPct', { p: unlocked ? p.pct : 0 })} · ${T('nightsDone', { n: p.nights, t: 6 })} · ${T('trophiesCount', { n: got, t: tr.length })}</span></div></button>`;
     };
     list.innerHTML = card(1) + card(2) + `<div class="chapter locked"><canvas data-soon="1"></canvas><div class="info"><b>${T('chapter', { n: 3 })} — ???</b><span>${T('comingSoon')}</span></div></div>`;
     list.querySelectorAll('.chapter canvas').forEach((cv) => {
@@ -594,7 +594,7 @@
     const d = D();
     const results = () => {
       const isStory = cfg.night !== 'custom';
-      const canNext = isStory && cfg.night < 7 && d.chapters[cfg.chapter].next > cfg.night;
+      const canNext = isStory && cfg.night < 6 && d.chapters[cfg.chapter].next > cfg.night;
       const o = overlay(`<div class="clockflip" style="font-size:clamp(40px,12vmin,90px)">6<span class="am">AM</span></div><div class="mid">${cfg.night === 'custom' ? T('winCustom') : T('winNight', { n: cfg.night })}</div>
         <div class="btns">${canNext ? `<button class="mbtn" data-a="n">${T('nextNight')}</button>` : ''}<button class="mbtn" data-a="m">${T('menu')}</button></div>`);
       const nb = o.querySelector('[data-a=n]');
@@ -618,7 +618,7 @@
       letter: (next) => { const doc = FN.DOCS.find((x) => x.id === 'd4'); letter(FN.L(doc.title), FN.L(doc.text), next); },
       ending2: (next) => letter(en ? 'Ending — The Factory Closes' : 'Fin — La fermeture de l’usine', en ? 'The Fun Factory closes its doors for good. The animatronics are boxed up, one by one. Somewhere in the dark, a music box keeps playing. (Find every document for another ending.)' : 'La Fun Factory ferme définitivement ses portes. Les animatroniques sont mis en caisse, un par un. Quelque part dans le noir, une boîte à musique continue de jouer. (Retrouvez tous les documents pour une autre fin.)', next),
       trueEnding: (next) => letter(en ? 'True ending — The one they waited for' : 'Vraie fin — Celui qu’ils attendaient', en ? 'With Gérard’s note in hand, you understand: they were never hunting you. They were waiting for Harold Grimwood. At 6 AM, the old mascots turn towards the empty office chair… and power down, at peace.' : 'Avec la note de Gérard, vous comprenez : ils ne vous chassaient pas. Ils attendaient Harold Grimwood. À 6 h, les vieilles mascottes se tournent vers le fauteuil vide du bureau… et s’éteignent, apaisées.', next),
-      ending6: (next) => letter(en ? 'Final closing' : 'Fermeture définitive', en ? 'Notice: the guard is dismissed for tampering with the animatronics and for odour. Night 7 remains available… for those who insist.' : 'Avis : le gardien est licencié pour avoir trafiqué les animatroniques et pour mauvaise odeur. La Nuit 7 reste disponible… pour ceux qui insistent.', next),
+      ending6: (next) => letter(en ? 'Final closing' : 'Fermeture définitive', en ? 'Notice: the guard is dismissed for tampering with the animatronics and for odour. The Custom Night stays open… for those who insist.' : 'Avis : le gardien est licencié pour avoir trafiqué les animatroniques et pour mauvaise odeur. La Custom Night reste ouverte… pour ceux qui insistent.', next),
       n7: (next) => letter(en ? 'Seventh night' : 'Septième nuit', en ? 'Nobody was supposed to come back. You did. The Custom Night is waiting for you.' : 'Personne n’était censé revenir. Vous l’avez fait. La Custom Night vous attend.', next),
     };
     let chain = [];

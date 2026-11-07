@@ -4,7 +4,7 @@
   const { rand, clamp } = FN.util;
 
   // Story difficulty per night: [bruno, gus, nora, krok]
-  const LEVELS = { 1: [0, 2, 1, 0], 2: [0, 4, 3, 2], 3: [1, 6, 5, 4], 4: [3, 8, 7, 7], 5: [5, 10, 10, 9], 6: [9, 14, 13, 13], 7: [14, 17, 16, 16] };
+  const LEVELS = { 1: [0, 2, 1, 0], 2: [0, 4, 3, 2], 3: [1, 6, 5, 4], 4: [3, 8, 7, 7], 5: [5, 10, 10, 9], 6: [9, 14, 13, 13] };
   const DRAIN = { 1: 0.38, 2: 0.44, 3: 0.48, 4: 0.51, 5: 0.54, 6: 0.58, 7: 0.6, custom: 0.55 };
   const INTERVAL = { bruno: 3.1, gus: 4.6, nora: 5.0, krok: 5.0 };
   const PATH = {
@@ -71,7 +71,7 @@
       this.fan = 0;
       this.nose = 0;
       this.hollow = null;
-      this.hollowHourChance = this.rules.hollow ? 1 : this.night === 7 ? 0.25 : this.night === 'custom' ? 0.06 : this.night >= 3 ? 0.03 : 0;
+      this.hollowHourChance = this.rules.hollow ? 1 : this.night === 6 ? 0.08 : this.night === 'custom' ? 0.06 : this.night >= 3 ? 0.03 : 0;
       this.kitchenCode = false;
     }
     callScript() { return typeof this.night === 'number' ? CALLS[this.night] : null; }

@@ -23,7 +23,7 @@
       if (act === 'continue') {
         if (FN.Game.resumeSaved()) return;
         const ch = d.last.chapter || 1;
-        const n = Math.min(7, FN.Save.data.chapters[ch].next);
+        const n = Math.min(6, FN.Save.data.chapters[ch].next);
         FN.Game.start({ chapter: ch, night: n });
       } else if (act === 'play') FN.UI.openNights(FN.Save.data.chapters[2].unlocked ? FN.Save.data.last.chapter || 1 : 1);
       else if (act === 'custom') {

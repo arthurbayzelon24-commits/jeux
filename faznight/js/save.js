@@ -88,6 +88,9 @@
       if (raw) {
         try { this.data = merge(defaults(), JSON.parse(raw)); } catch (e) { this.data = defaults(); }
       }
+      for (const ch of [1, 2]) { const c = this.data.chapters[ch]; if (c.next > 6) c.next = 6; delete c.done[7]; }
+      delete this.data.trophies.g_n7; delete this.data.trophies.g_ch2n7;
+      if (this.data.resume && this.data.resume.cfg && this.data.resume.cfg.night === 7) this.data.resume = null;
       return this.data;
     },
     /** Writes now (synchronously to localStorage, asynchronously to IndexedDB). */

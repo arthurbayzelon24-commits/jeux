@@ -6,7 +6,7 @@
   // [pepper, rico, lumi, oldkrok, oldbruno, chime, static]
   const LEVELS = {
     1: [2, 1, 0, 0, 0, 2, 0], 2: [4, 3, 2, 1, 0, 4, 0], 3: [5, 4, 4, 3, 2, 6, 1], 4: [7, 6, 6, 6, 4, 8, 3],
-    5: [9, 8, 8, 8, 6, 10, 5], 6: [12, 12, 12, 12, 10, 12, 8], 7: [16, 16, 16, 15, 14, 15, 12],
+    5: [9, 8, 8, 8, 6, 10, 5], 6: [12, 12, 12, 12, 10, 12, 8],
   };
   const IDS = ['pepper', 'rico', 'lumi', 'oldkrok', 'oldbruno', 'chime', 'static'];
   FN.ch2Levels = (n) => { const l = LEVELS[n] || LEVELS[1]; const o = {}; IDS.forEach((id, i) => (o[id] = l[i])); return o; };
@@ -65,7 +65,7 @@
       for (const id of Object.keys(PATHS)) this.a[id] = { i: 0, t: rand(3, INTERVAL[id] + 3), hallT: 0, flashes: 0 };
       this.st = { cam: null, t: 0, seen: 0, cool: 20, timer: INTERVAL.static };
       this.hollow = null;
-      this.hollowChance = this.rules.hollow ? 1 : this.night === 7 ? 0.3 : this.night === 'custom' ? 0.06 : this.night >= 3 ? 0.035 : 0;
+      this.hollowChance = this.rules.hollow ? 1 : this.night === 6 ? 0.08 : this.night === 'custom' ? 0.06 : this.night >= 3 ? 0.035 : 0;
     }
     room(id) { return PATHS[id][this.a[id].i]; }
     callScript() { return typeof this.night === 'number' ? CALLS[this.night] : null; }
