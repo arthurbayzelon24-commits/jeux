@@ -17,9 +17,10 @@
     oldkrok: ['08', '07', 'HALL'],
     rico: ['12', '03', '05', 'VENT_L', 'OFFICE'],
     lumi: ['10', '04', '06', 'VENT_R', 'OFFICE'],
+    endo: ['08', '07', '01', 'HALL', 'OFFICE'],
   };
-  const INTERVAL = { pepper: 4.6, oldbruno: 5.6, oldkrok: 5.2, rico: 4.2, lumi: 4.6, static: 7 };
-  const MASK_NEED = { pepper: 2.6, oldbruno: 4.2, rico: 2.4, lumi: 3 };
+  const INTERVAL = { endo: 5.0, pepper: 4.6, oldbruno: 5.6, oldkrok: 5.2, rico: 4.2, lumi: 4.6, static: 7 };
+  const MASK_NEED = { endo: 3.2, pepper: 2.6, oldbruno: 4.2, rico: 2.4, lumi: 3 };
 
   const CALLS = {
     1: [
@@ -65,7 +66,7 @@
       for (const id of Object.keys(PATHS)) this.a[id] = { i: 0, t: rand(3, INTERVAL[id] + 3), hallT: 0, flashes: 0 };
       this.st = { cam: null, t: 0, seen: 0, cool: 20, timer: INTERVAL.static };
       this.hollow = null;
-      this.hollowChance = this.rules.hollow ? 1 : this.night === 6 ? 0.08 : this.night === 'custom' ? 0.06 : this.night >= 3 ? 0.035 : 0;
+      this.hollowChance = this.rules.hollow ? 1 : cfg.mp ? 0.12 : this.night === 6 ? 0.08 : this.night === 'custom' ? 0.06 : this.night >= 3 ? 0.035 : 0;
     }
     room(id) { return PATHS[id][this.a[id].i]; }
     callScript() { return typeof this.night === 'number' ? CALLS[this.night] : null; }
@@ -293,7 +294,7 @@
       s.timer = INTERVAL.static;
       if (Math.random() * 20 < lvl) {
         const cams = R.cams[2].map((r) => r.id).filter((id) => id !== '11');
-        s.cam = this.camUp && Math.random() < 0.6 ? this.cam : cams[Math.floor(Math.random() * cams.length)];
+        s.cam = this.camUp && Math.random() < 0.6 && !this.cam.startsWith('P:') ? this.cam : cams[Math.floor(Math.random() * cams.length)];
         if (s.cam === '11') s.cam = '07';
         s.t = 0; s.seen = 0;
         this.glitch[s.cam] = 0.4;
@@ -347,7 +348,7 @@
           const p = clamp(k.hallT / Math.max(8, 18 - this.level('oldkrok') * 0.45), 0, 1);
           A.drawChar(ctx, 'oldkrok', 800 + Math.sin(t * 3) * 6, 440 + p * 180, 180 + p * 260, { t, pose: 'walk', phase: t * 2, light: 0.85, eyes: 1, jaw: 0.3 + p * 0.4 });
         }
-        for (const id of ['oldbruno', 'pepper']) if (this.room(id) === 'HALL') A.drawChar(ctx, id, id === 'pepper' ? 860 : 740, 560, 360, { t, pose: 'idle', light: 0.85, eyes: 1 });
+        for (const id of ['oldbruno', 'pepper', 'endo']) if (this.room(id) === 'HALL' && this.level(id) > 0) A.drawChar(ctx, id, id === 'pepper' ? 860 : id === 'endo' ? 800 : 740, 560, 360, { t, pose: 'idle', light: 0.85, eyes: 1 });
       } else {
         // eyes in the dark
         for (const id of ['oldbruno', 'pepper', 'oldkrok']) if (this.room(id) === 'HALL' && this.level(id) > 0 && Math.sin(t * 2 + id.length) > 0.3) A.drawChar(ctx, id, 800, 560, 320, { t, light: 0, eyes: 0.5 });
@@ -409,7 +410,7 @@
         const spot = room.spots[id];
         if (spot) this.camChar(ctx, map, unitH, id, spot, { t: t + id.length, pose: id === 'lumi' ? 'float' : cam.startsWith('0') && +cam <= 6 && +cam >= 5 ? 'peek' : 'idle', eyes: 1 });
       }
-      if (cam === '08') this.camChar(ctx, map, unitH, 'endo', [0.5, 0.98, 0.42], { t, pose: 'slump', light: 0.3, eyes: 0.2 });
+      if (cam === '08' && this.level('endo') <= 0) this.camChar(ctx, map, unitH, 'endo', [0.5, 0.98, 0.42], { t, pose: 'slump', light: 0.3, eyes: 0.2 });
       if (cam === '11') {
         const spot = room.spots.chime;
         const awake = this.chimeOut;
@@ -434,7 +435,7 @@
     challengeFailed() { return false; }
     saveState() { return { battery: this.battery, box: this.box, a: this.a, masked: this.masked }; }
     loadState(s) {
-      this.battery = s.battery; this.box = s.box; this.a = s.a; this.masked = s.masked || 0;
+      this.battery = s.battery; this.box = s.box; this.a = Object.assign({ endo: { i: 0, t: 6, hallT: 0, flashes: 0 } }, s.a); this.masked = s.masked || 0;
       for (const id in this.a) if (this.room(id) === 'OFFICE') this.a[id].i = 0;
     }
   }

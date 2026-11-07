@@ -103,6 +103,7 @@
       if (this.ch === 1) this.loops.rain = AU.loop('rain');
       this.startLoops && this.startLoops();
       if (this.cfg.resume) this.restore(this.cfg.resume);
+      if (this.cfg.mp && FN.MP && FN.MP.session) FN.MP.attach(this);
       else this.scheduleCall();
       this.running = true;
       this.lastFrame = performance.now();
@@ -141,6 +142,7 @@
     }
     pause() {
       if (this.over || this.paused) return;
+      if (this.cfg.mp && FN.MP) { FN.MP.pauseMenu(this); return; } // the night keeps running for the team
       this.paused = true;
       AU.stopSpeak();
       FN.UI.pauseMenu(this);
@@ -150,6 +152,7 @@
     // ------------------------------------------------ time & AI tick
     step(dt) {
       this.time += dt;
+      if (this.mp) FN.MP.tick(this, dt);
       const h = Math.min(5, Math.floor((this.time / this.duration) * 6));
       if (h !== this.hour) { this.hour = h; this.onHour(h); }
       if (this.time >= this.duration) return this.win();
@@ -230,6 +233,7 @@
     }
     /** Draw a camera feed (cover-fit). */
     drawCam(t) {
+      if (this.cam.startsWith('P:') && FN.MP) return FN.MP.drawPartner(this, t);
       const ctx = this.ctx, W = this.W, H = this.H;
       const bg = R.bg(this.ch, this.cam);
       const s = Math.max(W / R.RW, H / R.RH);
@@ -440,6 +444,7 @@
       this.ui.map = map;
       this.ui.camLabel = this.el('', 'camlabel hidden');
       this.ui.sub = this.el('', 'subtitle hidden');
+      if (this.cfg.mp && FN.MP) FN.MP.hud(this);
     }
     updateCommonHud() {
       const u = this.ui; if (!u) return;
@@ -452,8 +457,8 @@
       this.hud.classList.toggle('tablet', this.camUp && this.camAnim > 0.5);
       u.camLabel.classList.toggle('hidden', !this.camUp);
       if (this.camUp) {
-        const r = R.cam(this.ch, this.cam);
-        u.camLabel.textContent = `CAM ${r.id} — ${FN.L(r.name)}`;
+        if (this.cam.startsWith('P:')) u.camLabel.textContent = FN.MP.camLabel(this.cam.slice(2));
+        else { const r = R.cam(this.ch, this.cam); u.camLabel.textContent = `CAM ${r.id} — ${FN.L(r.name)}`; }
         for (const id in u.camBtns) u.camBtns[id].classList.toggle('on', id === this.cam);
       }
     }
@@ -512,6 +517,7 @@
       if (this.over) return;
       this.over = true;
       this.endCall(false);
+      if (this.mp) FN.MP.report(this, 'dead', id);
       for (const k in this.loops) this.loops[k] && this.loops[k].stop(0.05);
       this.loops = {};
       const d = FN.Save.data;
@@ -523,7 +529,8 @@
       FN.Scare.run(this.canvas, id, () => {
         this.destroy();
         FN.Trophies.evaluate();
-        FN.UI.gameOver(this.cfg, id, opts);
+        if (this.cfg.mp && FN.MP && FN.MP.session) FN.MP.onEnd('dead', id);
+        else FN.UI.gameOver(this.cfg, id, opts);
       });
     }
     win() {
@@ -533,6 +540,7 @@
       for (const k in this.loops) this.loops[k] && this.loops[k].stop(0.5);
       this.loops = {};
       this.destroy();
+      if (this.cfg.mp && FN.MP && FN.MP.session) { FN.MP.report(this, 'won'); FN.MP.onEnd('won'); return; }
       FN.Game.onWin(this);
     }
     quitAndSave() {

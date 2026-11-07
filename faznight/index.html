@@ -46,7 +46,7 @@
             <button class="mbtn" data-act="settings" data-i18n="settings"></button>
             <button class="mbtn" data-act="credits" data-i18n="credits"></button>
           </nav>
-          <div class="home-foot"><span id="profileLine"></span><span id="versionLine">v1.4</span></div>
+          <div class="home-foot"><span id="profileLine"></span><span id="versionLine">v1.5</span></div>
         </div>
       </section>
 
@@ -69,6 +69,12 @@
           </div>
           <div class="title-foot" id="titleFoot"></div>
         </div>
+      </section>
+
+      <!-- MULTIPLAYER: create / join / lobby -->
+      <section class="screen" id="mp">
+        <header class="bar"><button class="back" id="mpBack" aria-label="Retour">‹</button><h2 id="mpTitle"></h2></header>
+        <div class="scroll"><div class="mp" id="mpBody"></div></div>
       </section>
 
       <!-- NIGHT SELECT (per chapter) -->
@@ -155,6 +161,8 @@
     <script src="js/engine.js"></script>
     <script src="js/chapter1.js"></script>
     <script src="js/chapter2.js"></script>
+    <script src="js/net.js"></script>
+    <script src="js/mp.js"></script>
     <script src="js/gallery3d.js"></script>
     <script src="js/minigame.js"></script>
     <script src="js/ui.js"></script>

@@ -6,11 +6,12 @@
   // Story difficulty per night: [bruno, gus, nora, krok]
   const LEVELS = { 1: [0, 2, 1, 0], 2: [0, 4, 3, 2], 3: [1, 6, 5, 4], 4: [3, 8, 7, 7], 5: [5, 10, 10, 9], 6: [9, 14, 13, 13] };
   const DRAIN = { 1: 0.38, 2: 0.44, 3: 0.48, 4: 0.51, 5: 0.54, 6: 0.58, 7: 0.6, custom: 0.55 };
-  const INTERVAL = { bruno: 3.1, gus: 4.6, nora: 5.0, krok: 5.0 };
+  const INTERVAL = { bruno: 3.1, gus: 4.6, nora: 5.0, krok: 5.0, endo: 4.2 };
   const PATH = {
     gus: { '01': ['02'], '02': ['04', '05', '07'], '04': ['02', '07'], '05': ['07', '02'], '07': ['08', '05'], '08': ['DOOR_L', '07'] },
     nora: { '01': ['02'], '02': ['11', '09'], '11': ['09', '02'], '09': ['10', '11'], '10': ['DOOR_R', '09'] },
     bruno: { '01': ['02'], '02': ['06'], '06': ['09'], '09': ['10'], '10': ['DOOR_R'] },
+    endo: { '04': ['02', '05'], '02': ['05', '07'], '05': ['07'], '07': ['08', '05'], '08': ['DOOR_L', '07'] },
   };
   const SIDE_PAN = { '01': 0, '02': 0, '03': -0.8, '04': -0.7, '05': -0.6, '06': 0.7, '07': -0.5, '08': -0.8, '09': 0.5, '10': 0.8, '11': 0.7, DOOR_L: -1, DOOR_R: 1 };
 
@@ -63,6 +64,7 @@
         gus: { room: '01', t: rand(2, INTERVAL.gus), doorT: 0 },
         nora: { room: '01', t: rand(2, INTERVAL.nora), doorT: 0, charge: 0 },
         bruno: { room: '01', t: rand(2, INTERVAL.bruno), doorT: 0 },
+        endo: { room: '04', t: rand(4, 9), doorT: 0 },
         krok: { stage: 0, t: rand(2, INTERVAL.krok), lock: 0, run: false, runT: 0, runLeft: 0, bangs: 0 },
       };
       this.inOffice = null;
@@ -71,7 +73,7 @@
       this.fan = 0;
       this.nose = 0;
       this.hollow = null;
-      this.hollowHourChance = this.rules.hollow ? 1 : this.night === 6 ? 0.08 : this.night === 'custom' ? 0.06 : this.night >= 3 ? 0.03 : 0;
+      this.hollowHourChance = this.rules.hollow ? 1 : cfg.mp ? 0.12 : this.night === 6 ? 0.08 : this.night === 'custom' ? 0.06 : this.night >= 3 ? 0.03 : 0;
       this.kitchenCode = false;
     }
     callScript() { return typeof this.night === 'number' ? CALLS[this.night] : null; }
@@ -142,7 +144,7 @@
       } else if (this.loops['buzz' + side]) { this.loops['buzz' + side].stop(0.05); delete this.loops['buzz' + side]; }
       this.updateHud();
     }
-    atDoor(side) { for (const id of ['gus', 'nora', 'bruno']) if (this.a[id].room === 'DOOR_' + side) return id; return null; }
+    atDoor(side) { for (const id of ['gus', 'nora', 'bruno', 'endo']) if (this.a[id].room === 'DOOR_' + side) return id; return null; }
     onKey(e) {
       const k = e.key.toLowerCase();
       if (k === 'q' || k === 'a') this.toggleDoor('L');
@@ -182,6 +184,7 @@
       this.aiDoorChar('gus', dt);
       this.aiDoorChar('nora', dt);
       this.aiDoorChar('bruno', dt);
+      if (this.a.endo) this.aiDoorChar('endo', dt);
       this.aiKrok(dt);
       // intruder in office
       if (this.inOffice) {
@@ -427,7 +430,8 @@
         const p = clamp(1 - this.a.krok.runLeft / 2.2, 0, 1);
         this.camChar(ctx, map, unitH, 'krok', [0.5, 0.75 + p * 0.45, 0.4 + p * 0.8], { t, pose: 'walk', phase: t * 16, light: 0.5, eyes: 1, jaw: 0.6 });
       }
-      for (const id of ['gus', 'nora', 'bruno']) {
+      for (const id of ['gus', 'nora', 'bruno', 'endo']) {
+        if (!this.a[id] || (id === 'endo' && this.level('endo') <= 0)) continue;
         const c = this.a[id];
         if (c.room !== cam) continue;
         let spot = room.spots[id];
@@ -440,7 +444,7 @@
           this.camChar(ctx, map, unitH, id, spot, { t, pose: close ? 'peek' : 'idle', flip: cam === '10', eyes: 1, jaw: close && id === 'gus' ? 0.4 : 0, light: id === 'bruno' ? 0.25 : room.light });
         }
       }
-      if (cam === '04') this.camChar(ctx, map, unitH, 'endo', [0.16, 0.97, 0.78], { t, pose: 'idle', light: 0.35, eyes: Math.random() < 0.03 ? 1 : 0.25 });
+      if (cam === '04' && this.level('endo') <= 0) this.camChar(ctx, map, unitH, 'endo', [0.16, 0.97, 0.78], { t, pose: 'idle', light: 0.35, eyes: Math.random() < 0.03 ? 1 : 0.25 });
       if (cam === '06') {
         if (this.a.bruno.room === '06' && Math.random() < 0.02) AU.play('laugh', { pan: 0.6, vol: 0.2 });
         if (this.kitchenCode) {
@@ -468,7 +472,7 @@
       return { power: this.power, minPower: this.minPower, a: this.a, doors: this.doors, broken: this.broken, inOffice: this.inOffice, hadPowerOut: this.hadPowerOut };
     }
     loadState(s) {
-      this.power = s.power; this.minPower = s.minPower; this.a = s.a; this.doors = s.doors; this.broken = s.broken; this.inOffice = s.inOffice;
+      this.power = s.power; this.minPower = s.minPower; this.a = Object.assign({ endo: { room: '04', t: 6, doorT: 0 } }, s.a); this.doors = s.doors; this.broken = s.broken; this.inOffice = s.inOffice;
       this.doorA = { L: this.doors.L ? 1 : 0, R: this.doors.R ? 1 : 0 };
       if (this.power <= 0) this.powerOut();
     }

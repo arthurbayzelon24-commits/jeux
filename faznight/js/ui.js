@@ -230,6 +230,7 @@
     const nextN = Math.min(5, chap.next);
     const items = [];
     items.push(['new', T('g_new')]);
+    items.push(['mp', `${FN.MP ? FN.MP.ICON : ''}${FN.lang === 'en' ? 'Multiplayer' : 'Multijoueur'}<small>${FN.lang === 'en' ? '2 to 4 guards' : '2 à 4 gardiens'}</small>`]);
     items.push(['continue', `${T('g_continue')}<small>${res ? esc(T('resumeSub', { chapter: '', night: res.cfg.night === 'custom' ? 'C' : res.cfg.night, hour: FN.util.HOURS[res.hour || 0] + ' AM' })).replace(/^ — /, '') : anyDone ? esc(T('g_contNight', { n: nextN })) : ''}</small>`, !(res || anyDone)]);
     if (chap.next >= 6) items.push(['n6', T('g_night6')]);
     if (d.customUnlocked[ch]) items.push(['custom', T('g_custom')]);
@@ -238,7 +239,7 @@
     // stars: 5 nights, 6th night, one challenge cleared
     const stars = [chap.done[5], chap.done[6], Object.keys(d.challengesDone).some((k) => k.startsWith('c' + ch + '_'))];
     $('#titleStars').innerHTML = stars.map((s) => `<span class="${s ? 'on' : ''}">★</span>`).join('');
-    $('#titleFoot').textContent = `v1.4 · © Grimwood Entertainment`;
+    $('#titleFoot').textContent = `v1.5 · © Grimwood Entertainment`;
     $('#titleMenu').querySelectorAll('[data-t]').forEach((b) => (b.onclick = () => {
       const a = b.dataset.t; AU.play('uiSelect');
       if (a === 'new') {
@@ -249,6 +250,7 @@
       } else if (a === 'n6') FN.Game.start({ chapter: ch, night: 6 });
       else if (a === 'custom') { customCh = ch; customLv = null; show('custom'); }
       else if (a === 'all') { nightsChapter = ch; show('nights'); }
+      else if (a === 'mp') FN.MP.openMenu(ch);
     }));
     const cv = $('#titleFace');
     faceState.id = G.face[0]; faceState.next = 5;
@@ -804,5 +806,6 @@
     enterFullscreen, autoLandscape, maybeRotateHint, hideOverlay, PRESETS,
     get current() { return current; },
     openNights(ch) { nightsChapter = ch; show('nights'); },
+    goTitle,
   };
 })(window.FN);

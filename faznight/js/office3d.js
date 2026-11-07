@@ -557,6 +557,7 @@
         this.place('oldkrok', 0.1 + Math.sin(t * 3) * 0.05, 0, hallZ - 11 + p * 9, 0, { pose: 'walk', phase: t * 2, light: 1, eyes: 1, jaw: 0.3 + p * 0.4 });
       }
       if (n.room('pepper') === 'HALL') this.place('pepper', 0.35, 0, hallZ - 6, -0.1, { pose: 'idle', light: 1, eyes: 1 });
+      if (n.room('endo') === 'HALL' && n.level('endo') > 0) this.place('endo', 0.05, 0, hallZ - 9, 0, { pose: 'walk', phase: t * 1.5, light: 1, eyes: 1 });
       if (n.room('oldbruno') === 'HALL') this.place('oldbruno', -0.35, 0, hallZ - 7.5, 0.1, { pose: 'idle', light: 1, eyes: 1 });
       // vents: crouched inside the tunnel
       if (n.room('rico') === 'VENT_L') this.place('rico', -2.1, 0.14, -3.05, 0, { pose: 'peek', light: 1, eyes: n.vent.L ? 1 : 0.4 }, 0.42);

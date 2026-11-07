@@ -49,7 +49,7 @@
     document.addEventListener('visibilitychange', () => {
       const g = FN.Game.current;
       if (document.hidden) {
-        if (g && g.running && !g.over) {
+        if (g && g.running && !g.over && !g.cfg.mp) {
           g.pause();
           FN.Save.data.resume = { cfg: Object.assign({}, g.cfg, { resume: null }), state: g.serialize(), hour: g.hour, saved: Date.now() };
           FN.Save.flush();

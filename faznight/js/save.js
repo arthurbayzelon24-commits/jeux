@@ -16,7 +16,7 @@
       },
       chapters: {
         1: { unlocked: true, next: 1, done: {} },
-        2: { unlocked: false, next: 1, done: {} },
+        2: { unlocked: true, next: 1, done: {} },
       },
       customUnlocked: { 1: false, 2: false },
       customRecords: { 1: 0, 2: 0 },
@@ -88,6 +88,7 @@
       if (raw) {
         try { this.data = merge(defaults(), JSON.parse(raw)); } catch (e) { this.data = defaults(); }
       }
+      this.data.chapters[2].unlocked = true; // game 2 is open from the start
       for (const ch of [1, 2]) { const c = this.data.chapters[ch]; if (c.next > 6) c.next = 6; delete c.done[7]; }
       delete this.data.trophies.g_n7; delete this.data.trophies.g_ch2n7;
       if (this.data.resume && this.data.resume.cfg && this.data.resume.cfg.night === 7) this.data.resume = null;

@@ -163,3 +163,17 @@ Nouveautés :
 - Jumpscares : un cri filtré qui monte puis s'effondre, et un choc métallique.
 - Pas des animatroniques : talon puis pointe, avec un sifflement de servomoteur.
 - Pendant les nuits : bourdonnement des néons. Au chapitre 1, de la pluie sur le toit, et parfois du tonnerre qui fait vaciller la lumière.
+
+## Version 1.5 — multijoueur
+
+- **Le jeu 2 (Fun Factory) est ouvert dès le début.**
+- **Multijoueur** : sur l'écran titre d'un jeu, choisissez Multijoueur.
+  - **Créer une partie** : choisissez le nombre de joueurs (2 à 4) et la nuit. Un code de 4 lettres s'affiche dans le salon.
+  - **Rejoindre une partie** : tapez le code. L'hôte lance la nuit quand au moins 2 joueurs sont là.
+  - Chaque joueur a son propre bureau et ses propres animatroniques, mais la nuit est la même : une horloge commune, celle de l'hôte.
+  - Pendant la nuit, la tablette des caméras a un bouton par coéquipier. On voit son bureau en direct (portes, lumières, animatronique à la porte ou dans le bureau, lampe, masque, énergie). On peut lui **envoyer 10 % d'énergie** ou le **prévenir** d'un danger.
+  - En équipe, il y a plus d'animatroniques : **Endo-7** se réveille et chasse (chapitre 1 : depuis les coulisses vers la porte gauche ; chapitre 2 : par le grand couloir). Hank le Creux apparaît plus souvent, et chaque joueur en plus rend les animatroniques plus agressifs.
+  - Un joueur éliminé voit le bilan de l'équipe en direct. À la fin, l'hôte peut relancer une nouvelle nuit depuis le salon.
+- **En ligne** : les joueurs ouvrent le même lien claude.ai du jeu, avec un compte qui a accès au lien partagé.
+- **Mode local** : hors du lien claude.ai, le multijoueur fonctionne entre plusieurs onglets du même navigateur.
+- Les nuits en multijoueur ne comptent pas dans la progression de l'histoire.

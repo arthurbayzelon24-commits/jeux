@@ -497,6 +497,10 @@
     if (!cache[key]) { const cv = A.canvas(w, h); fn(cv.getContext('2d'), w, h); cache[key] = cv; }
     return cache[key];
   }
+  // Endo-7 (team nights): where it stands on each camera
+  const spot = (arr, id, v) => { const r = arr.find((x) => x.id === id); r.spots = r.spots || {}; r.spots.endo = v; };
+  spot(ch1, '04', [0.16, 0.97, 0.78]); spot(ch1, '02', [0.32, 0.7, 0.45]); spot(ch1, '05', [0.68, 0.9, 0.62]); spot(ch1, '07', [0.52, 0.75, 0.42]); spot(ch1, '08', [0.62, 1.02, 0.92]);
+  spot(ch2, '08', [0.5, 0.98, 0.42]); spot(ch2, '07', [0.38, 0.84, 0.52]); spot(ch2, '01', [0.62, 0.86, 0.66]);
   FN.Rooms = {
     RW, RH, OW, OH,
     cams: { 1: ch1, 2: ch2 },
