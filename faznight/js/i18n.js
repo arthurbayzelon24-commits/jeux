@@ -5,7 +5,7 @@ window.FN = window.FN || {};
     fr: {
       tagline: "La collection d'horreur animatronique",
       bootPresents: 'présente', bootWarnTitle: 'Avertissement', bootWarn: 'Ce jeu contient des images effrayantes, des sons soudains et forts, et des lumières qui clignotent.', bootHeadphones: 'Pour une meilleure expérience : jouez dans le noir, avec un casque.',
-      bootScary: 'Ce jeu a été conçu pour vous faire peur. S’il vous plaît, veuillez ne pas mourir. Sinon, vous serez aspiré dans l’écran et vous en ressortirez avec un bras en moins. Vous ne vivrez plus et vous perdrez du sang. Vous risquez de vomir pendant l’attraction. Votre écran risque de bouger.',
+      bootScary: 'Veuillez ne pas rentrer dans l’écran, sinon vous allez mourir. Les animatroniques peuvent sortir légèrement de l’écran. Si vous mourez, ils sortiront littéralement de l’écran et vous tueront dans votre corps. Sinon, vous pourriez vomir ou avoir une crise cardiaque.',
       devBy: 'Développé par Dadabot 132', difficulty: 'Difficulté', chooseGame: 'Choisissez un jeu', soonStamp: 'COMING SOON', g_new: 'Nouvelle partie', g_continue: 'Continuer', g_night6: '6e nuit', g_custom: 'Custom Night', g_all: 'Toutes les nuits', g_locked2: 'Terminez la Nuit 5 du jeu 1 pour l’ouvrir.', g_play: 'Jouer', g_soon: 'Le prochain jeu de la collection est en préparation.', g_ad: 'Offre d’emploi', g_contNight: 'Nuit {n}',
       play: 'Jouer', continue: 'Continuer', resume: 'Reprendre la nuit', collection: 'Collection', trophies: 'Trophées',
       customNight: 'Custom Night', extras: 'Extras', settings: 'Paramètres', credits: 'Crédits',
@@ -61,7 +61,7 @@ window.FN = window.FN || {};
     en: {
       tagline: 'The animatronic horror collection',
       bootPresents: 'presents', bootWarnTitle: 'Warning', bootWarn: 'This game contains frightening images, sudden loud sounds and flashing lights.', bootHeadphones: 'For the best experience: play in the dark, with headphones.',
-      bootScary: 'This game was designed to scare you. Please, do not die. Otherwise you will be pulled into the screen and come back out with one arm missing. You will no longer be alive and you will lose blood. You may throw up during the ride. Your screen may shake.',
+      bootScary: 'Please do not go into the screen, or you will die. The animatronics may come slightly out of the screen. If you die, they will literally come out of the screen and kill you in your body. Otherwise, you could throw up or have a heart attack.',
       devBy: 'Developed by Dadabot 132', difficulty: 'Difficulty', chooseGame: 'Choose a game', soonStamp: 'COMING SOON', g_new: 'New game', g_continue: 'Continue', g_night6: '6th night', g_custom: 'Custom Night', g_all: 'All nights', g_locked2: 'Finish Night 5 of game 1 to open it.', g_play: 'Play', g_soon: 'The next game in the collection is in the works.', g_ad: 'Help wanted', g_contNight: 'Night {n}',
       play: 'Play', continue: 'Continue', resume: 'Resume night', collection: 'Collection', trophies: 'Trophies',
       customNight: 'Custom Night', extras: 'Extras', settings: 'Settings', credits: 'Credits',
