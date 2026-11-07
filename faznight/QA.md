@@ -47,7 +47,7 @@ Il n’y a pas de collisions physiques : les personnages se déplacent entre des
 ## Parties complètes jouées par le joueur automatique (rendu 2.5D, temps accéléré)
 
 - Chapitre 1 : Nuits 1, 2, 3, 4, 5 et 6 gagnées au moins une fois. Les défaites viennent surtout de coupures de courant à 4-5 h.
-- Chapitre 2 : Nuits 3 et 4 gagnées après l’équilibrage (le temps pour mettre le masque passe de 0,65-1,3 s à 1,0-1,65 s).
+- Chapitre 2 : Nuits 1, 2 et 5 gagnées lors des tests précédents. Nuits 3 et 4 gagnées après l’équilibrage (le temps pour mettre le masque passe de 0,65-1,3 s à 1,0-1,65 s). La Nuit 6 n’a pas encore été jouée en entier par le joueur automatique.
 
 ## Erreurs JavaScript
 
