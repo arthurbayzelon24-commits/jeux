@@ -154,7 +154,13 @@
       for (const id in this.models) this.models[id].userData.placed = false;
       this.cam.rotation.set(0, (0.5 - this.n.pan) * 2 * this.yawMax, 0, 'YXZ');
       const sh = this.n.shake;
-      if (sh) { this.cam.position.x = (Math.random() - 0.5) * sh * 0.06; this.cam.position.y = 1.35 + (Math.random() - 0.5) * sh * 0.06; } else { this.cam.position.x = 0; this.cam.position.y = 1.35; }
+      // the guard breathes: slow head bob and roll, faster and shakier when something is close
+      const danger = this.n.inOffice || this.n.intr || (this.n.atDoor && (this.n.atDoor('L') || this.n.atDoor('R'))) || this.n.chimeOut ? 1 : 0;
+      this.breath = (this.breath || 0) + (danger ? 0.09 : 0.035);
+      const by = Math.sin(this.breath) * (0.006 + danger * 0.006), roll = Math.sin(this.breath * 0.5) * (0.004 + danger * 0.006);
+      this.cam.position.x = sh ? (Math.random() - 0.5) * sh * 0.06 : 0;
+      this.cam.position.y = 1.35 + by + (sh ? (Math.random() - 0.5) * sh * 0.06 : 0);
+      this.cam.rotation.z = roll;
       this.update(t);
       this.updateArms(t);
       for (const id in this.models) if (!this.models[id].userData.placed) this.models[id].visible = false;
@@ -269,6 +275,19 @@
       // tiny Bruno plush on the desk
       this.plush = G3.build('bruno'); G3.applyPose(this.plush, { t: 2, light: 1, eyes: 0.2 });
       this.plush.scale.setScalar(0.12); this.plush.position.set(1.05, 0.9, -0.1); this.plush.rotation.y = -0.4; S.add(this.plush);
+      // --- set dressing (v1.3): pipes, hanging cables, wall clock, bin, papers
+      const pipeM = std('#3a3d40', { metalness: 0.7, roughness: 0.5, map: G3.wornTex(61, 0.9) });
+      for (const z of [-2.3, -1.9]) { const p = new T3.Mesh(new T3.CylinderGeometry(0.05, 0.05, 6.2, 12), pipeM); p.rotation.z = Math.PI / 2; p.position.set(0, 2.88, z); S.add(p); }
+      for (let i = 0; i < 5; i++) { const x = -2.4 + i * 1.2; const c = new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3([new T3.Vector3(x, 2.95, -2.1), new T3.Vector3(x + 0.2, 2.55 - (i % 2) * 0.15, -1.6), new T3.Vector3(x + 0.5, 2.95, -1.1)]), 12, 0.012, 5), std('#111')); S.add(c); }
+      const clockC = A.canvas(256, 256), clockT = new T3.CanvasTexture(clockC); clockT.encoding = T3.sRGBEncoding;
+      const clock = new T3.Mesh(new T3.CircleGeometry(0.22, 32), new T3.MeshStandardMaterial({ map: clockT, roughness: 0.4 }));
+      clock.position.set(1.65, 2.35, -2.57); S.add(clock);
+      const rim = new T3.Mesh(new T3.TorusGeometry(0.22, 0.02, 8, 32), std('#2a1a10', { metalness: 0.3 })); rim.position.copy(clock.position); S.add(rim);
+      this.clock = { c: clockC, t: clockT, last: -1 };
+      const bin = new T3.Mesh(new T3.CylinderGeometry(0.16, 0.13, 0.4, 16, 1, true), std('#2a2d30', { metalness: 0.6, side: T3.DoubleSide, map: G3.wornTex(71, 0.8) })); bin.position.set(-1.6, 0.2, -0.1); bin.castShadow = true; S.add(bin);
+      for (let i = 0; i < 4; i++) { const p = new T3.Mesh(new T3.IcosahedronGeometry(0.05, 0), std('#d8d0c0')); p.position.set(-1.6 + (i - 1.5) * 0.04, 0.38 + (i % 2) * 0.03, -0.1); S.add(p); }
+      const r = A.rng(5);
+      for (let i = 0; i < 9; i++) { const p = new T3.Mesh(new T3.PlaneGeometry(0.21, 0.29), std('#d8d0c0', { side: T3.DoubleSide, map: G3.wornTex(80 + i, 0.5) })); p.rotation.set(-Math.PI / 2, 0, r() * 6); p.position.set((r() - 0.5) * 4.5, 0.003 + i * 0.0005, -1.8 + r() * 2.2); p.receiveShadow = true; S.add(p); }
       // ceiling lamp
       const lampG = new T3.Group(); lampG.position.set(0, 3, -0.7); S.add(lampG);
       box(std('#111'), 0.01, 0.6, 0.01, 0, -0.3, 0, lampG, false);
@@ -334,6 +353,22 @@
       const press = n._press && now - n._press.t < 420 ? n._press.side : null;
       return { L: n.lights.L || press === 'L' ? 1 : 0, R: n.lights.R || press === 'R' ? 1 : 0, tab: n.camUp ? 1 : 0, fl: 0 };
     }
+    /** The wall clock shows the night's real hour; its glass dims with the power. */
+    drawClock() {
+      const n = this.n, k = this.clock, frac = (n.time / n.duration) * 6, key = Math.floor(frac * 12);
+      if (key === k.last) return;
+      k.last = key;
+      const x = k.c.getContext('2d'), W = 256;
+      x.fillStyle = '#e8dfc8'; x.fillRect(0, 0, W, W); A.grime(x, 0, 0, W, W, 12, 30, '#3a2410', 0.3);
+      x.fillStyle = '#1a1412'; x.font = 'bold 30px Georgia'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      for (let i = 1; i <= 12; i++) { const a = (i / 12) * Math.PI * 2 - Math.PI / 2; x.fillText(String(i), W / 2 + Math.cos(a) * 96, W / 2 + Math.sin(a) * 96); }
+      const hour = (12 + Math.floor(frac)) % 12, min = (frac % 1) * 60;
+      const hand = (ang, len, w) => { x.save(); x.translate(W / 2, W / 2); x.rotate(ang); x.fillStyle = '#111'; x.fillRect(-w / 2, -len, w, len); x.restore(); };
+      hand(((hour + min / 60) / 12) * Math.PI * 2, 58, 9); hand((min / 60) * Math.PI * 2, 86, 5);
+      x.fillStyle = '#7a1010'; x.beginPath(); x.arc(W / 2, W / 2, 9, 0, 7); x.fill();
+      x.fillStyle = '#7a1010'; x.font = '16px Georgia'; x.fillText('GRIMWOOD', W / 2, W * 0.68);
+      k.t.needsUpdate = true;
+    }
     update(t) {
       const n = this.n;
       // fan
@@ -350,8 +385,10 @@
       this.beamLamp.material.opacity = (this.lamp.intensity / 1.25) * 0.09;
       this.beamL.material.opacity = n.lights.L && n.doorA.L < 0.5 ? 0.26 : 0;
       this.beamR.material.opacity = n.lights.R && n.doorA.R < 0.5 ? 0.26 : 0;
-      this.dust.update(t); this.dust.p.material.opacity = out ? 0.05 : 0.3;
+      this.dust.update(t);
+      if (this.balloons) for (const b of this.balloons) b.b.position.y = b.y + Math.sin(t * 0.9 + b.ph) * 0.03; this.dust.p.material.opacity = out ? 0.05 : 0.3;
       this.phoneLed.visible = !out && Math.floor(t * 2) % 2 === 0;
+      this.drawClock();
       for (const side of ['L', 'R']) {
         const x = side === 'L' ? -3.05 : 3.05, sg = side === 'L' ? -1 : 1;
         const d = n.doorA[side];
@@ -455,6 +492,17 @@
       mini('pepper', -1.05, 0.3); mini('rico', 1.1, -0.4);
       const conf = ['#ff66cc', '#66ccff', '#ffcc66'];
       for (let i = 0; i < 40; i++) { const r = A.rng(i + 9); const c = new T3.Mesh(new T3.PlaneGeometry(0.02, 0.012), new T3.MeshBasicMaterial({ color: conf[i % 3], side: T3.DoubleSide })); c.position.set((r() - 0.5) * 2.5, 0.895, -0.6 + r() * 0.8); c.rotation.set(-Math.PI / 2, 0, r() * 6); S.add(c); }
+      // --- set dressing (v1.3): balloons on strings, streamers, gift boxes
+      const cols = [0xff4fa8, 0x4fa8ff, 0xffd24f, 0x9a4fff];
+      for (let i = 0; i < 7; i++) {
+        const side = i < 4 ? -1 : 1, x = side * (2.35 + (i % 2) * 0.25), z = -2.2 + (i % 4) * 0.2, y = 2.0 + (i % 3) * 0.18;
+        const bm = new T3.MeshPhysicalMaterial({ color: cols[i % 4], roughness: 0.25, clearcoat: 1 });
+        const b = new T3.Mesh(new T3.SphereGeometry(0.16, 20, 16), bm); b.scale.set(1, 1.18, 1); b.position.set(x, y, z); b.castShadow = true; S.add(b);
+        const str = new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3([new T3.Vector3(x, y - 0.18, z), new T3.Vector3(x + 0.05, y - 0.8, z), new T3.Vector3(x - side * 0.3, 0.9, z + 0.4)]), 10, 0.003, 4), std('#ddd')); S.add(str);
+        (this.balloons = this.balloons || []).push({ b, y, ph: i });
+      }
+      for (let i = 0; i < 6; i++) { const x = -2.9 + i * 1.16; const s2 = new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3([new T3.Vector3(x, 2.75, -2.5), new T3.Vector3(x + 0.58, 2.45, -2.2), new T3.Vector3(x + 1.16, 2.75, -2.5)]), 14, 0.02, 5), new T3.MeshStandardMaterial({ color: cols[i % 4], roughness: 0.7 })); S.add(s2); }
+      for (const [x, z, c] of [[-1.9, -1.6, 0xd8336b], [1.95, -1.7, 0x3b7dd8]]) { const g = new T3.Group(); g.position.set(x, 0, z); S.add(g); const bx = new T3.Mesh(new T3.BoxGeometry(0.4, 0.34, 0.4), std('#ffffff', { color: c, roughness: 0.6 })); bx.position.y = 0.17; bx.castShadow = true; g.add(bx); const rib = std('#ffd24f', { metalness: 0.4 }); const r1 = new T3.Mesh(new T3.BoxGeometry(0.42, 0.35, 0.05), rib); r1.position.y = 0.17; g.add(r1); const r2 = r1.clone(); r2.rotation.y = Math.PI / 2; g.add(r2); }
       // party lights in the office
       this.lightA = new T3.PointLight(0xff50b0, 0.5, 6, 2); this.lightA.position.set(-2.2, 2.4, -1.2); S.add(this.lightA);
       this.lightB = new T3.PointLight(0x5080ff, 0.5, 6, 2); this.lightB.position.set(2.2, 2.4, -1.2); S.add(this.lightB);
@@ -499,6 +547,7 @@
       this.beamF.material.opacity = n.flash ? 0.17 + Math.random() * 0.015 : 0;
       this.beamVL.material.opacity = n.vent.L ? 0.14 : 0; this.beamVR.material.opacity = n.vent.R ? 0.14 : 0;
       this.dust.update(t);
+      if (this.balloons) for (const b of this.balloons) b.b.position.y = b.y + Math.sin(t * 0.9 + b.ph) * 0.03;
       const hallZ = -2.6;
       // hallway occupants (lit only by the flashlight; eyes glow in the dark)
       if (n.hollow) this.place('hollow', 0.2, 0, hallZ - 9.5, 0, { pose: 'slump', light: 1, eyes: 1 });

@@ -25,14 +25,34 @@
         const grow = clamp(t / 0.28, 0, 1);
         const h = H * (1.3 + grow * 1.25 + Math.sin(t * 9) * 0.03);
         const sx = Math.sin(t * 61) * H * 0.03, sy = Math.cos(t * 53) * H * 0.025;
-        A.drawChar(ctx, id, W / 2 + sx, H * (1.85 + grow * 0.6) + sy, h, { t: t * 3, pose: id === 'chime' ? 'dance' : 'attack', jaw: 1, light: 0.95, eyes: 1, scare: true, tilt: Math.sin(t * 40) * 0.06 });
+        A.drawChar(ctx, id, W / 2 + sx, H * (2.55 + grow * 0.5) + sy, h, { t: t * 3, pose: id === 'chime' ? 'dance' : 'attack', jaw: 1, light: 0.95, eyes: 1, scare: true, tilt: Math.sin(t * 40) * 0.06 });
         if (t < 0.12) { ctx.fillStyle = `rgba(255,255,255,${0.7 - t * 5})`; ctx.fillRect(0, 0, W, H); }
         ctx.fillStyle = `rgba(160,0,0,${0.15 + Math.random() * 0.12})`; ctx.fillRect(0, 0, W, H);
+        FN.Scare.glitch(ctx, W, H, 0.6 + Math.sin(t * 30) * 0.4);
         A.staticFx(ctx, W, H, 0.1 + (t > 1.1 ? (t - 1.1) * 2.5 : 0), t);
         if (t < 1.45) requestAnimationFrame(frame);
         else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); done && done(); }
       };
       requestAnimationFrame(frame);
+    },
+    /** Analog damage: RGB split and torn horizontal bands, `k` 0..1. */
+    glitch(ctx, W, H, k) {
+      if (k <= 0.02) return;
+      const buf = FN.Scare._buf || (FN.Scare._buf = document.createElement('canvas'));
+      if (buf.width !== W || buf.height !== H) { buf.width = W; buf.height = H; }
+      const b = buf.getContext('2d');
+      b.globalCompositeOperation = 'copy'; b.drawImage(ctx.canvas, 0, 0);
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+      // chromatic split
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22 * k;
+      const off = Math.round(W * 0.008 * k + 2);
+      ctx.filter = 'none';
+      ctx.drawImage(buf, off, 0); ctx.drawImage(buf, -off, 0);
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+      // torn bands
+      const n = 2 + Math.floor(Math.random() * 4 * k);
+      for (let i = 0; i < n; i++) { const y = Math.random() * H, h = H * (0.01 + Math.random() * 0.05), dx = (Math.random() - 0.5) * W * 0.08 * k; ctx.drawImage(buf, 0, y, W, h, dx, y, W, h); }
+      ctx.restore();
     },
   };
 
@@ -232,6 +252,7 @@
       if (gl) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H * 0.999); A.staticFx(ctx, W, H, 0.6, t); this.camText(FN.t('signalLost'), W / 2, H / 2, 0.05); }
       // horizontal interference bars
       if (!perf) for (let i = 0; i < 2; i++) { const y = ((t * 140 + i * 377) % (H + 80)) - 40; ctx.fillStyle = 'rgba(255,255,255,0.035)'; ctx.fillRect(0, y, W, 26 * this.dpr); }
+      if (this.camSwitchT > 0.05 && !perf) FN.Scare.glitch(ctx, W, H, this.camSwitchT * 3);
       A.scanlines(ctx, W, H);
       // REC + stamp
       const u = Math.max(12, H * 0.028);
@@ -255,6 +276,8 @@
     camChar(ctx, map, unitH, id, spot, o) {
       const [x, y] = map(spot[0], spot[1]);
       const opt = Object.assign({ light: R.cam(this.ch, this.cam).light, eyes: 0.8 }, o);
+      const tt = performance.now() / 1000, slot = Math.floor(tt / 9 + id.length);
+      if (opt.stare == null && (opt.pose || 'idle') === 'idle' && Math.sin(slot * 7.31 + id.charCodeAt(0)) > 0.55 && (tt / 9 + id.length) % 1 > 0.55) { opt.stare = true; opt.eyes = Math.max(opt.eyes, 1); }
       opt.light *= 0.75;
       A.drawChar(ctx, id, x, y, spot[2] * unitH, opt);
       if ((o && o.light) !== 0 && !this.camSwitchT) FN.Trophies.seen(id);

@@ -98,3 +98,46 @@ Animations : attente, marche, course, regard, bouche, yeux, attaque et jumpscare
 Nouveautés :
 - **Endo-7** : un endosquelette secret, visible sur les caméras des coulisses et de l'atelier.
 - **Le gardien** : un modèle humain personnalisable (uniforme, tenue, teint, cheveux, accessoires à débloquer). Il apparaît dans les cinématiques, et ses mains sont visibles à la première personne pendant les nuits.
+
+## Version 1.3 — graphismes, interface, animatroniques
+
+**Animatroniques**
+- Costumes plus crédibles : coutures, manchettes aux coudes et aux genoux, col, pectoraux, membres plus musclés, pieds plus massifs.
+- Détails propres à chacun :
+  - Bruno : boutons ;
+  - Gus : sangle de basse ;
+  - Nora : crête et plumes ;
+  - Krok et Vieux Krok : crête dorsale ;
+  - Pepper et Rico : lignes de moulage et étoile ;
+  - Lumi : cœur lumineux qui pulse ;
+  - Madame Chime : porcelaine fissurée ;
+  - Static : revers de costume et voyant clignotant ;
+  - Hank le Creux : bouche cousue ;
+  - versions abîmées : trous dans le revêtement.
+- Yeux avec reflet humide.
+- Mouvements de tête « servomoteur » : la tête tient une position, puis se déplace d'un coup.
+- Claquements de mâchoire, démarche lourde qui tangue.
+- Sur les caméras, un animatronique fixe parfois l'objectif.
+
+**Graphismes**
+- Rayons de lumière visibles : lampe du plafond, lumières des portes, lampe torche, conduits.
+- Poussière qui flotte dans l'air.
+- Respiration du gardien : la caméra se balance doucement et s'agite quand une menace est proche.
+- Jumpscares recadrés sur le visage, avec décalage de couleurs et image déchirée. Les changements de caméra se déchirent aussi.
+- Bureau 1 : tuyaux, câbles, poubelle, papiers au sol, et une horloge murale qui affiche la vraie heure de la nuit.
+- Bureau 2 : ballons qui flottent, guirlandes, cadeaux.
+- Écran d'accueil : un projecteur balaie la scène, et de temps en temps un animatronique tourne la tête vers vous.
+
+**Interface**
+- Écran de démarrage avec avertissement, qui débloque aussi le son sur iPhone.
+- Nouvelles polices :
+  - IM Fell English SC pour les titres ;
+  - Special Elite pour les menus ;
+  - VT323 pour l'interface de jeu et les caméras.
+
+  Hors ligne, des polices de secours s'affichent.
+- Boutons de jeu en plaques métalliques avec voyant et icônes dessinées.
+- Jauge de batterie à 5 segments qui clignote quand elle est faible.
+- Cadre de tablette quand les caméras sont levées.
+- Cartes de nuits avec une image de caméra animée et une jauge de difficulté.
+- Galerie : rotation automatique quand on ne touche pas l'écran, et le modèle sort de l'ombre avec les yeux qui s'allument.

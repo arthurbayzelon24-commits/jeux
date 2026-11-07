@@ -352,6 +352,8 @@
       if (L.eyeWhite !== false) ball(M.eyeball, o.r, o.r * (o.ry || 1), o.r * 0.95, 0, 0, 0, eye);
       const iris = ball(M.iris, o.r * 0.5, o.r * 0.5 * (o.ry || 1), o.r * 0.18, 0, 0, o.r * 0.88, eye);
       ball(M.pupil, o.r * 0.2, o.r * 0.24 * (o.ry || 1), o.r * 0.08, 0, 0, o.r * 0.98, eye);
+      // wet specular highlight so the eyes read as glass, not paint
+      ball(new T.MeshBasicMaterial({ color: 0xffffff }), o.r * 0.09, o.r * 0.09, o.r * 0.03, -o.r * 0.22, o.r * 0.24, o.r * 1.0, eye);
       const sp = new T.Sprite(new T.SpriteMaterial({ map: glowTex(), color: new T.Color(L.eye), blending: T.AdditiveBlending, depthWrite: false, transparent: true }));
       sp.scale.set(o.r * 4.5, o.r * 4.5, 1); sp.position.set(0, 0, o.r * 1.2); eye.add(sp);
       // eyelids: upper and lower half-shells that close for blinks

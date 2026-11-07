@@ -58,7 +58,7 @@
       const load = () => {
         if (model) { scene.remove(model); model.traverse((o) => o.geometry && o.geometry.type === 'TubeGeometry' && o.geometry.dispose()); }
         const cid = ids[idx];
-        try { model = FN.Models.build(cid); }
+        try { model = FN.Models.build(cid); model.userData.enter = performance.now(); }
         catch (e) {
           console.error(e);
           model = new T.Group();
@@ -87,7 +87,8 @@
       // orbit controls (mouse, touch, pinch, wheel)
       const pts = new Map();
       let pinch0 = 0, dist0 = 0;
-      cv.addEventListener('pointerdown', (e) => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); dist0 = st.tDist; } });
+      let lastTouch = performance.now();
+      cv.addEventListener('pointerdown', (e) => { lastTouch = performance.now(); cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); dist0 = st.tDist; } });
       cv.addEventListener('pointermove', (e) => {
         if (!pts.has(e.pointerId)) return;
         const prev = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
@@ -104,6 +105,7 @@
         requestAnimationFrame(frame);
         const w = cv.clientWidth, h = cv.clientHeight;
         if (cv.width !== Math.round(w * R.getPixelRatio()) || cv.height !== Math.round(h * R.getPixelRatio())) { R.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }
+        if (!pts.size && performance.now() - lastTouch > 3500 && st.tDist > 2) st.tYaw += 0.0035; // slow turntable when idle
         for (const k of ['yaw', 'pitch', 'dist', 'ty']) st[k] += (st['t' + k[0].toUpperCase() + k.slice(1)] - st[k]) * 0.12;
         const t = performance.now() / 1000, ct = t - clipT0;
         cam.position.set(Math.sin(st.yaw) * Math.cos(st.pitch) * st.dist, st.ty + Math.sin(st.pitch) * st.dist, Math.cos(st.yaw) * Math.cos(st.pitch) * st.dist);
@@ -115,7 +117,13 @@
         else if (clip === 'eyes') { o.pose = 'idle'; o.look = Math.sin(ct * 1.7) * 0.8; o.eyes = 0.6 + Math.abs(Math.sin(ct * 2)) * 0.6; }
         else if (clip === 'attack' || clip === 'scare') { o.pose = 'attack'; o.jaw = 1; }
         else o.pose = 'idle';
-        if (model.userData && model.userData.L) FN.Models.pose(model, o);
+        if (model.userData && model.userData.L) {
+          FN.Models.pose(model, o);
+          // entrance: rises out of the dark while its eyes power on
+          const e = Math.min(1, (performance.now() - (model.userData.enter || 0)) / 900);
+          model.position.y = (1 - e) * (1 - e) * -0.6;
+          if (e < 1) for (const ey of model.userData.eyes || []) if (ey.iris) { ey.iris.material.emissiveIntensity *= e; ey.sp.material.opacity *= e; }
+        }
         if (clip === 'scare' && ct < 1.4) { cam.position.x += (Math.random() - 0.5) * 0.04; cam.position.y += (Math.random() - 0.5) * 0.04; key.color.setHex(0xff4020); } else key.color.setHex(0xffe0c0);
         R.render(scene, cam);
       };

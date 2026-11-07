@@ -1,6 +1,6 @@
 # FAZNIGHT — Contrôle qualité
 
-Liste générée par un test automatique dans Chromium (script Playwright), le 7 novembre 2026, après les corrections de la version 1.2.2.
+Liste générée par un test automatique dans Chromium (script Playwright), le 7 novembre 2026, après la mise à jour 1.3 (graphismes, interface, animatroniques).
 
 ## Nuits
 

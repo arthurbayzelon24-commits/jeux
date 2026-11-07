@@ -595,7 +595,7 @@
         ${D().settings.immersion ? '' : `<div class="small"><b>${T('tips')} :</b> ${esc(FN.L(c.hint))}</div>`}
         <div class="btns"><button class="mbtn" data-a="r">${T('retry')}</button><button class="mbtn" data-a="m">${T('menu')}</button></div>`);
       const cv = o.querySelector('canvas'); fitCanvas(cv, 0.6);
-      const a = animate(cv, (ctx, W, H, t) => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); A.drawChar(ctx, id, W / 2, H * 1.3, H * 1.1, { t, light: 0.15, eyes: 0.7 }); A.staticFx(ctx, W, H, 0.35, t); });
+      const a = animate(cv, (ctx, W, H, t) => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); A.drawChar(ctx, id, W / 2, H * 1.62, H * 1.1, { t, light: 0.2, eyes: 0.8, stare: true }); A.staticFx(ctx, W, H, 0.35, t); });
       if (!menuRAF) menuRAF = requestAnimationFrame(menuLoop);
       AU.loop('staticNoise', { vol: 0.04 });
       const leave = () => { anims.delete(a); AU.stopAllLoops(0.2); hideOverlay(); };
