@@ -582,7 +582,7 @@
   /** Analog static over the whole canvas. */
   function staticFx(ctx, w, h, alpha, t) {
     if (alpha <= 0.005) return;
-    const fr = getNoise()[Math.floor((t || performance.now() / 1000) * 30) % 4];
+    const fr = getNoise()[((Math.floor((t || performance.now() / 1000) * 30) % 4) + 4) % 4]; // t can be slightly negative
     ctx.save(); ctx.globalAlpha = Math.min(1, alpha);
     const p = ctx.createPattern(fr, 'repeat');
     ctx.translate(Math.random() * 192, Math.random() * 192);

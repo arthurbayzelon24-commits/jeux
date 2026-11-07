@@ -24,41 +24,56 @@
     renderMenu();
   };
   function setTitle(t) { $('#mpTitle').textContent = t; }
+  const COLORS = ['#ff3b30', '#3b9bff', '#3bd16b', '#ffb300'];
+  const avatar = (i, filled) => `<svg viewBox="0 0 40 40" class="mp-av" style="--c:${COLORS[i % 4]}"><circle cx="20" cy="20" r="19" class="ring"/>${filled ? '<circle cx="20" cy="15" r="6.5" class="fill"/><path d="M8 33c1.6-6.2 6.2-9.2 12-9.2s10.4 3 12 9.2" class="fill"/>' : '<text x="20" y="26" text-anchor="middle" class="q">?</text>'}</svg>`;
+  /** Step indicator: 1 nickname, 2 game, 3 lobby. */
+  const steps = (k) => `<ol class="mp-steps">${[L('Pseudo', 'Nickname'), L('Partie', 'Game'), L('Salon', 'Lobby')].map((t, i) => `<li class="${i < k ? 'done' : ''} ${i === k ? 'now' : ''}"><span>${i + 1}</span>${t}</li>`).join('')}</ol>`;
+  /** Every view change slides in instead of popping. */
+  function view(html) { const b = body(); b.innerHTML = html; b.classList.remove('mp-in'); void b.offsetWidth; b.classList.add('mp-in'); }
   function renderMenu() {
     setTitle(L('Multijoueur', 'Multiplayer') + ' · ' + GAME[ui.ch]);
-    body().innerHTML = `
+    view(`${steps(0)}
       <div class="mp-hero">${ICON}<div><b>${L('Nuit en équipe', 'Team night')}</b>
         <p>${L('Chaque gardien a son bureau, mais la nuit est la même pour tous. Regardez le bureau de vos coéquipiers sur les caméras, envoyez-leur de l’énergie, prévenez-les du danger. En équipe, Endo-7 se réveille et les animatroniques sont plus agressifs.', 'Each guard has their own office, but the night is the same for everyone. Watch your teammates’ offices on the cameras, send them power, warn them of danger. As a team, Endo-7 wakes up and the animatronics get more aggressive.')}</p></div></div>
       <label class="mp-field" for="mpNick">${L('Votre pseudo', 'Your nickname')}<input id="mpNick" maxlength="14" autocomplete="off" value="${esc(nick())}" /></label>
       <div class="mp-actions">
-        <button class="mp-big" id="mpCreate"><span>＋</span>${L('Créer une partie', 'Create a game')}</button>
-        <button class="mp-big" id="mpJoin"><span>⇥</span>${L('Rejoindre une partie', 'Join a game')}</button>
-      </div>`;
+        <button class="mp-choice" id="mpCreate"><span class="mp-ci">＋</span><b>${L('Créer une partie', 'Create a game')}</b><small>${L('Vous êtes l’hôte : vous choisissez la nuit et le nombre de joueurs.', 'You host: you pick the night and how many players.')}</small></button>
+        <button class="mp-choice" id="mpJoin"><span class="mp-ci">⇥</span><b>${L('Rejoindre une partie', 'Join a game')}</b><small>${L('Tapez le code de 4 lettres donné par l’hôte.', 'Type the 4-letter code the host gives you.')}</small></button>
+      </div>`);
     $('#mpNick').oninput = (e) => { FN.Save.data.name = e.target.value.trim().slice(0, 14) || 'Gardien'; FN.Save.save(); };
     $('#mpCreate').onclick = () => { AU.play('uiSelect'); renderCreate(); };
     $('#mpJoin').onclick = () => { AU.play('uiSelect'); renderJoin(); };
   }
-  function opts(key, values, label) {
-    return `<div class="mp-opt"><span>${label}</span><div class="opts" data-k="${key}">${values.map((v) => `<button data-v="${v}" class="${ui[key] === v ? 'on' : ''}">${v}</button>`).join('')}</div></div>`;
+  function opts(key, values, label, face) {
+    return `<div class="mp-opt"><span class="mp-lab">${label}</span><div class="mp-tiles" data-k="${key}">${values.map((v) => `<button data-v="${v}" class="mp-tile ${ui[key] === v ? 'on' : ''}">${face(v)}</button>`).join('')}</div></div>`;
   }
+  const playersFace = (v) => `<span class="avs">${Array.from({ length: v }, (_, i) => avatar(i, true)).join('')}</span><b>${v}</b><small>${L('joueurs', 'players')}</small>`;
+  const nightFace = (v) => `<b>${v}</b><small>${L('Nuit', 'Night')}</small><span class="pips">${Array.from({ length: 6 }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</span>`;
   function renderCreate() {
     setTitle(L('Créer une partie', 'Create a game'));
-    body().innerHTML = `<div class="mp-card">
-      ${opts('max', [2, 3, 4], L('Nombre de joueurs', 'Number of players'))}
-      ${opts('night', [1, 2, 3, 4, 5, 6], L('Nuit', 'Night'))}
+    view(`${steps(1)}<div class="mp-card">
+      ${opts('max', [2, 3, 4], L('Nombre de joueurs', 'Number of players'), playersFace)}
+      ${opts('night', [1, 2, 3, 4, 5, 6], L('Nuit', 'Night'), nightFace)}
       <p class="mp-note">${GAME[ui.ch]} · ${L('Endo-7 rejoint la nuit, et chaque joueur en plus rend les animatroniques plus agressifs.', 'Endo-7 joins the night, and each extra player makes the animatronics more aggressive.')}</p>
-      <div class="mp-actions"><button class="mp-big primary" id="mpGo">${L('Créer', 'Create')}</button><button class="mp-big" id="mpBackMenu">${L('Retour', 'Back')}</button></div></div>`;
-    body().querySelectorAll('.opts[data-k]').forEach((o) => o.querySelectorAll('button').forEach((b) => (b.onclick = () => { ui[o.dataset.k] = +b.dataset.v; AU.play('uiMove'); renderCreate(); })));
+      <div class="mp-actions"><button class="mp-big primary" id="mpGo">${L('Créer la partie', 'Create the game')}</button><button class="mp-big" id="mpBackMenu">${L('Retour', 'Back')}</button></div></div>`);
+    // selecting a tile only moves the highlight (no full redraw, no flash)
+    body().querySelectorAll('.mp-tiles[data-k]').forEach((o) => o.querySelectorAll('button').forEach((b) => (b.onclick = () => { ui[o.dataset.k] = +b.dataset.v; AU.play('uiMove'); o.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); })));
     $('#mpGo').onclick = () => { AU.play('uiSelect'); const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ'; let code = ''; for (let i = 0; i < 4; i++) code += abc[Math.floor(Math.random() * abc.length)]; openLobby(code, true); };
     $('#mpBackMenu').onclick = renderMenu;
   }
   function renderJoin() {
     setTitle(L('Rejoindre une partie', 'Join a game'));
-    body().innerHTML = `<div class="mp-card">
-      <label class="mp-field" for="mpCode">${L('Code de la partie', 'Game code')}<input id="mpCode" class="mp-code-in" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD" /></label>
+    view(`${steps(1)}<div class="mp-card">
+      <label class="mp-field" for="mpCode">${L('Code de la partie', 'Game code')}
+        <span class="mp-boxes" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <input id="mpCode" class="mp-code-in" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" /></label>
       <p class="mp-note" id="mpJoinMsg">${L('Demandez le code à l’hôte de la partie.', 'Ask the host for the game code.')}</p>
-      <div class="mp-actions"><button class="mp-big primary" id="mpGo">${L('Rejoindre', 'Join')}</button><button class="mp-big" id="mpBackMenu">${L('Retour', 'Back')}</button></div></div>`;
+      <div class="mp-actions"><button class="mp-big primary" id="mpGo">${L('Rejoindre', 'Join')}</button><button class="mp-big" id="mpBackMenu">${L('Retour', 'Back')}</button></div></div>`);
     const inp = $('#mpCode');
+    const boxes = [...body().querySelectorAll('.mp-boxes i')];
+    const sync = () => { const v = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4); inp.value = v; boxes.forEach((b, i) => { b.textContent = v[i] || ''; b.classList.toggle('cur', i === v.length); }); };
+    inp.addEventListener('input', () => { sync(); AU.play('uiMove'); }); sync();
+    body().querySelector('.mp-boxes').onclick = () => inp.focus();
     setTimeout(() => inp.focus(), 50);
     const go = () => { const c = inp.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length !== 4) { AU.play('denied'); $('#mpJoinMsg').textContent = L('Le code fait 4 lettres.', 'The code is 4 letters.'); return; } AU.play('uiSelect'); openLobby(c, false); };
     $('#mpGo').onclick = go;
@@ -91,7 +106,7 @@
     if (st && st.at > s.lastStart && !s.inGame) {
       s.lastStart = st.at;
       const me = s.net.me();
-      if (st.roster.includes(me)) return startGame(s, st);
+      if (st.roster.includes(me)) return countdown(s, st);
       body().innerHTML = `<p class="mp-wait">${L('La partie a commencé sans vous (elle est complète).', 'The game started without you (it is full).')}</p>`;
       return;
     }
@@ -127,13 +142,14 @@
     for (let i = 0; i < max; i++) {
       const p = list[i];
       rows.push(p
-        ? `<li class="mp-slot full"><span class="mp-n">J${i + 1}</span><b>${esc(p.presence.nick || '?')}</b>${p.presence.role === 'host' ? `<em>${L('hôte', 'host')}</em>` : ''}${p.isMe ? `<em class="me">${L('vous', 'you')}</em>` : ''}</li>`
-        : `<li class="mp-slot"><span class="mp-n">J${i + 1}</span><i>${L('En attente d’un joueur…', 'Waiting for a player…')}</i></li>`);
+        ? `<li class="mp-slot full" style="--c:${COLORS[i % 4]}">${avatar(i, true)}<div><span class="mp-n">J${i + 1}</span><b>${esc(p.presence.nick || '?')}</b><span class="tags">${p.presence.role === 'host' ? `<em>${L('hôte', 'host')}</em>` : ''}${p.isMe ? `<em class="me">${L('vous', 'you')}</em>` : ''}<em class="ok">${L('prêt', 'ready')}</em></span></div></li>`
+        : `<li class="mp-slot" style="--c:${COLORS[i % 4]}">${avatar(i, false)}<div><span class="mp-n">J${i + 1}</span><i>${L('En attente', 'Waiting')}<span class="dots"><b>.</b><b>.</b><b>.</b></span></i></div></li>`);
     }
     const n = Math.min(list.length, max);
     const local = s.net.kind === 'local';
     const html = `<div class="mp-lobby">
-      <div class="mp-codebox"><small>${L('Code de la partie', 'Game code')}</small><div class="mp-code">${esc(s.code)}</div><button class="act" id="mpCopy">${L('Copier', 'Copy')}</button>
+      ${steps(2)}
+      <div class="mp-codebox"><small>${L('Code de la partie — donnez-le à vos amis', 'Game code — give it to your friends')}</small><div class="mp-code">${[...s.code].map((c) => `<span>${esc(c)}</span>`).join('')}</div><button class="act" id="mpCopy">${L('Copier', 'Copy')}</button>
         <p class="mp-note">${local ? L('Mode local : jouez dans plusieurs onglets de ce navigateur. En ligne, ouvrez le jeu depuis le lien partagé.', 'Local mode: play in several tabs of this browser. Online, open the game from the shared link.') : L('Les autres joueurs ouvrent le même lien FAZNIGHT, puis Multijoueur › Rejoindre.', 'Other players open the same FAZNIGHT link, then Multiplayer › Join.')}</p></div>
       <div class="mp-info"><b>${GAME[ch]}</b> · ${L('Nuit', 'Night')} ${night} · ${n}/${max} ${L('joueurs', 'players')}</div>
       <ul class="mp-slots">${rows.join('')}</ul>
@@ -153,6 +169,24 @@
   }
 
   // ---------------------------------------------------------------- start
+  /** 3, 2, 1 — everyone sees the team line-up, then the night starts. */
+  function countdown(s, st) {
+    s.inGame = true; s.painted = null;
+    const o = $('#overlay');
+    o.className = 'mp-count';
+    const team = st.roster.map((peer, i) => { const p = peerOf(s, peer); return `<div class="mp-cm" style="--c:${COLORS[i % 4]};animation-delay:${i * 0.12}s">${avatar(i, true)}<b>${esc(p ? p.presence.nick || '?' : '?')}</b><span>J${i + 1}</span></div>`; }).join('');
+    o.innerHTML = `<div class="mp-cgame">${GAME[st.ch]} · ${L('Nuit', 'Night')} ${st.n}</div><div class="mp-cteam">${team}</div><div class="mp-cnum" id="mpCnum">3</div><div class="mp-csub">${L('Restez dans votre bureau. Surveillez vos coéquipiers.', 'Stay in your office. Watch your teammates.')}</div>`;
+    let k = 3;
+    AU.play('clank', { vol: 0.4 });
+    const iv = setInterval(() => {
+      k--;
+      const el = $('#mpCnum');
+      if (k > 0 && el) { el.textContent = k; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); AU.play('clank', { vol: 0.4 }); return; }
+      clearInterval(iv);
+      o.className = 'hidden'; o.innerHTML = '';
+      startGame(s, st);
+    }, 1000);
+  }
   function startGame(s, st) {
     s.inGame = true; s.painted = null; s.roster = st.roster; s.ch = st.ch; s.night = st.n; s.over = false;
     s.net.presence({ ph: 'play', g: null, k: null });

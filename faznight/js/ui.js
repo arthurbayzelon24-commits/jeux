@@ -239,7 +239,7 @@
     // stars: 5 nights, 6th night, one challenge cleared
     const stars = [chap.done[5], chap.done[6], Object.keys(d.challengesDone).some((k) => k.startsWith('c' + ch + '_'))];
     $('#titleStars').innerHTML = stars.map((s) => `<span class="${s ? 'on' : ''}">★</span>`).join('');
-    $('#titleFoot').innerHTML = `<b>${esc(T('devBy'))}</b> · v1.5`;
+    $('#titleFoot').innerHTML = `<b>${esc(T('devBy'))}</b> · v1.6`;
     $('#titleMenu').querySelectorAll('[data-t]').forEach((b) => (b.onclick = () => {
       const a = b.dataset.t; AU.play('uiSelect');
       if (a === 'new') {
