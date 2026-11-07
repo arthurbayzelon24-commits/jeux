@@ -256,19 +256,19 @@
         const ballet = L.legs === 'ballet';
         const hip = piv(pelvis, s * 0.12 * bw, -0.07, 0);
         joint(M, hip, 0.035);
-        const thR = ballet ? 0.05 : human ? 0.075 : 0.1;
+        const thR = ballet ? 0.05 : human ? 0.075 : 0.12;
         mk(G.cyl, M.metal, 0.02, 0.44, 0.02, 0, -0.22, 0, hip);
-        const thigh = S(mk(taperGeo(thR, thR * 0.75, 0.42), human ? M.pants : shellM, 1, 1, 0.92, 0, -0.03, 0, hip));
+        const thigh = S(mk(taperGeo(thR, thR * 0.68, 0.42), human ? M.pants : shellM, 1, 1, 0.92, 0, -0.03, 0, hip));
         if (dmg > 0.5 && s > 0) thigh.visible = false;
         const knee = piv(hip, 0, -0.45, 0);
         joint(M, knee, 0.03);
         mk(G.cyl, M.metal, 0.018, 0.42, 0.018, 0, -0.21, 0, knee);
-        const calf = S(mk(taperGeo(thR * 0.78, thR * 0.55, 0.38), human ? M.pants : L.legs === 'ballet' ? M.pale : M.shellDark, 1, 1, 0.92, 0, -0.03, 0, knee));
+        const calf = S(mk(taperGeo(thR * 0.82, thR * 0.5, 0.38), human ? M.pants : L.legs === 'ballet' ? M.pale : M.shellDark, 1, 1, 0.92, 0, -0.03, 0, knee));
         if (dmg > 0.5 && s > 0) calf.visible = false;
         piston(M, P, hip, [0, -0.12, -0.06], knee, [0, -0.12, -0.05]);
         const ankle = piv(knee, 0, -0.43, 0);
         joint(M, ankle, 0.022);
-        const shoe = mk(rboxGeo(ballet ? 0.06 : human ? 0.1 : 0.14, 0.08, ballet ? 0.12 : human ? 0.26 : 0.3, 0.03), human ? M.shoe : ballet ? M.pale : L.foot ? new T.MeshStandardMaterial({ color: new T.Color(L.foot), roughness: 0.8 }) : M.shellDark, 1, 1, 1, 0, -0.04, 0.06, ankle);
+        const shoe = mk(rboxGeo(ballet ? 0.06 : human ? 0.1 : 0.16, 0.09, ballet ? 0.12 : human ? 0.26 : 0.34, 0.035), human ? M.shoe : ballet ? M.pale : L.foot ? new T.MeshStandardMaterial({ color: new T.Color(L.foot), roughness: 0.8 }) : M.shellDark, 1, 1, 1, 0, -0.04, 0.06, ankle);
         if (!human && !ballet) { mk(rboxGeo(0.145, 0.02, 0.31, 0.008), M.rubber, 1, 1, 1, 0, -0.085, 0.06, ankle); S(shoe); }
         if (bare) shoe.material = M.metal, shoe.visible = true, shoe.scale.set(0.7, 0.6, 0.9);
         P.legs.push({ s, hip, knee, ankle });
@@ -287,6 +287,7 @@
     const front = S(mk(lathe('torsoF' + tw + bh, prof.map(([r, y]) => [r * 1.01, y]), 20, -Math.PI * 0.4, Math.PI * 1.0), human ? M.shirt : shellM, bw, 1, 0.78, 0, 0, 0, torso));
     P.chestPlate = front;
     if (dmg >= 0.5) front.visible = false; // exposed ribs & spine
+    if (!human && !thin && !bare && !L.vest) for (const s of [-1, 1]) { const pc = S(ball(shellM, 0.13 * bw, 0.1 * bh, 0.07, s * 0.13 * bw, 0.5 * bh, 0.2 * 0.78 * bw, torso)); pc.rotation.z = s * 0.2; if (dmg >= 0.5 && s < 0) pc.visible = false; }
     if (!human && !thin && !bare && L.torso !== 'suit') { const b = S(ball(M.belly, 0.2 * tw * bw, 0.22 * bh, 0.07, 0, 0.26 * bh, 0.205 * 0.78 * bw + 0.02, torso)); if (dmg >= 0.5) b.visible = false; }
     if (L.tutu) for (let i = 0; i < 3; i++) shell(mk(new T.CylinderGeometry(0.2 - i * 0.03, 0.45 - i * 0.07, 0.06, 28, 1, true), new T.MeshStandardMaterial({ color: new T.Color(i % 2 ? L.tutu : A.lighten(L.tutu, 0.2)), side: T.DoubleSide, roughness: 0.8, map: fabricTex(9) }), 1, 1, 1, 0, -0.02 + i * 0.035, 0, torso));
     if (L.bib) {
@@ -311,12 +312,12 @@
       S(ball(shellM, 0.11 * tw, 0.1, 0.1, s * 0.02, -0.02, 0, sh));
       mk(G.cyl, M.metal, 0.016, 0.32, 0.016, 0, -0.16, 0, sh);
       const bareArm = (dmg > 0.6 && s < 0) || bare;
-      const up = S(mk(taperGeo(0.075 * tw, 0.06 * tw, 0.3), human ? M.shirt : shellM, 1, 1, 0.95, 0, -0.04, 0, sh));
+      const up = S(mk(taperGeo(0.088 * tw, 0.058 * tw, 0.3), human ? M.shirt : shellM, 1, 1, 0.95, 0, -0.04, 0, sh));
       if (bareArm) up.visible = false;
       const el = piv(sh, 0, -0.33, 0);
       joint(M, el, 0.026);
       mk(G.cyl, M.metal, 0.014, 0.28, 0.014, 0, -0.14, 0, el);
-      const fo = S(mk(taperGeo(0.06 * tw, 0.045 * tw, 0.27), human ? M.shirt : M.shellDark, 1, 1, 0.95, 0, -0.03, 0, el));
+      const fo = S(mk(taperGeo(0.072 * tw, 0.046 * tw, 0.27), human ? M.shirt : M.shellDark, 1, 1, 0.95, 0, -0.03, 0, el));
       if (bareArm) fo.visible = false;
       piston(M, P, sh, [0, -0.1, 0.05], el, [0, -0.1, 0.045], 0.012);
       const wr = piv(el, 0, -0.3, 0);
@@ -404,7 +405,7 @@
     const hw = ((L.head?.rx || 80) / 80) * 0.22 * big, hh = ((L.head?.ry || 70) / 70) * 0.2 * big;
     const cy = hh * 0.95; // head centre above the neck
     const H = piv(head, 0, cy, 0);
-    P.skull = H;
+    P.skull = H; P.hw = hw; P.hh = hh;
     // metal skull under every shell (visible in x-ray / when damaged)
     const endoSkull = ball(M.metal, hw * 0.82, hh * 0.82, hw * 0.78, 0, 0, 0, H);
     endoSkull.userData.endo = true;
@@ -571,6 +572,69 @@
     }
   }
 
+  // ---------------------------------------------------------------- costume details (v1.3)
+  /** Seams, cuffs, collars and the per-character details that make each silhouette readable. */
+  function details(id, L, M, P) {
+    if (L.kind === 'guard' || L.bare) return;
+    const seamM = new T.MeshStandardMaterial({ color: new T.Color(A.darken(L.fur, 0.55)), roughness: 0.9 });
+    const tw = L.torso === 'thin' ? 0.7 : 1, bw = L.bodyW || 1;
+    // costume cuffs where the suit pieces meet: show the gap to the endoskeleton
+    for (const a of P.arms) { shell(mk(new T.TorusGeometry(0.052 * tw, 0.012, 6, 18), seamM, 1, 1, 1, 0, -0.27, 0, a.el)).rotation.x = Math.PI / 2; shell(mk(new T.TorusGeometry(0.068 * tw, 0.012, 6, 18), seamM, 1, 1, 1, 0, -0.29, 0, a.sh)).rotation.x = Math.PI / 2; }
+    for (const l of P.legs) { shell(mk(new T.TorusGeometry(0.075, 0.013, 6, 18), seamM, 1, 1, 1, 0, -0.4, 0, l.knee)).rotation.x = Math.PI / 2; shell(mk(new T.TorusGeometry(0.09, 0.013, 6, 18), seamM, 1, 1, 1, 0, -0.42, 0, l.hip)).rotation.x = Math.PI / 2; }
+    shell(mk(new T.TorusGeometry(0.1 * tw * bw, 0.016, 6, 22), seamM, 1, 1, 0.8, 0, 0.635 * (L.bodyH || 1), 0, P.torso)).rotation.x = Math.PI / 2;
+    // stitched seam down the chest
+    for (let i = 0; i < 6; i++) shell(mk(G.box, seamM, 0.004, 0.03, 0.004, 0, 0.36 + i * 0.045, 0.29 * 0.78 * bw * tw + 0.01, P.torso));
+    const H = P.skull;
+    const r = A.rng(L.seed || 1);
+    switch (id) {
+      case 'bruno': case 'oldbruno':
+        for (let i = 0; i < 2; i++) mk(G.cyl, M.black, 0.02, 0.01, 0.02, 0, 0.42 + i * 0.09, 0.29 * 0.78 * bw + 0.012, P.torso).rotation.x = Math.PI / 2;
+        break;
+      case 'gus':
+        tube([[-0.24, 0.55, 0.12], [0, 0.35, 0.26], [0.24, 0.05, 0.14]], 0.012, new T.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.7 }), P.torso); // bass strap
+        break;
+      case 'nora': {
+        const fm = M.shellDark;
+        for (let i = 0; i < 7; i++) { const a = (i / 6 - 0.5) * 1.4; const f = shell(mk(G.cone, fm, 0.035, 0.14, 0.014, Math.sin(a) * P.hw * 0.6, P.hh * 0.95, -0.02 + Math.cos(a) * 0.03, H)); f.rotation.set(-0.35, 0, -a * 0.7); }
+        for (const s of [-1, 1]) for (let i = 0; i < 4; i++) { const f = shell(mk(G.cone, fm, 0.035, 0.13, 0.012, s * (0.3 + i * 0.012), 0.42 - i * 0.04, -0.02 - i * 0.03, P.torso)); f.rotation.z = s * (2.4 + i * 0.12); }
+        break;
+      }
+      case 'krok': case 'oldkrok':
+        for (let i = 0; i < 6; i++) { const c = shell(mk(G.cone, M.shellDark, 0.035, 0.08, 0.02, 0, 0.12 + i * 0.09, -0.23 * bw, P.torso)); c.rotation.x = -0.4; }
+        if (P.tail) for (let i = 0; i < 5; i++) shell(mk(G.cone, M.shellDark, 0.025, 0.06, 0.015, 0, -0.08 - i * 0.12, -0.22 - i * 0.05, P.tail)).rotation.x = -1.2;
+        break;
+      case 'pepper': case 'rico':
+        // moulded plastic panel lines and a star badge
+        for (const y of [0.18, 0.46]) shell(mk(new T.TorusGeometry(0.205 * bw, 0.004, 4, 28), M.black, 1, 1, 0.78, 0, y, 0, P.torso)).rotation.x = Math.PI / 2;
+        { const st = new T.Shape(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? 0.018 : 0.04; i ? st.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : st.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+          mk(new T.ExtrudeGeometry(st, { depth: 0.008, bevelEnabled: false }), M.gold, 1, 1, 1, 0.11, 0.5, 0.29 * 0.78 * bw + 0.005, P.torso); }
+        break;
+      case 'lumi': {
+        const core = mk(G.sph, new T.MeshBasicMaterial({ color: 0xffc0e8, transparent: true, opacity: 0.55, blending: T.AdditiveBlending, depthWrite: false }), 0.12, 0.09, 0.12, 0, 0.12, 0, H);
+        P.core = core;
+        break;
+      }
+      case 'chime': {
+        const crack = new T.MeshBasicMaterial({ color: 0x2a1a1a });
+        tube([[0.05, 0.1, 0.17], [0.07, 0.04, 0.19], [0.05, -0.03, 0.2], [0.08, -0.08, 0.19]], 0.0025, crack, H);
+        tube([[-0.09, 0.14, 0.15], [-0.06, 0.1, 0.18], [-0.08, 0.06, 0.18]], 0.002, crack, H);
+        break;
+      }
+      case 'static': {
+        for (const s of [-1, 1]) { const lp = shell(mk(G.box, M.shellDark, 0.07, 0.3, 0.02, s * 0.09, 0.45, 0.24 * bw, P.torso)); lp.rotation.z = s * -0.25; }
+        const led = mk(G.sphLo, new T.MeshBasicMaterial({ color: 0x7dffb0 }), 0.012, 0.012, 0.012, 0.18, 0.28, 0.2, H); P.led = led;
+        break;
+      }
+      case 'hollow': {
+        const thread = new T.MeshBasicMaterial({ color: 0x0a0806 });
+        for (let i = 0; i < 6; i++) mk(G.box, thread, 0.004, 0.05, 0.004, -0.1 + i * 0.04, -0.15, 0.255, H);
+        break;
+      }
+    }
+    // worn shells: a few missing patches on old/abîmés characters
+    if ((L.damage || 0) > 0) for (let i = 0; i < 4; i++) { const p = ball(M.black, 0.04 + r() * 0.04, 0.03 + r() * 0.03, 0.01, (r() - 0.5) * 0.3, 0.1 + r() * 0.45, 0.22 * bw, P.torso); p.userData.shell = true; }
+  }
+
   // ---------------------------------------------------------------- build
   function build(id) {
     const def = FN.CHARS[id];
@@ -589,6 +653,7 @@
     const B = buildBody(id, L, M, P);
     buildHead(L, M, P, B.head);
     props(L, M, P);
+    details(id, L, M, P);
     if (L.kind === 'guard') {
       const g = FN.Save.data.guard || {};
       const badge = mk(new T.CylinderGeometry(0.03, 0.03, 0.006, 6), M.gold, 1, 1, 1, -0.11, 0.48, 0.225, P.torso); badge.rotation.x = Math.PI / 2;
@@ -640,7 +705,9 @@
         if (legL) { legL.hip.rotation.x = -Math.sin(ph) * A1; legR.hip.rotation.x = Math.sin(ph) * A1; legL.knee.rotation.x = Math.max(0, Math.sin(ph + 1.4)) * (run ? 1.3 : 0.7); legR.knee.rotation.x = Math.max(0, Math.sin(ph + 1.4 + Math.PI)) * (run ? 1.3 : 0.7); legL.ankle.rotation.x = Math.sin(ph) * 0.2; legR.ankle.rotation.x = -Math.sin(ph) * 0.2; }
         aL.sh.rotation.x = Math.sin(ph) * (run ? 0.8 : 0.32); aR.sh.rotation.x = -Math.sin(ph) * (run ? 0.8 : 0.32);
         aL.el.rotation.x = aR.el.rotation.x = run ? -1.3 : -0.35;
-        P.body.position.y = -Math.abs(Math.cos(ph)) * (run ? 0.06 : 0.035) + 0.02;
+        P.body.position.y = -Math.abs(Math.cos(ph)) * (run ? 0.06 : 0.045) + 0.02;
+        P.body.rotation.z = Math.sin(ph) * (run ? 0.03 : 0.05); // heavy side-to-side lurch
+        P.body.position.x = Math.sin(ph) * 0.02;
         P.torso.rotation.x = run ? 0.3 : 0.06; P.torso.rotation.y = Math.sin(ph) * 0.1; P.pelvis.rotation.z = Math.sin(ph) * 0.05;
         P.head.rotation.x = run ? -0.25 : -0.04; P.head.rotation.z = Math.sin(ph) * 0.04;
         curl(aL.hand, run ? 0.9 : 0.35); curl(aR.hand, run ? 0.9 : 0.35);
@@ -692,8 +759,14 @@
       }
       default: { // idle: breathing, weight shift, slow head turns and the odd mechanical twitch
         P.torso.rotation.x = Math.sin(t * 1.3) * 0.015; P.pelvis.rotation.z = Math.sin(t * 0.45) * 0.02;
-        P.head.rotation.y = Math.sin(t * 0.33) * 0.22 + look * 0.5; P.head.rotation.z = Math.sin(t * 0.5) * 0.04 + twitch * 0.25 + (o.tilt || 0) * -1;
-        P.head.rotation.x = Math.sin(t * 0.27) * 0.05;
+        // servo motion: the head holds a position, then snaps to the next one
+        const step = Math.floor(t / 2.7 + (L.seed || 0) * 0.37), frac = (t / 2.7 + (L.seed || 0) * 0.37) % 1;
+        const tgt = (k) => Math.sin(k * 12.9898 + (L.seed || 1)) * 0.3;
+        const ease = frac < 0.12 ? frac / 0.12 : 1;
+        const yaw = tgt(step - 1) + (tgt(step) - tgt(step - 1)) * (ease * ease * (3 - 2 * ease));
+        P.head.rotation.y = (o.stare ? 0 : yaw) + look * 0.5; P.head.rotation.z = Math.sin(t * 0.5) * 0.04 + twitch * 0.25 + (o.tilt || 0) * -1;
+        P.head.rotation.x = Math.sin(t * 0.27) * 0.05 - (o.stare ? 0.08 : 0);
+        if (Math.sin(t * 0.9 + (L.seed || 0)) > 0.985) jaw = Math.max(jaw, Math.abs(Math.sin(t * 40)) * 0.25); // jaw chatter
         curl(aL.hand, 0.35); curl(aR.hand, 0.35);
       }
     }
@@ -719,6 +792,8 @@
       e.sp.material.opacity = a * 0.85; e.sp.visible = a > 0.02 && L.kind !== 'guard';
     }
     if (P.brows) for (const b of P.brows) b.o.rotation.z = b.s * (pz === 'attack' ? -0.5 : -0.18);
+    if (P.core) { P.core.material.opacity = 0.35 + Math.sin(t * 2.4) * 0.15 + glow * 0.2; P.core.scale.setScalar(0.1 + Math.sin(t * 2.4) * 0.01); }
+    if (P.led) P.led.visible = Math.floor(t * 2) % 2 === 0;
     if (P.ears) for (const e of P.ears) e.p.rotation.z = Math.sin(t * 1.7 + e.s) * 0.06 + (twitch ? e.s * 0.25 : 0);
     if (P.tail) P.tail.rotation.y = Math.sin(t * 2) * 0.35;
     if (P.tentacles) P.tentacles.forEach((segs, i) => segs.forEach((sg, k) => { sg.rotation.x = Math.sin(t * 1.8 + i + k * 0.7) * 0.28; sg.rotation.z = Math.cos(t * 1.4 + i * 1.3 + k) * 0.22; }));

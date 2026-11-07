@@ -60,8 +60,22 @@
     const stageY = oy + 540 * s * 0.6;
     const flick = Math.random() < 0.03 ? 0 : 1;
     const wide = W / H > 1.25, cx = wide ? 0.68 : 0.5;
+    // a stage spotlight sweeps slowly across the band; whoever it touches comes out of the dark
+    const spot = cx + Math.sin(t * 0.22) * 0.2;
+    const baseY = wide ? stageY : H * 0.97, ch = wide ? 540 * s * 0.42 : H * 0.3;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const sx = W * spot, cone = ctx.createLinearGradient(0, 0, 0, baseY);
+    cone.addColorStop(0, `rgba(255,225,170,${0.16 * flick})`); cone.addColorStop(1, `rgba(255,225,170,${0.04 * flick})`);
+    ctx.fillStyle = cone; ctx.beginPath(); ctx.moveTo(sx - W * 0.015, 0); ctx.lineTo(sx + W * 0.015, 0); ctx.lineTo(sx + ch * 0.32, baseY); ctx.lineTo(sx - ch * 0.32, baseY); ctx.closePath(); ctx.fill();
+    const pool = ctx.createRadialGradient(sx, baseY, 1, sx, baseY, ch * 0.4); pool.addColorStop(0, `rgba(255,220,160,${0.22 * flick})`); pool.addColorStop(1, 'rgba(255,220,160,0)');
+    ctx.fillStyle = pool; ctx.fillRect(sx - ch * 0.4, baseY - ch * 0.15, ch * 0.8, ch * 0.3);
+    ctx.restore();
+    // every ~20 s one of them turns its head and stares at you
+    const starer = Math.floor(t / 20) % 3, staring = (t % 20) > 15;
     [['gus', cx - 0.12], ['bruno', cx], ['nora', cx + 0.12]].forEach(([id, x], i) => {
-      A.drawChar(ctx, id, W * x, wide ? stageY : H * 0.97, wide ? 540 * s * 0.42 : H * 0.3, { t: t + i * 2, pose: 'idle', light: 0.07 * flick, eyes: Math.max(0, Math.sin(t * 0.4 + i * 2.1) - 0.6) * 2.5, tilt: Math.sin(t * 0.3 + i) * 0.05 });
+      const lit = Math.max(0, 1 - Math.abs(x - spot) * 7);
+      const st = staring && i === starer;
+      A.drawChar(ctx, id, W * x, baseY, ch, { t: t + i * 2, pose: 'idle', light: (0.07 + lit * 0.75) * flick, stare: st, eyes: st ? 1 : Math.max(lit * 0.6, Math.max(0, Math.sin(t * 0.4 + i * 2.1) - 0.6) * 2.5), tilt: st ? 0.12 : Math.sin(t * 0.3 + i) * 0.05 });
     });
     // eyes that briefly appear in the dark
     eyesState.next -= 1 / 30;
@@ -176,11 +190,29 @@
     for (let n = 1; n <= 6; n++) {
       const locked = n > chap.next;
       const doneN = chap.done[n];
-      html += `<button class="night-card ${doneN ? 'done' : ''} ${locked ? 'locked' : ''} ${n >= 6 ? 'secret' : ''}" data-n="${n}"><b>${T('night', { n })}</b><span>${T('n' + n)}</span></button>`;
+      const pips = Array.from({ length: 6 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('');
+      html += `<button class="night-card ${doneN ? 'done' : ''} ${locked ? 'locked' : ''} ${n >= 6 ? 'secret' : ''}" data-n="${n}"><canvas data-room="${n}"></canvas><div class="nc-body"><b>${T('night', { n })}</b><span>${T('n' + n)}</span><div class="pips" aria-label="${T('difficulty')} ${n}/6">${pips}</div></div></button>`;
     }
-    html += `<button class="night-card" data-new="1"><b>${T('newGame')}</b><span>${T('chapter', { n: nightsChapter })}</span></button>`;
+    html += `<button class="night-card" data-new="1"><div class="nc-body"><b>${T('newGame')}</b><span>${T('chapter', { n: nightsChapter })}</span></div></button>`;
     grid.innerHTML = html;
     grid.querySelectorAll('[data-ch]').forEach((b) => (b.onclick = () => { nightsChapter = +b.dataset.ch; buildNights(); AU.play('uiMove'); }));
+    // each night card shows a live camera still of the room where that night's threat starts
+    const roomFor = { 1: ['01', '02', '03', '07', '10', '04'], 2: ['09', '11', '05', '07', '06', '08'] };
+    const charFor = { 1: ['gus', 'krok', 'nora', 'gus', 'bruno', 'hollow'], 2: ['pepper', 'chime', 'rico', 'oldkrok', 'lumi', 'oldbruno'] };
+    grid.querySelectorAll('canvas[data-room]').forEach((cv) => {
+      const n = +cv.dataset.room, ch = nightsChapter, room = roomFor[ch][n - 1], who = charFor[ch][n - 1];
+      fitCanvas(cv, 0.8);
+      animate(cv, (c, W, H, t) => {
+        c.setTransform(1, 0, 0, 1, 0, 0);
+        const bg = R.bg(ch, room), s = Math.max(W / 960, H / 540);
+        c.drawImage(bg, (W - 960 * s) / 2 + Math.sin(t * 0.3 + n) * 6, (H - 540 * s) / 2, 960 * s, 540 * s);
+        A.drawChar(c, who, W * 0.62, H * 1.12, H * 1.05, { t: t + n, pose: who === 'lumi' ? 'float' : who === 'hollow' ? 'slump' : 'idle', light: 0.6, eyes: 0.4 + Math.max(0, Math.sin(t * 1.3 + n)) * 0.6, stare: true });
+        c.save(); c.globalCompositeOperation = 'screen'; c.fillStyle = ch === 1 ? '#1e2c26' : '#261e36'; c.fillRect(0, 0, W, H); c.restore();
+        A.staticFx(c, W, H, 0.08, t); A.scanlines(c, W, H, 0.12);
+        c.font = `${Math.round(H * 0.11)}px VT323, monospace`; c.fillStyle = '#ffffffcc'; c.fillText(`CAM ${room}`, W * 0.05, H * 0.15);
+        if (Math.floor(t * 1.5) % 2) { c.fillStyle = '#e11'; c.beginPath(); c.arc(W * 0.92, H * 0.1, H * 0.035, 0, 7); c.fill(); }
+      });
+    });
     grid.querySelectorAll('[data-n]').forEach((b) => (b.onclick = () => { AU.play('uiSelect'); FN.Game.start({ chapter: nightsChapter, night: +b.dataset.n }); }));
     grid.querySelector('[data-new]').onclick = () => confirmBox(T('newGameConfirm'), () => {
       const c = D().chapters[nightsChapter]; c.done = {}; c.next = 1; D().resume = null; FN.Save.flush();

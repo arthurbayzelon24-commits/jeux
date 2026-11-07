@@ -91,8 +91,8 @@
       const sideBtn = (side, kind) => {
         const left = side === 'L';
         const style = { [left ? 'left' : 'right']: `calc(10px + var(--safe-${left ? 'l' : 'r'}))`, bottom: kind === 'door' ? 'calc(130px + var(--safe-b))' : 'calc(62px + var(--safe-b))' };
-        if (kind === 'door') return this.button(`<span class="ico">▮</span>${FN.t('door')}`, 'door', style, () => this.toggleDoor(side));
-        return this.button(`<span class="ico">☀</span>${FN.t('light')}`, 'light', style, () => this.setLight(side, true), () => this.setLight(side, false));
+        if (kind === 'door') return this.button(`${FN.ICON.door}${FN.t('door')}`, 'door', style, () => this.toggleDoor(side));
+        return this.button(`${FN.ICON.light}${FN.t('light')}`, 'light', style, () => this.setLight(side, true), () => this.setLight(side, false));
       };
       u.doorL = sideBtn('L', 'door'); u.lightL = sideBtn('L', 'light');
       u.doorR = sideBtn('R', 'door'); u.lightR = sideBtn('R', 'light');
@@ -105,7 +105,7 @@
       const p = Math.max(0, Math.ceil(this.power));
       const usage = this.usage();
       const bars = Array.from({ length: Math.min(5, usage) }, (_, i) => `<i class="${i >= 3 ? 'r' : i >= 2 ? 'y' : ''}"></i>`).join('');
-      u.power.innerHTML = `${FN.t('power', { p })}<br>${FN.t('usage')} <span class="usage">${bars}</span>`;
+      u.power.innerHTML = `${FN.battHtml(FN.lang === 'en' ? 'Power' : 'Énergie', this.power)}<br>${FN.t('usage')} <span class="usage">${bars}</span>`;
       for (const s of ['L', 'R']) {
         u['door' + s].classList.toggle('on', this.doors[s]);
         u['light' + s].classList.toggle('on', this.lights[s]);

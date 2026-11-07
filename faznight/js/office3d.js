@@ -40,6 +40,33 @@
     parent.add(o); return o;
   }
 
+  // ---------------------------------------------------------------- atmosphere (v1.3)
+  const beamTex = () => tex('beam', 64, 256, (x, w, h) => {
+    const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.35, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    const s = x.createLinearGradient(0, 0, w, 0); s.addColorStop(0, 'rgba(0,0,0,1)'); s.addColorStop(0.5, 'rgba(0,0,0,0)'); s.addColorStop(1, 'rgba(0,0,0,1)');
+    x.globalCompositeOperation = 'destination-out'; x.fillStyle = s; x.fillRect(0, 0, w, h);
+  });
+  /** Visible light shaft: an additive cone from `from` towards `to`. Opacity follows the light. */
+  function beam(scene, from, to, radius, color) {
+    const len = from.distanceTo(to);
+    const g = new T3.ConeGeometry(radius, len, 24, 1, true); g.translate(0, -len / 2, 0); g.rotateX(-Math.PI / 2);
+    const m = new T3.MeshBasicMaterial({ map: beamTex(), color, transparent: true, opacity: 0, blending: T3.AdditiveBlending, depthWrite: false, side: T3.DoubleSide });
+    // map the gradient along the cone length
+    const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i), uv.getY(i));
+    const o = new T3.Mesh(g, m); o.position.copy(from); o.lookAt(to); o.renderOrder = 5; o.frustumCulled = false;
+    scene.add(o); return o;
+  }
+  /** Dust motes drifting in the air, brighter inside light shafts. */
+  function dust(scene, box, n = 220) {
+    const pos = new Float32Array(n * 3), seed = A.rng(91);
+    for (let i = 0; i < n; i++) { pos[i * 3] = box.min.x + seed() * (box.max.x - box.min.x); pos[i * 3 + 1] = box.min.y + seed() * (box.max.y - box.min.y); pos[i * 3 + 2] = box.min.z + seed() * (box.max.z - box.min.z); }
+    const g = new T3.BufferGeometry(); g.setAttribute('position', new T3.BufferAttribute(pos, 3));
+    const m = new T3.PointsMaterial({ size: 0.012, color: 0xfff0d0, transparent: true, opacity: 0.35, blending: T3.AdditiveBlending, depthWrite: false, map: G3.glowTex() });
+    const p = new T3.Points(g, m); scene.add(p);
+    return { p, box, n, update(t) { const a = g.attributes.position; for (let i = 0; i < n; i++) { let y = a.getY(i) + Math.sin(t * 0.3 + i) * 0.0008 - 0.0004; if (y < box.min.y) y = box.max.y; a.setY(i, y); a.setX(i, a.getX(i) + Math.sin(t * 0.2 + i * 1.7) * 0.0006); } a.needsUpdate = true; } };
+  }
+
   // ---------------------------------------------------------------- base
   class Office3D {
     constructor(night) {
@@ -250,6 +277,12 @@
       this.lamp = new T3.PointLight(0xffc890, 1.25, 9, 1.6); this.lamp.position.set(0, 2.25, -0.7);
       this.lamp.castShadow = this.R.shadowMap.enabled && FN.Save.data.settings.quality === 'high'; this.lamp.shadow.mapSize.set(1024, 1024); this.lamp.shadow.bias = -0.002;
       S.add(this.lamp);
+      // light shafts and dust (v1.3)
+      const V = (x, y, z) => new T3.Vector3(x, y, z);
+      this.beamLamp = beam(S, V(0, 2.3, -0.7), V(0, 0, -0.9), 1.3, 0xffc890);
+      this.beamL = beam(S, V(-3.0, 2.25, -1.4), V(-6.5, 0.2, -1.4), 0.85, 0xffe2b0);
+      this.beamR = beam(S, V(3.0, 2.25, -1.4), V(6.5, 0.2, -1.4), 0.85, 0xffe2b0);
+      this.dust = dust(S, new T3.Box3(V(-2.8, 0.3, -2.4), V(2.8, 2.6, 0.6)));
       // monitor glow
       this.monGlow = new T3.PointLight(0x60ff90, 0.25, 3, 2); this.monGlow.position.set(0, 1.2, -0.2); S.add(this.monGlow);
       // invisible hit target on Bruno's nose (poster)
@@ -314,6 +347,10 @@
       this.hemi.intensity = out ? 0.01 : 0.12;
       this.monGlow.intensity = out ? 0 : 0.25;
       for (const s of this.screens) s.visible = !out;
+      this.beamLamp.material.opacity = (this.lamp.intensity / 1.25) * 0.09;
+      this.beamL.material.opacity = n.lights.L && n.doorA.L < 0.5 ? 0.26 : 0;
+      this.beamR.material.opacity = n.lights.R && n.doorA.R < 0.5 ? 0.26 : 0;
+      this.dust.update(t); this.dust.p.material.opacity = out ? 0.05 : 0.3;
       this.phoneLed.visible = !out && Math.floor(t * 2) % 2 === 0;
       for (const side of ['L', 'R']) {
         const x = side === 'L' ? -3.05 : 3.05, sg = side === 'L' ? -1 : 1;
@@ -404,6 +441,11 @@
       this.flash.position.set(0.15, 1.2, 0.7); this.flash.target.position.set(0, 1.0, -14);
       this.flash.castShadow = this.R.shadowMap.enabled; this.flash.shadow.mapSize.set(1024, 1024);
       S.add(this.flash, this.flash.target);
+      const V = (x, y, z) => new T3.Vector3(x, y, z);
+      this.beamF = beam(S, V(0.25, 1.15, -1.2), V(0, 1.0, -12), 1.5, 0xfff6e0);
+      this.beamVL = beam(S, V(-2.1, 0.7, -2.4), V(-2.1, 0.3, -6.2), 0.42, 0xfff4d8);
+      this.beamVR = beam(S, V(2.1, 0.7, -2.4), V(2.1, 0.3, -6.2), 0.42, 0xfff4d8);
+      this.dust = dust(S, new T3.Box3(V(-2.8, 0.3, -9), V(2.8, 2.4, 0.6)), 300);
       // desk
       this.deskProps(S, '#5a5a6a', '#2a2a36');
       const tablet = new T3.Group(); tablet.position.set(-0.4, 0.9, -0.1); tablet.rotation.x = -1.3; S.add(tablet);
@@ -454,6 +496,9 @@
       this.amb.intensity = 0.08 * flick; this.hemi.intensity = 0.14 * flick;
       this.flash.intensity = n.flash ? 3.2 : 0;
       this.ventL.intensity = n.vent.L ? 2.4 : 0; this.ventR.intensity = n.vent.R ? 2.4 : 0;
+      this.beamF.material.opacity = n.flash ? 0.17 + Math.random() * 0.015 : 0;
+      this.beamVL.material.opacity = n.vent.L ? 0.14 : 0; this.beamVR.material.opacity = n.vent.R ? 0.14 : 0;
+      this.dust.update(t);
       const hallZ = -2.6;
       // hallway occupants (lit only by the flashlight; eyes glow in the dark)
       if (n.hollow) this.place('hollow', 0.2, 0, hallZ - 9.5, 0, { pose: 'slump', light: 1, eyes: 1 });

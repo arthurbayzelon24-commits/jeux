@@ -73,7 +73,13 @@
     let lastTouch = 0;
     document.addEventListener('touchend', (e) => { const now = Date.now(); if (now - lastTouch < 300 && e.target.closest('#game')) e.preventDefault(); lastTouch = now; }, { passive: false });
 
-    FN.UI.show('home', false);
+    // boot: studio card + content warning, tap to start (this also unlocks audio on iOS)
+    FN.UI.show('boot', false);
+    const goHome = () => { if (FN.UI.current !== 'boot') return; FN.Audio.init(); FN.Audio.setVolumes(FN.Audio.vols); FN.Audio.play('sting'); FN.UI.show('home', false); FN.Audio.music('menu'); };
+    $('#bootGo').addEventListener('click', goHome);
+    $('#boot').addEventListener('click', (e) => { if (e.target.id !== 'bootGo' && performance.now() > 2500) goHome(); });
+    // logo: occasional RGB glitch
+    setInterval(() => { const l = $('#logo'); if (!l || Math.random() > 0.35) return; l.classList.add('glitch'); setTimeout(() => l.classList.remove('glitch'), 90 + Math.random() * 120); }, 1800);
     FN.Trophies.evaluate();
 
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

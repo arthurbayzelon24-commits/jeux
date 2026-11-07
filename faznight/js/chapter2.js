@@ -81,10 +81,10 @@
     buildHud() {
       this.commonHud();
       const u = this.ui;
-      u.mask = this.button(`<span class="ico">☻</span>${FN.t('mask')}`, 'maskb', { left: 'calc(10px + var(--safe-l))', bottom: 'calc(6px + var(--safe-b))', width: 'min(30vw, 160px)', height: '46px' }, () => this.toggleMask());
-      u.flash = this.button(`<span class="ico">◉</span>${FN.t('flash')}`, 'light', { left: '50%', transform: 'translateX(-50%)', bottom: 'calc(60px + var(--safe-b))' }, () => this.setFlash(true), () => this.setFlash(false));
-      u.ventL = this.button(`<span class="ico">◧</span>${FN.t('vent')}`, 'light', { left: 'calc(10px + var(--safe-l))', bottom: 'calc(62px + var(--safe-b))' }, () => this.setVent('L', true), () => this.setVent('L', false));
-      u.ventR = this.button(`<span class="ico">◨</span>${FN.t('vent')}`, 'light', { right: 'calc(10px + var(--safe-r))', bottom: 'calc(62px + var(--safe-b))' }, () => this.setVent('R', true), () => this.setVent('R', false));
+      u.mask = this.button(`${FN.ICON.mask}${FN.t('mask')}`, 'maskb', { left: 'calc(10px + var(--safe-l))', bottom: 'calc(6px + var(--safe-b))', width: 'min(30vw, 160px)', height: '46px' }, () => this.toggleMask());
+      u.flash = this.button(`${FN.ICON.flash}${FN.t('flash')}`, 'light', { left: '50%', transform: 'translateX(-50%)', bottom: 'calc(60px + var(--safe-b))' }, () => this.setFlash(true), () => this.setFlash(false));
+      u.ventL = this.button(`${FN.ICON.vent}${FN.t('vent')}`, 'light', { left: 'calc(10px + var(--safe-l))', bottom: 'calc(62px + var(--safe-b))' }, () => this.setVent('L', true), () => this.setVent('L', false));
+      u.ventR = this.button(`${FN.ICON.vent}${FN.t('vent')}`, 'light', { right: 'calc(10px + var(--safe-r))', bottom: 'calc(62px + var(--safe-b))' }, () => this.setVent('R', true), () => this.setVent('R', false));
       u.cambar.style.left = 'auto'; u.cambar.style.right = 'calc(10px + var(--safe-r))'; u.cambar.style.transform = 'none'; u.cambar.style.width = 'min(36vw, 220px)';
       u.wind = this.button(FN.t('wind'), 'windbtn hidden', {}, () => { this.winding = true; }, () => { this.winding = false; });
       u.windMeter = this.el('<i></i>', 'windmeter hidden');
@@ -95,7 +95,7 @@
     updateHud() {
       this.updateCommonHud();
       const u = this.ui; if (!u) return;
-      u.batt.innerHTML = FN.t('battery', { p: Math.max(0, Math.ceil(this.battery)) }) + `<br>♪ ${Math.round(this.box * 100)} %`;
+      u.batt.innerHTML = FN.battHtml(FN.lang === 'en' ? 'Light' : 'Lampe', this.battery) + `<br>♪ ${FN.lang === 'en' ? 'Music box' : 'Boîte à musique'} ${Math.round(this.box * 100)} %`;
       u.mask.classList.toggle('on', this.mask);
       u.flash.classList.toggle('on', this.flash);
       u.ventL.classList.toggle('on', this.vent.L); u.ventR.classList.toggle('on', this.vent.R);

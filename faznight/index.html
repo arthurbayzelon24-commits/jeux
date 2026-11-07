@@ -13,12 +13,25 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Special+Elite&family=VT323&display=swap" />
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
     <div id="app">
       <!-- Background canvas used by every menu screen -->
       <canvas id="menuBg" aria-hidden="true"></canvas>
+
+      <!-- BOOT: warning + tap to start (unlocks audio) -->
+      <section class="screen" id="boot">
+        <div class="boot-inner">
+          <div class="boot-studio">GRIMWOOD ENTERTAINMENT</div>
+          <div class="boot-presents" data-i18n="bootPresents"></div>
+          <div class="boot-warn"><b data-i18n="bootWarnTitle"></b><span data-i18n="bootWarn"></span><span data-i18n="bootHeadphones"></span></div>
+          <button class="boot-go" id="bootGo" data-i18n="tapToStart"></button>
+        </div>
+      </section>
 
       <!-- HOME -->
       <section class="screen" id="home">

@@ -94,7 +94,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 .night-card span { font-size: 12px; color: var(--dim); line-height: 1.35; }
 .night-card.done { border-color: #3d7a3f; }
 .night-card.done::after { content: '★'; position: absolute; right: 12px; top: 10px; color: var(--gold); font-size: 20px; }
-.night-card.locked { opacity: 0.45; pointer-events: none; }
+.night-card.locked { opacity: 0.7; pointer-events: none; }
 .night-card.locked b::after { content: ' 🔒'; font-size: 16px; }
 .night-card.secret { border-color: #6b1a1a; background: linear-gradient(160deg, #2a0707, #070606); }
 
@@ -314,3 +314,77 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 }
 .guard-prev { width: 120px; height: 160px; border-radius: 6px; background: #050505; border: 1px solid var(--line); }
 .opts button.locked { opacity: 0.4; }
+
+/* =====================================================================
+   v1.3 — visual identity pass: typefaces, boot screen, HUD, night cards
+   ===================================================================== */
+:root {
+  --ui: 'Special Elite', 'Courier New', ui-monospace, monospace;
+  --hud: 'VT323', 'Courier New', ui-monospace, monospace;
+  --logo: 'IM Fell English SC', Georgia, 'Times New Roman', serif;
+  --metal1: #2a2c30; --metal2: #121315; --led-off: #2a0c0c; --led-on: #ff3b30; --led-amber: #ffb300;
+}
+html, body { font-family: var(--ui); }
+.logo { font-family: var(--logo); position: relative; }
+.logo span { position: relative; display: inline-block; }
+.logo::after { content: ''; position: absolute; left: 0; right: 0; top: 52%; height: 2px; background: #ff3b3055; opacity: 0; animation: scanbar 7s infinite; }
+@keyframes scanbar { 92% { opacity: 0; } 93% { opacity: 1; transform: translateY(-14px); } 96% { opacity: 1; transform: translateY(18px); } 97% { opacity: 0; } }
+.logo.glitch span { text-shadow: 3px 0 #ff1a1a, -3px 0 #1ad1ff; }
+.mbtn { font-family: var(--ui); }
+#overlay .big, .go-text { font-family: var(--logo); }
+.clockflip { font-family: var(--hud); letter-spacing: 6px; }
+
+/* ---------- boot ---------- */
+#boot { z-index: 50; background: #000; justify-content: center; align-items: center; }
+.boot-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 24px max(16px, env(safe-area-inset-left, 0px)); max-width: 560px; }
+.boot-studio { font-family: var(--logo); font-size: clamp(22px, 6vmin, 40px); letter-spacing: 6px; color: #d9cbb0; animation: bootIn 2.2s ease both; }
+.boot-presents { font-size: 13px; letter-spacing: 5px; text-transform: uppercase; color: var(--dim); animation: bootIn 2.2s 0.6s ease both; }
+.boot-warn { display: flex; flex-direction: column; gap: 6px; margin-top: 18px; border: 1px solid #5a1010; padding: 14px 16px; font-size: 13px; line-height: 1.5; color: #cfc6b8; background: #120606; animation: bootIn 1.4s 1.2s ease both; }
+.boot-warn b { color: var(--red-hi); letter-spacing: 4px; text-transform: uppercase; font-size: 12px; }
+.boot-go { margin-top: 18px; min-height: 52px; padding: 0 28px; border: 1px solid #ffffff33; background: none; font-family: var(--ui); font-size: 16px; letter-spacing: 4px; text-transform: uppercase; color: #fff; animation: bootIn 1s 1.8s ease both, pulse 2.4s 2.8s ease-in-out infinite; }
+@keyframes bootIn { from { opacity: 0; filter: blur(6px); transform: translateY(6px); } }
+@keyframes pulse { 50% { opacity: 0.45; } }
+
+/* ---------- in-game HUD ---------- */
+#hud { font-family: var(--hud); }
+#hud .info-tr .clock { font-size: clamp(34px, 9vmin, 56px); letter-spacing: 3px; line-height: 0.9; color: #f2f2f2; text-shadow: 0 0 10px #ffffff66; }
+#hud .info-tr .nightn { font-size: clamp(16px, 4vmin, 22px); letter-spacing: 2px; color: #cfc6b8; }
+#hud .info-bl { font-size: clamp(15px, 3.6vmin, 20px); letter-spacing: 1px; top: calc(62px + var(--safe-t)); }
+.batt { display: inline-flex; align-items: center; gap: 12px; }
+.batt .cell { width: 46px; height: 18px; border: 2px solid #ddd; border-radius: 3px; padding: 2px; position: relative; display: inline-flex; gap: 2px; }
+.batt .cell::after { content: ''; position: absolute; right: -6px; top: 4px; width: 3px; height: 6px; background: #ddd; border-radius: 0 2px 2px 0; }
+.batt .cell i { flex: 1; background: #3cff52; border-radius: 1px; }
+.batt .cell i.y { background: #e8e02b; } .batt .cell i.r { background: #ff3030; } .batt .cell i.off { background: #ffffff12; }
+.batt.low .cell { border-color: #ff3030; animation: blink 0.8s steps(2) infinite; }
+.hbtn {
+  font-family: var(--hud); font-size: clamp(14px, 3.6vmin, 18px); letter-spacing: 2px;
+  background: linear-gradient(160deg, var(--metal1), var(--metal2)); border: 1px solid #000; border-radius: 10px;
+  box-shadow: inset 0 1px 0 #ffffff1f, inset 0 -2px 0 #0008, 0 3px 10px #000a; color: #cfcfcf;
+}
+.hbtn svg { width: clamp(22px, 6vmin, 30px); height: clamp(22px, 6vmin, 30px); display: block; margin: 0 auto 2px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.hbtn::before { content: ''; position: absolute; top: 6px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--led-off); box-shadow: inset 0 1px 1px #000; }
+.hbtn.on { background: linear-gradient(160deg, #3a1414, #160606); border-color: #000; color: #fff; box-shadow: inset 0 1px 0 #ffffff1f, 0 0 16px #ff2a2a55; }
+.hbtn.on::before { background: var(--led-on); box-shadow: 0 0 8px var(--led-on); }
+.hbtn.light.on { background: linear-gradient(160deg, #3a3418, #161206); box-shadow: inset 0 1px 0 #ffffff1f, 0 0 16px #fff3b055; }
+.hbtn.light.on::before { background: var(--led-amber); box-shadow: 0 0 8px var(--led-amber); }
+.hbtn.small::before { display: none; }
+.hbtn.broken { opacity: 0.4; filter: grayscale(1); }
+.cambar { font-family: var(--hud); font-size: clamp(16px, 4vmin, 22px); letter-spacing: 6px; background: linear-gradient(#ffffff26, #ffffff0a); border: 1px solid #ffffff55; border-bottom-width: 3px; }
+.cammap { background: #050806e6; border: 1px solid #6bd36b55; box-shadow: 0 0 0 4px #0a0f0b, 0 0 24px #000; border-radius: 6px; }
+.cammap button { font-family: var(--hud); font-size: 15px; border-color: #8fae8f; background: #10160fdd; color: #cfe8cf; border-radius: 3px; }
+.cammap button.on { background: #6bd36b; color: #031103; border-color: #c8ffc8; box-shadow: 0 0 10px #6bd36b; }
+.camlabel { font-family: var(--hud); font-size: clamp(20px, 5vmin, 30px); letter-spacing: 3px; color: #f0f0f0; }
+.subtitle { font-family: var(--ui); }
+/* tablet bezel while the cameras are up */
+#hud.tablet::after { content: 'GRIMWOOD SECURE · LIVE'; position: absolute; inset: calc(4px + var(--safe-t)) calc(4px + var(--safe-r)) calc(4px + var(--safe-b)) calc(4px + var(--safe-l)); border: 3px solid #1c1e1c; border-radius: 18px; box-shadow: inset 0 0 0 2px #0008, inset 0 0 60px #000c; pointer-events: none; font-size: 12px; letter-spacing: 4px; color: #ffffff55; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 2px; }
+
+/* ---------- night select cards ---------- */
+.night-card { padding: 0; overflow: hidden; min-height: 0; gap: 0; background: #0d0a0a; }
+.night-card canvas { width: 100%; aspect-ratio: 16 / 9; display: block; background: #000; }
+.night-card .nc-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; }
+.night-card b { font-family: var(--logo); font-size: 22px; letter-spacing: 2px; }
+.night-card .pips { display: flex; gap: 3px; margin-top: 2px; }
+.night-card .pips i { width: 14px; height: 5px; border-radius: 2px; background: #ffffff1a; }
+.night-card .pips i.on { background: linear-gradient(90deg, var(--red), var(--red-hi)); }
+.night-card.done::after { top: 8px; right: 10px; text-shadow: 0 0 8px #000; }
+.night-card.locked canvas { filter: grayscale(1) brightness(0.35); }

@@ -4,6 +4,8 @@ window.FN = window.FN || {};
   const STR = {
     fr: {
       tagline: "La collection d'horreur animatronique",
+      bootPresents: 'présente', bootWarnTitle: 'Avertissement', bootWarn: 'Ce jeu contient des images effrayantes, des sons soudains et forts, et des lumières qui clignotent.', bootHeadphones: 'Pour une meilleure expérience : jouez dans le noir, avec un casque.',
+      difficulty: 'Difficulté',
       play: 'Jouer', continue: 'Continuer', resume: 'Reprendre la nuit', collection: 'Collection', trophies: 'Trophées',
       customNight: 'Custom Night', extras: 'Extras', settings: 'Paramètres', credits: 'Crédits',
       continueSub: '{chapter} — Nuit {night}', resumeSub: '{chapter} — Nuit {night}, {hour}', newGameSub: 'Aucune partie en cours',
@@ -57,6 +59,8 @@ window.FN = window.FN || {};
     },
     en: {
       tagline: 'The animatronic horror collection',
+      bootPresents: 'presents', bootWarnTitle: 'Warning', bootWarn: 'This game contains frightening images, sudden loud sounds and flashing lights.', bootHeadphones: 'For the best experience: play in the dark, with headphones.',
+      difficulty: 'Difficulty',
       play: 'Play', continue: 'Continue', resume: 'Resume night', collection: 'Collection', trophies: 'Trophies',
       customNight: 'Custom Night', extras: 'Extras', settings: 'Settings', credits: 'Credits',
       continueSub: '{chapter} — Night {night}', resumeSub: '{chapter} — Night {night}, {hour}', newGameSub: 'No game in progress',

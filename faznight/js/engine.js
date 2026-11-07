@@ -107,6 +107,7 @@
       AU.stopSpeak();
       clearTimeout(this._callTimer);
       this.hud.innerHTML = '';
+      this.hud.classList.remove('tablet');
     }
     resize() {
       const q = FN.Save.data.settings.quality;
@@ -423,6 +424,7 @@
       u.cambar.textContent = (this.camUp ? '▼ ' : '▲ ') + FN.t('cams');
       u.cambar.disabled = !this.canUseCams() && !this.camUp;
       u.map.classList.toggle('hidden', !this.camUp);
+      this.hud.classList.toggle('tablet', this.camUp && this.camAnim > 0.5);
       u.camLabel.classList.toggle('hidden', !this.camUp);
       if (this.camUp) {
         const r = R.cam(this.ch, this.cam);
@@ -525,6 +527,22 @@
     }
   }
   FN.Night = Night;
+
+  // ---------------------------------------------------------------- HUD icons (inline SVG, original drawings)
+  FN.ICON = {
+    door: '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M4 7h16M4 11h16M4 15h16"/></svg>',
+    light: '<svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>',
+    mask: '<svg viewBox="0 0 24 24"><path d="M4 6c3-2 13-2 16 0 0 8-3 14-8 14S4 14 4 6z"/><ellipse cx="9" cy="10" rx="2" ry="1.6"/><ellipse cx="15" cy="10" rx="2" ry="1.6"/><path d="M9 15c2 1.5 4 1.5 6 0"/></svg>',
+    flash: '<svg viewBox="0 0 24 24"><path d="M8 3h8l-1 6v12H9V9z"/><path d="M8 9h8M12 13v3"/></svg>',
+    vent: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M6 9h12M6 12h12M6 15h12"/></svg>',
+  };
+  /** Battery gauge: 5 cells that change colour, blinking when low. */
+  FN.battHtml = function (label, pct) {
+    const n = Math.ceil(Math.max(0, pct) / 20);
+    const cls = pct <= 20 ? 'r' : pct <= 45 ? 'y' : '';
+    const cells = Array.from({ length: 5 }, (_, i) => `<i class="${i < n ? cls : 'off'}"></i>`).join('');
+    return `<span class="batt ${pct <= 15 ? 'low' : ''}"><span class="cell">${cells}</span> ${label} ${Math.max(0, Math.ceil(pct))} %</span>`;
+  };
   FN.util = { rand, clamp, HOURS };
 
   // ---------------------------------------------------------------- game controller & progression
