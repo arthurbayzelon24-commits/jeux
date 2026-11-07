@@ -493,3 +493,7 @@ html, body { font-family: var(--ui); }
 .mp-row b { flex: 1; font-size: 15px; }
 .mp-row.dead span:last-child { color: #ff6b5b; } .mp-row.won span:last-child { color: var(--gold); }
 @media (orientation: landscape) and (max-height: 500px) { .mp-code { font-size: 44px; } .mp-big { min-height: 52px; } }
+.title-brand { font-family: var(--logo); font-size: clamp(26px, 7vmin, 52px); letter-spacing: 3px; line-height: 1; color: #efe6d4; text-shadow: 0 0 14px #ff2a1a55, 2px 2px 0 #3a0000; margin-bottom: 4px; }
+.title-brand span { color: var(--red-hi); letter-spacing: 6px; font-size: 0.7em; margin-left: 4px; }
+.title-foot b { color: #cfc6b8; font-weight: normal; letter-spacing: 2px; }
+.dev-by { color: #a89f93; letter-spacing: 2px; }
